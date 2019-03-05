@@ -12,10 +12,10 @@ namespace RedisSlimClient.Tests.Io
         [Fact]
         public void Read_SimpleString()
         {
-            var reader = GetReader("+hello\n\r");
+            var reader = GetReader("+hello\r\n");
 
             var parsedObject = (RedisString)reader.Single();
-            var value = parsedObject.AsString();
+            var value = parsedObject.ToString();
 
             Assert.Equal("hello", value);
             Assert.Equal(RedisType.String, parsedObject.Type);
@@ -24,7 +24,7 @@ namespace RedisSlimClient.Tests.Io
         [Fact]
         public void Read_Array_ReturnsExpectedMembers()
         {
-            var reader = GetReader("*3\n\r:1234\n\r+hi\n\r-me-error\n\r");
+            var reader = GetReader("*3\r\n:1234\r\n+hi\r\n-me-error\r\n");
 
             var parsedObject = (RedisArray)reader.Single();
 
@@ -36,7 +36,7 @@ namespace RedisSlimClient.Tests.Io
             var err1 = (RedisError)parsedObject.ElementAt(2);
 
             Assert.Equal(1234, int1.Value);
-            Assert.Equal("hi", str1.AsString());
+            Assert.Equal("hi", str1.ToString());
             Assert.Equal("me-error", err1.Message);
         }
 
@@ -48,10 +48,10 @@ namespace RedisSlimClient.Tests.Io
         [InlineData("<??>")]
         public void Read_BulkStringWithAsciiChars_ReturnsCorrectOutput(string str)
         {
-            var reader = GetReader($"${str.Length}\n\r{str}\n\r");
+            var reader = GetReader($"${str.Length}\r\n{str}\r\n");
 
             var parsedObject = (RedisString)reader.Single();
-            var value = parsedObject.AsString();
+            var value = parsedObject.ToString();
 
             Assert.Equal(str, value);
             Assert.Equal(RedisType.String, parsedObject.Type);
@@ -60,7 +60,7 @@ namespace RedisSlimClient.Tests.Io
         [Fact]
         public void Read_Integer()
         {
-            var reader = GetReader(":12345678\n\r");
+            var reader = GetReader(":12345678\r\n");
 
             var parsedObject = (RedisInteger)reader.Single();
             var value = parsedObject.Value;

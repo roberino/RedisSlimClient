@@ -8,8 +8,11 @@ namespace RedisSlimClient.Configuration
         public ClientConfiguration(string connectionString)
         {
             ServerUri = new Uri(connectionString);
+            DefaultTimeout = TimeSpan.FromMinutes(1);
         }
 
         public Uri ServerUri { get; }
+
+        public TimeSpan DefaultTimeout { get; }
     }
 }

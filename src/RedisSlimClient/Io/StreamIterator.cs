@@ -52,13 +52,13 @@ namespace RedisSlimClient.Io
             {
                 var c = buffer[i];
 
-                if (c == '\n')
+                if (c == '\r')
                 {
                     end0 = true;
                 }
                 else
                 {
-                    if (c == '\r' && end0)
+                    if (c == '\n' && end0)
                     {
                         yield return GetNextSegment(currentOffset, i - currentOffset - 1);
                         currentOffset = i + 1;

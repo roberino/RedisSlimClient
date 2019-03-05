@@ -38,6 +38,7 @@ namespace RedisSlimClient.Io
         {
             _socket?.Dispose();
             _stream?.Dispose();
+            _commandPipeline?.Dispose();
         }
     }
 }

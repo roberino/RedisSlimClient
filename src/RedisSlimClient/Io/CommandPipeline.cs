@@ -1,40 +1,76 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using RedisSlimClient.Io.Commands;
 using System.IO;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
+using RedisSlimClient.Io.Types;
 
 namespace RedisSlimClient.Io
 {
-    interface ICommandPipeline
+    interface ICommandPipeline : IDisposable
     {
-        Task<IEnumerable<object>> Execute(RedisCommand command);
+        Task<RedisObject> Execute(RedisCommand command, TimeSpan timeout);
     }
 
     class CommandPipeline : ICommandPipeline
     {
         readonly Stream _writeStream;
         readonly DataReader _reader;
+        readonly CommandQueue _commandQueue;
+
+        bool _disposed;
 
         public CommandPipeline(Stream writeStream)
         {
             _writeStream = writeStream;
             _reader = new DataReader(new StreamIterator(writeStream));
+            _commandQueue = new CommandQueue();
+
+            Task.Run(() => ProcessQueue());
         }
 
-        public Task<IEnumerable<object>> Execute(RedisCommand command)
+        public async Task<RedisObject> Execute(RedisCommand command, TimeSpan timeout)
         {
-            command.Write(x => _writeStream.Write(x));
+            if (_disposed)
+            {
+                throw new ObjectDisposedException(nameof(CommandPipeline));
+            }
 
-            _writeStream.Flush();
-
-            return ReadAsync();
+            return await _commandQueue.Enqueue(() =>
+            {
+                command.Write(x => _writeStream.Write(x));
+                return command;
+            }, timeout);
         }
 
-        async Task<IEnumerable<object>> ReadAsync()
+        void ProcessQueue()
         {
-            await Task.CompletedTask;
+            while (!_disposed)
+            {
+                _writeStream.Flush();
 
-            return _reader;
+                _commandQueue.ProcessNextCommand(cmd =>
+                {
+                    try
+                    {
+                        var nextResult = _reader.First();
+
+                        cmd.CompletionSource.SetResult(nextResult);
+                    }
+                    catch (Exception ex)
+                    {
+                        cmd.CompletionSource.SetException(ex);
+                    }
+                });
+            }
+        }
+
+        public void Dispose()
+        {
+            _disposed = true;
         }
     }
 }

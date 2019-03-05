@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using RedisSlimClient.Io.Types;
 
 namespace RedisSlimClient.Io.Commands
 {
@@ -8,6 +10,7 @@ namespace RedisSlimClient.Io.Commands
         protected RedisCommand(string commandText)
         {
             CommandText = commandText;
+            CompletionSource = new TaskCompletionSource<RedisObject>();
         }
 
         public string CommandText { get; }
@@ -23,6 +26,8 @@ namespace RedisSlimClient.Io.Commands
             });
         }
 
-        public Task<object> Result { get; }
+        public TaskCompletionSource<RedisObject> CompletionSource { get; }
+
+        public TaskAwaiter<RedisObject> GetAwaiter() => CompletionSource.Task.GetAwaiter();
     }
 }

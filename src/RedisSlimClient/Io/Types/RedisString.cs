@@ -11,6 +11,8 @@ namespace RedisSlimClient.Io.Types
 
         public byte[] Value { get; }
 
-        public string AsString(Encoding encoding = null) => (encoding ?? Encoding.ASCII).GetString(Value);
+        public string ToString(Encoding encoding) => encoding.GetString(Value);
+
+        public override string ToString() => ToString(Encoding.ASCII);
     }
 }

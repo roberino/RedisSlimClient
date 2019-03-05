@@ -19,6 +19,9 @@ namespace RedisSlimClient.Io
                 case TypeCode.Int64:
                     output.Write((long)item);
                     break;
+                case TypeCode.Object:
+                    output.Write((byte[])item);
+                    break;
                 default:
                     throw new NotSupportedException(tc.ToString());
             }

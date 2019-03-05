@@ -1,7 +1,8 @@
-﻿using System;
-using RedisSlimClient.Configuration;
+﻿using RedisSlimClient.Configuration;
 using RedisSlimClient.Io;
 using RedisSlimClient.Io.Commands;
+using RedisSlimClient.Io.Types;
+using System;
 using System.Threading.Tasks;
 
 namespace RedisSlimClient
@@ -19,30 +20,39 @@ namespace RedisSlimClient
 
         public async Task<bool> PingAsync()
         {
-            var cmd = new PingCommand();
-            var cmdPipe = await _connection.ConnectAsync();
+            return await CompareStringResponse(new PingCommand(), "PONG");
+        }
 
-            var result = await cmdPipe.Execute(cmd);
-
-            return true;
+        public async Task<bool> SetDataAsync(string key, byte[] data)
+        {
+            return await CompareStringResponse(new SetCommand(key, data), "OK");
         }
 
         public async Task<byte[]> GetDataAsync(string key)
         {
             var cmd = new GetCommand(key);
-            
+
             var cmdPipe = await _connection.ConnectAsync();
 
-            await cmdPipe.Execute(cmd);
+            var rstr = (RedisString) await cmdPipe.Execute(cmd, _configuration.DefaultTimeout);
 
-            await cmd.Result;
-
-            return (byte[])cmd.Result.Result;
+            return rstr.Value;
         }
 
         public void Dispose()
         {
-            _connection?.Dispose();
+            _connection.Dispose();
+        }
+
+        async Task<bool> CompareStringResponse(RedisCommand cmd, string expectedResponse)
+        {
+            var cmdPipe = await _connection.ConnectAsync();
+
+            var result = await cmdPipe.Execute(cmd, _configuration.DefaultTimeout);
+
+            var msg = result.ToString();
+
+            return string.Equals(expectedResponse, msg, StringComparison.OrdinalIgnoreCase);
         }
     }
 }

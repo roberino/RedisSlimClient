@@ -17,7 +17,7 @@ namespace RedisSlimClient.Tests.Io
             var stream = new MemoryStream();
             var iterator = new StreamIterator(stream);
 
-            var data = Encoding.ASCII.GetBytes("hello\n\rworld\n\r");
+            var data = Encoding.ASCII.GetBytes("hello\r\nworld\r\n");
 
             stream.Write(data);
             stream.Position = 0;
@@ -36,7 +36,7 @@ namespace RedisSlimClient.Tests.Io
             var stream = new MemoryStream();
             var iterator = new StreamIterator(stream, 4);
 
-            var data = Encoding.ASCII.GetBytes("hello\n\rworld\n\r");
+            var data = Encoding.ASCII.GetBytes("hello\r\nworld\r\n");
 
             stream.Write(data);
             stream.Position = 0;

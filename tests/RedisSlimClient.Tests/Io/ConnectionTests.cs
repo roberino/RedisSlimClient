@@ -21,15 +21,6 @@ namespace RedisSlimClient.Tests.Io
         }
 
         [Fact]
-        public void Constructor_LocalHost_CanContructAndDispose()
-        {
-            using (new Connection(_localEndpoint))
-            {
-
-            }
-        }
-
-        [Fact]
         public async Task ConnectAsync_LocalServer_CanConnect()
         {
             using (var server = new TcpServer(_localEndpoint))
@@ -59,8 +50,9 @@ namespace RedisSlimClient.Tests.Io
                 using (var connection = new Connection(_localEndpoint))
                 {
                     var pipeline = await connection.ConnectAsync();
+                    var cmd = new PingCommand();
 
-                    var result = await pipeline.Execute(new PingCommand());
+                    var result = await pipeline.Execute(cmd, TimeSpan.FromMilliseconds(100));
 
                     Assert.NotNull(result);
                 }
