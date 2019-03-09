@@ -1,9 +1,9 @@
 ﻿using RedisSlimClient.Configuration;
 using RedisSlimClient.Io;
 using RedisSlimClient.Io.Commands;
-using RedisSlimClient.Io.Types;
 using System;
 using System.Threading.Tasks;
+using RedisSlimClient.Types;
 
 namespace RedisSlimClient
 {

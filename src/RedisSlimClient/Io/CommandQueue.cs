@@ -3,7 +3,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
-using RedisSlimClient.Io.Types;
+using RedisSlimClient.Types;
 
 namespace RedisSlimClient.Io
 {
@@ -38,12 +38,16 @@ namespace RedisSlimClient.Io
             return await cmd;
         }
 
-        public void ProcessNextCommand(Action<RedisCommand> action)
+        public bool ProcessNextCommand(Action<RedisCommand> action)
         {
             if (_commandQueue.Count > 0 && _commandQueue.TryDequeue(out var next))
             {
                 action(next);
+
+                return true;
             }
+
+            return false;
         }
     }
 }

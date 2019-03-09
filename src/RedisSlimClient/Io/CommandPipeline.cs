@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.ComponentModel;
 using RedisSlimClient.Io.Commands;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using RedisSlimClient.Io.Types;
+using RedisSlimClient.Types;
 
 namespace RedisSlimClient.Io
 {
@@ -48,23 +49,23 @@ namespace RedisSlimClient.Io
 
         void ProcessQueue()
         {
-            while (!_disposed)
-            {
-                _writeStream.Flush();
+            _writeStream.Flush();
 
-                _commandQueue.ProcessNextCommand(cmd =>
+            foreach (var nextResult in _reader)
+            {
+                while (!_commandQueue.ProcessNextCommand(cmd =>
                 {
                     try
                     {
-                        var nextResult = _reader.First();
-
                         cmd.CompletionSource.SetResult(nextResult);
                     }
                     catch (Exception ex)
                     {
                         cmd.CompletionSource.SetException(ex);
                     }
-                });
+                }))
+                {
+                }
             }
         }
 

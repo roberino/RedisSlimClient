@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-using RedisSlimClient.Io.Types;
+using RedisSlimClient.Types;
 
 namespace RedisSlimClient.Io.Commands
 {

@@ -1,7 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 
-namespace RedisSlimClient.Io.Types
+namespace RedisSlimClient.Types
 {
     class RedisArray : RedisObject, IReadOnlyCollection<RedisObject>
     {

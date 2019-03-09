@@ -12,8 +12,9 @@ namespace RedisSlimClient.Io
         readonly byte[] _buffer;
 
         readonly MemoryStream _overflow;
-
         readonly CancellationTokenSource _cancellationToken;
+
+        bool _startEndFlag;
 
         public StreamIterator(Stream stream, int bufferSize = 1024)
         {
@@ -35,6 +36,8 @@ namespace RedisSlimClient.Io
                     yield break;
                 }
 
+                DebugOutput.Dump(_buffer, read);
+
                 foreach (var segment in Iterate(_buffer, 0, read))
                 {
                     yield return segment;
@@ -45,7 +48,6 @@ namespace RedisSlimClient.Io
         IEnumerable<ArraySegment<byte>> Iterate(byte[] buffer, int offset, int length)
         {
             var i = offset;
-            var end0 = false;
             var currentOffset = offset;
 
             while (i < length)
@@ -54,17 +56,17 @@ namespace RedisSlimClient.Io
 
                 if (c == '\r')
                 {
-                    end0 = true;
+                    _startEndFlag = true;
                 }
                 else
                 {
-                    if (c == '\n' && end0)
+                    if (c == '\n' && _startEndFlag)
                     {
                         yield return GetNextSegment(currentOffset, i - currentOffset - 1);
                         currentOffset = i + 1;
                     }
 
-                    end0 = false;
+                    _startEndFlag = false;
                 }
 
                 i++;
@@ -82,12 +84,19 @@ namespace RedisSlimClient.Io
 
             if (_overflow.Position > 0)
             {
-                _overflow.Write(_buffer, offset, count);
+                if (count > 0)
+                {
+                    _overflow.Write(_buffer, offset, count);
+                    count = (int)_overflow.Position;
+                }
+                else
+                {
+                    count = (int)_overflow.Position + count;
+                }
 
                 newBuffer = _overflow.ToArray();
 
                 offset = 0;
-                count = newBuffer.Length;
 
                 _overflow.Position = 0;
             }

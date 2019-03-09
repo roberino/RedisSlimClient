@@ -1,6 +1,6 @@
 ﻿using System.Text;
 
-namespace RedisSlimClient.Io.Types
+namespace RedisSlimClient.Types
 {
     class RedisString : RedisObject
     {

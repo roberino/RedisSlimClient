@@ -1,8 +1,8 @@
 ﻿using RedisSlimClient.Io;
-using RedisSlimClient.Io.Types;
 using System.IO;
 using System.Linq;
 using System.Text;
+using RedisSlimClient.Types;
 using Xunit;
 
 namespace RedisSlimClient.Tests.Io
@@ -55,6 +55,21 @@ namespace RedisSlimClient.Tests.Io
 
             Assert.Equal(str, value);
             Assert.Equal(RedisType.String, parsedObject.Type);
+        }
+
+        [Fact]
+        public void Read_MultipleStrings_ReturnsCorrectOutput()
+        {
+            var reader = GetReader("+abcd\r\n$4\r\nefgh\r\n$4\r\nijkl\r\n");
+
+            var parsedObjects = reader.ToArray();
+            var value1 = parsedObjects[0].ToString();
+            var value2 = parsedObjects[1].ToString();
+            var value3 = parsedObjects[2].ToString();
+
+            Assert.Equal("abcd", value1);
+            Assert.Equal("efgh", value2);
+            Assert.Equal("ijkl", value3);
         }
 
         [Fact]

@@ -1,7 +1,7 @@
-﻿using RedisSlimClient.Io.Types;
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using RedisSlimClient.Types;
 
 namespace RedisSlimClient.Io
 {
@@ -51,7 +51,7 @@ namespace RedisSlimClient.Io
                 }
 
                 {
-                    var value = YieldObject(segment);
+                    var value = YieldObject(GetCurrentValue(segment));
 
                     if (value != null)
                     {
@@ -69,7 +69,9 @@ namespace RedisSlimClient.Io
 
         RedisObject YieldObject(RedisObject value)
         {
-            if (_currentArray == null)
+            _currentState = ReadState.Type;
+
+            if (_currentArray == null || value == null)
             {
                 return value;
             }
@@ -88,14 +90,19 @@ namespace RedisSlimClient.Io
             return null;
         }
 
-        RedisObject YieldObject(ArraySegment<byte> segment)
+        RedisObject GetCurrentValue(ArraySegment<byte> segment)
         {
-            var value =
-                _currentType.type == ResponseType.ErrorType
-                    ? (RedisObject)new RedisError(segment.ToAsciiString(_currentType.offset))
-                    : new RedisString(segment.ToBytes(_currentType.offset));
+            switch (_currentType.type)
+            {
+                case ResponseType.ErrorType:
+                    return new RedisError(segment.ToAsciiString(_currentType.offset));
+                case ResponseType.StringType:
+                    return new RedisString(segment.ToBytes(_currentType.offset));
+                case ResponseType.BulkStringType:
+                    return new RedisString(segment.ToBytes(_currentType.offset));
+            }
 
-            return YieldObject(value);
+            throw new NotSupportedException(_currentType.type.ToString());
         }
 
         public void Dispose()

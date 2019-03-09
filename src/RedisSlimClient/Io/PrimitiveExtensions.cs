@@ -1,6 +1,6 @@
-﻿using RedisSlimClient.Io.Types;
-using System;
+﻿using System;
 using System.Text;
+using RedisSlimClient.Types;
 
 namespace RedisSlimClient.Io
 {

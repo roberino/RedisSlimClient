@@ -1,4 +1,4 @@
-﻿namespace RedisSlimClient.Io.Types
+﻿namespace RedisSlimClient.Types
 {
     class RedisError : RedisObject
     {

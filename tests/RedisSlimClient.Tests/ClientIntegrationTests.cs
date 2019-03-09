@@ -1,7 +1,9 @@
 ﻿using RedisSlimClient.Configuration;
 using System;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using RedisSlimClient.Io;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -39,9 +41,69 @@ namespace RedisSlimClient.Tests
 
                 var data2 = await client.GetDataAsync("key1");
 
-                var datastr = Encoding.ASCII.GetString(data2);
+                var dataString = Encoding.ASCII.GetString(data2);
 
-                Assert.Equal("abcdefg", datastr);
+                Assert.Equal("abcdefg", dataString);
+            }
+        }
+
+        [Fact]
+        public async Task ConnectAsync_TwoGetCallsSameData_ReturnsTwoResults()
+        {
+            using (var client = new RedisClient(new ClientConfiguration(_localEndpoint.ToString())))
+            {
+                var data = Encoding.ASCII.GetBytes("abcdefg");
+
+                DebugOutput.Output = s => _output.WriteLine(s);
+
+                await client.SetDataAsync("key1", data);
+
+                var data2 = await client.GetDataAsync("key1");
+                var data3 = await client.GetDataAsync("key1");
+                var data4 = await client.GetDataAsync("key1");
+
+                var dataString2 = Encoding.ASCII.GetString(data2);
+                var dataString3 = Encoding.ASCII.GetString(data3);
+                var dataString4 = Encoding.ASCII.GetString(data4);
+
+                Assert.Equal("abcdefg", dataString2);
+                Assert.Equal("abcdefg", dataString3);
+                Assert.Equal("abcdefg", dataString4);
+            }
+        }
+
+        [Fact] //Skip = "Integration")]
+        public async Task ConnectAsync_RemoteServerMultipleThreads_CanGet()
+        {
+            using (var client = new RedisClient(new ClientConfiguration(_localEndpoint.ToString())))
+            {
+                var data = Encoding.ASCII.GetBytes("abcdefg");
+
+                await client.SetDataAsync("key1", data);
+
+                await client.GetDataAsync("key1")
+                    
+                    .ContinueWith(t =>
+                    {
+                        _output.WriteLine("Item1");
+
+                        var dataString1 = Encoding.ASCII.GetString(t.Result);
+
+                        Assert.Equal("abcdefg", dataString1);
+
+                        Thread.Sleep(1000);
+
+                        _output.WriteLine("Item1a");
+                    });
+
+                var data2 =
+                    await client.GetDataAsync("key1");
+
+                _output.WriteLine("Item2");
+
+                var dataString = Encoding.ASCII.GetString(data2);
+
+                Assert.Equal("abcdefg", dataString);
             }
         }
     }
