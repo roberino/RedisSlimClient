@@ -1,4 +1,5 @@
-﻿using System;
+﻿using RedisSlimClient.Serialization.Il;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -61,59 +62,34 @@ namespace RedisSlimClient.Serialization
                 .Where(p => p.CanRead && p.CanWrite)
                 .ToArray();
 
-            AddPropertyReadMethod(newAccessorType, targetProps);
-            AddPropertyExtractMethod(newAccessorType, targetProps);
-
+            new GetObjectImplBuilder<T>(newAccessorType, targetProps).Build();
+            new WriteObjectImplBuilder<T>(newAccessorType, targetProps).Build();
+            
             return newAccessorType.CreateTypeInfo();
         }
 
-        void AddPropertyReadMethod(TypeBuilder newType, IEnumerable<PropertyInfo> properties)
+        void AddPropertyExtractMethod(SerializeMethodImplBuilder<T> builder)
         {
-            var builder = new TypeModelBuilder<T>();
-            var targetMethod = typeof(IObjectGraphExporter).GetMethod(nameof(IObjectGraphExporter.GetObjectData));
-
-            var listType = typeof(Dictionary<string, object>);
-            var listAddMethod = listType.GetMethods(BindingFlags.Instance | BindingFlags.Public).First(m => m.Name == nameof(Dictionary<string, object>.Add) && m.GetParameters().Length == 2);
-
-            builder.AddPropertyReaderMethod(newType, targetMethod, properties, (il, prop) =>
-            {
-                il.Emit(OpCodes.Ldloc_0);
-                il.Emit(OpCodes.Ldstr, prop.Name);
-                il.Emit(OpCodes.Ldloc_1);
-
-                il.EmitCall(OpCodes.Call, listAddMethod, null);
-            });
-        }
-
-        void AddPropertyExtractMethod(TypeBuilder newType, IEnumerable<PropertyInfo> properties)
-        {
-            var builder = new TypeModelBuilder<T>();
             var targetMethod = typeof(IObjectGraphExporter).GetMethod(nameof(IObjectGraphExporter.WriteObjectData));
             var objectWriterType = typeof(IObjectWriter);
-            var objectWriterMethod = objectWriterType.GetMethod(nameof(IObjectWriter.WriteItem));
+            var objectWriterMethods = new OverloadedMethodLookup<>(objectWriterType, nameof(IObjectWriter.WriteItem), 2);
 
-            var localIntIndex = 0;
+            LocalVar counter = null;
 
-            builder.AddPropertyReaderMethod(newType, targetMethod, properties, (il, prop) =>
-                {
-                    il.Emit(OpCodes.Ldarg_2);
-                    il.Emit(OpCodes.Ldstr, prop.Name);
-                    il.Emit(OpCodes.Ldloc, localIntIndex);
-                    il.Emit(OpCodes.Ldloc_1);
+            //builder.AddPropertyReaderMethod(targetMethod, (il, propLocal, prop) =>
+            //    {
+            //        var writeMethod = objectWriterMethods.Bind(prop.PropertyType);
 
-                    il.EmitCall(OpCodes.Call, objectWriterMethod, null);
-                },
-                il =>
-                {
-                    var localInt = il.DeclareLocal(typeof(int));
+            //        il.CallMethod(targetMethod.GetParameters().ElementAt(1),
+            //            writeMethod,
+            //            prop.Name, counter, propLocal);
+            //    },
+            //    il =>
+            //    {
+            //        counter = il.CreateLocal(typeof(int));
 
-                    localIntIndex = localInt.LocalIndex;
-
-                    il.Emit(OpCodes.Ldarg_3);
-                    il.Emit(OpCodes.Ldc_I4, 1);
-                    il.Emit(OpCodes.Add);
-                    il.Emit(OpCodes.Stloc, localIntIndex);
-                });
+            //        il.Add(counter, targetMethod.GetParameters().ElementAt(2), counter);
+            //    });
         }
     }
 }

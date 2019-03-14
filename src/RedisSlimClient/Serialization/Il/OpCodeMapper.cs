@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Reflection.Emit;
 
-namespace RedisSlimClient.Serialization
+namespace RedisSlimClient.Serialization.Il
 {
     class OpCodeMapper
     {

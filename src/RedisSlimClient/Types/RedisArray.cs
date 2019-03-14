@@ -11,6 +11,12 @@ namespace RedisSlimClient.Types
             Items = new List<RedisObject>();
         }
 
+        public RedisArray(params RedisObject[] items) : base(RedisType.Array)
+        {
+            Count = items.Length;
+            Items = items;
+        }
+
         public bool IsComplete => Items.Count == Count;
 
         public int Count { get; }
