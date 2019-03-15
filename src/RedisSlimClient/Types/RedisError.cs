@@ -1,6 +1,6 @@
 ﻿namespace RedisSlimClient.Types
 {
-    class RedisError : RedisObject
+    internal class RedisError : RedisObject
     {
         public RedisError(string message) : base(RedisType.Error)
         {

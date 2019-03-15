@@ -4,7 +4,7 @@ using RedisSlimClient.Io;
 
 namespace RedisSlimClient.Types
 {
-    class RedisString : RedisObject
+    internal class RedisString : RedisObject
     {
         public RedisString(byte[] value) : base(RedisType.String)
         {

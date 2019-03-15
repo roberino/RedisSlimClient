@@ -2,7 +2,7 @@
 
 namespace RedisSlimClient.Serialization
 {
-    static class RedisTypeInfo
+    internal static class RedisTypeInfo
     {
         public static bool RequiresDecomposition(this Type type)
         {

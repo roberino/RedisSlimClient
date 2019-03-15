@@ -6,20 +6,17 @@ using System.Reflection.Emit;
 
 namespace RedisSlimClient.Serialization.Il
 {
-    class GetObjectImplBuilder<T> : SerializeMethodImplBuilder<T>
+    internal class GetObjectImplBuilder<T> : TypeProxyBuilder<T>
     {
-        readonly IDictionary<Type, (MethodInfo prop, MethodInfo meth)> _extractMethods;
         readonly MethodInfo _addMethod;
 
-        public GetObjectImplBuilder(TypeBuilder newType, IEnumerable<PropertyInfo> properties)
+        public GetObjectImplBuilder(TypeBuilder newType, IReadOnlyCollection<PropertyInfo> properties)
             : base(newType, typeof(IObjectGraphExporter).GetMethod(nameof(IObjectGraphExporter.GetObjectData)), properties)
         {   
             var listType = typeof(Dictionary<string, object>);
 
             _addMethod = listType.GetMethods(BindingFlags.Instance | BindingFlags.Public).First(m =>
                 m.Name == nameof(Dictionary<string, object>.Add) && m.GetParameters().Length == 2);
-
-            _extractMethods = new Dictionary<Type, (MethodInfo prop, MethodInfo meth)>();
         }
 
         protected override void OnInit(MethodBuilder methodBuilder)
@@ -47,18 +44,7 @@ namespace RedisSlimClient.Serialization.Il
 
         (MethodInfo prop, MethodInfo meth) GetExtractor(Type type)
         {
-            if (!_extractMethods.TryGetValue(type, out var extractMethods))
-            {
-                var m = typeof(TypeModel<>).MakeGenericType(type);
-
-                var instanceProp = m.GetProperty(nameof(TypeModel<object>.Instance), BindingFlags.Public | BindingFlags.Static);
-                var instance = instanceProp.GetValue(null);
-                var method = instance.GetType().GetMethod(nameof(TypeModel<object>.GetData));
-
-                _extractMethods[type] = extractMethods = (instanceProp.GetMethod, method);
-            }
-
-            return extractMethods;
+            return GetTypeModelMethod(type, nameof(TypeModel<object>.GetData));
         }
     }
 }

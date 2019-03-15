@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace RedisSlimClient.Types
 {
-    class RedisArray : RedisObject, IReadOnlyCollection<RedisObject>
+    internal class RedisArray : RedisObject, IReadOnlyCollection<RedisObject>
     {
         public RedisArray(long length) : base(RedisType.Array)
         {

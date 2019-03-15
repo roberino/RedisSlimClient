@@ -5,7 +5,7 @@ using RedisSlimClient.Types;
 
 namespace RedisSlimClient.Io
 {
-    class DataReader : IEnumerable<RedisObject>, IDisposable
+    internal class DataReader : IEnumerable<RedisObject>, IDisposable
     {
         readonly IEnumerable<ArraySegment<byte>> _byteStream;
 

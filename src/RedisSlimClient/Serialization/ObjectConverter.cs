@@ -5,7 +5,7 @@ using RedisSlimClient.Types;
 
 namespace RedisSlimClient.Serialization
 {
-    class ObjectConverter
+    internal class ObjectConverter
     {
         public RedisObject Convert(object obj)
         {

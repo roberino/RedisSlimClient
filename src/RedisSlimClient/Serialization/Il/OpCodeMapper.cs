@@ -4,7 +4,7 @@ using System.Reflection.Emit;
 
 namespace RedisSlimClient.Serialization.Il
 {
-    class OpCodeMapper
+    internal class OpCodeMapper
     {
         readonly Dictionary<Type, OpCode> _typeToOpCode = CreateMap();
 

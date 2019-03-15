@@ -4,7 +4,7 @@ using System.Text;
 
 namespace RedisSlimClient.Io
 {
-    class WorkCompletionHandler
+    internal class WorkCompletionHandler
     {
     }
 }

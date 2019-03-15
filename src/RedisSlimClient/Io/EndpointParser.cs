@@ -4,7 +4,7 @@ using System.Net;
 
 namespace RedisSlimClient.Io
 {
-    static class EndpointParser
+    internal static class EndpointParser
     {
         public static EndPoint AsEndpoint(this Uri uriEndpoint)
         {

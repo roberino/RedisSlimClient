@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace RedisSlimClient.Io.Commands
 {
-    class PingCommand : RedisCommand
+    internal class PingCommand : RedisCommand
     {
         public PingCommand() : base("PING")
         {

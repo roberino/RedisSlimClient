@@ -1,6 +1,6 @@
 ﻿namespace RedisSlimClient.Types
 {
-    class RedisInteger : RedisObject
+    internal class RedisInteger : RedisObject
     {
         public RedisInteger(long value) : base(RedisType.Integer)
         {

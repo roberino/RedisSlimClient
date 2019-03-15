@@ -1,6 +1,6 @@
 ﻿namespace RedisSlimClient.Io
 {
-    enum ResponseType : byte
+    internal enum ResponseType : byte
     {
         Unknown,
 

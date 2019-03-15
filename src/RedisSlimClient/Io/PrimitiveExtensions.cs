@@ -4,7 +4,7 @@ using RedisSlimClient.Types;
 
 namespace RedisSlimClient.Io
 {
-    static class PrimitiveExtensions
+    internal static class PrimitiveExtensions
     {
         public static RedisType AsObjectType(this ResponseType type)
         {

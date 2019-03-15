@@ -6,7 +6,7 @@ using System.Threading;
 
 namespace RedisSlimClient.Io
 {
-    class StreamIterator : IEnumerable<ArraySegment<byte>>, IDisposable
+    internal class StreamIterator : IEnumerable<ArraySegment<byte>>, IDisposable
     {
         readonly Stream _stream;
         readonly byte[] _buffer;

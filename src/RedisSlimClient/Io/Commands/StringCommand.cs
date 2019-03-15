@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace RedisSlimClient.Io.Commands
 {
-    class StringCommand : RedisCommand
+    internal class StringCommand : RedisCommand
     {
         readonly string _value;
 

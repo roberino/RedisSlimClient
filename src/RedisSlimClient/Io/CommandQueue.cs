@@ -7,7 +7,7 @@ using RedisSlimClient.Types;
 
 namespace RedisSlimClient.Io
 {
-    class CommandQueue
+    internal class CommandQueue
     {
         readonly SemaphoreSlim _semaphore;
         readonly ConcurrentQueue<RedisCommand> _commandQueue;

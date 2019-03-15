@@ -2,7 +2,7 @@
 using System.IO;
 namespace RedisSlimClient.Io
 {
-    static class DataWriter
+    internal static class DataWriter
     {
         public static void Write(this Stream output, object item)
         {

@@ -1,6 +1,6 @@
 ﻿namespace RedisSlimClient.Types
 {
-    abstract class RedisObject
+    internal abstract class RedisObject
     {
         protected RedisObject(RedisType type)
         {

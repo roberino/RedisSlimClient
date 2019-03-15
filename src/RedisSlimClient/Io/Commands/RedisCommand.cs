@@ -5,7 +5,7 @@ using RedisSlimClient.Types;
 
 namespace RedisSlimClient.Io.Commands
 {
-    abstract class RedisCommand
+    internal abstract class RedisCommand
     {
         protected RedisCommand(string commandText)
         {

@@ -11,12 +11,12 @@ using RedisSlimClient.Types;
 
 namespace RedisSlimClient.Io
 {
-    interface ICommandPipeline : IDisposable
+    internal interface ICommandPipeline : IDisposable
     {
         Task<RedisObject> Execute(RedisCommand command, TimeSpan timeout);
     }
 
-    class CommandPipeline : ICommandPipeline
+    internal class CommandPipeline : ICommandPipeline
     {
         readonly Stream _writeStream;
         readonly DataReader _reader;

@@ -8,11 +8,16 @@ using System.Threading;
 
 namespace RedisSlimClient.Serialization
 {
-    public sealed class TypeModel<T>
+    public interface ITypeModel<T>
+    {
+        void WriteData(T instance, IObjectWriter writer);
+    }
+
+    public sealed class TypeModel<T> : ITypeModel<T>
     {
         static readonly string TypeName = $"{typeof(T).Namespace}.{typeof(T).Name}.TypeReader";
 
-        private static readonly Lazy<TypeModel<T>> SingleInstance =
+        static readonly Lazy<TypeModel<T>> SingleInstance =
             new Lazy<TypeModel<T>>(() => new TypeModel<T>(), LazyThreadSafetyMode.ExecutionAndPublication);
 
         readonly IObjectGraphExporter _dataExtractor;
@@ -66,30 +71,6 @@ namespace RedisSlimClient.Serialization
             new WriteObjectImplBuilder<T>(newAccessorType, targetProps).Build();
             
             return newAccessorType.CreateTypeInfo();
-        }
-
-        void AddPropertyExtractMethod(SerializeMethodImplBuilder<T> builder)
-        {
-            var targetMethod = typeof(IObjectGraphExporter).GetMethod(nameof(IObjectGraphExporter.WriteObjectData));
-            var objectWriterType = typeof(IObjectWriter);
-            var objectWriterMethods = new OverloadedMethodLookup<>(objectWriterType, nameof(IObjectWriter.WriteItem), 2);
-
-            LocalVar counter = null;
-
-            //builder.AddPropertyReaderMethod(targetMethod, (il, propLocal, prop) =>
-            //    {
-            //        var writeMethod = objectWriterMethods.Bind(prop.PropertyType);
-
-            //        il.CallMethod(targetMethod.GetParameters().ElementAt(1),
-            //            writeMethod,
-            //            prop.Name, counter, propLocal);
-            //    },
-            //    il =>
-            //    {
-            //        counter = il.CreateLocal(typeof(int));
-
-            //        il.Add(counter, targetMethod.GetParameters().ElementAt(2), counter);
-            //    });
         }
     }
 }

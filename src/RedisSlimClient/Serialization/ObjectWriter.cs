@@ -4,14 +4,13 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Xml;
-using RedisSlimClient.Types;
 
 namespace RedisSlimClient.Serialization
 {
-    class ObjectWriter : IObjectWriter
+    internal class ObjectWriter : IObjectWriter
     {
-        private readonly Encoding _textEncoding;
-        private readonly IList<(string name, TypeCode type, SubType subType, byte[] data)> _objectData;
+        readonly Encoding _textEncoding;
+        readonly IList<(string name, TypeCode type, SubType subType, byte[] data)> _objectData;
 
         public ObjectWriter(Encoding textEncoding = null)
         {
@@ -29,47 +28,47 @@ namespace RedisSlimClient.Serialization
 
         }
 
-        public void WriteItem(string name, int level, object data)
+        public void WriteItem(string name, object data)
         {
         }
 
-        public void WriteItem(string name, int level, string data)
+        public void WriteItem(string name, string data)
         {
             Write(name, TypeCode.String, SubType.None, _textEncoding.GetBytes(data));
         }
 
-        public void WriteItem(string name, int level, byte[] data)
+        public void WriteItem(string name, byte[] data)
         {
             Write(name, TypeCode.Object, SubType.ByteArray, data);
         }
 
-        public void WriteItem(string name, int level, IEnumerable data)
+        public void WriteItem<T>(string name, IEnumerable<T> data)
         {
             throw new NotImplementedException();
         }
 
-        public void WriteItem(string name, int level, DateTime data)
+        public void WriteItem(string name, DateTime data)
         {
             Write(name, TypeCode.DateTime, SubType.None,
                 Encoding.ASCII.GetBytes(XmlConvert.ToString(data, XmlDateTimeSerializationMode.Utc)));
         }
 
-        public void WriteItem(string name, int level, short data)
+        public void WriteItem(string name, short data)
         {
             throw new NotImplementedException();
         }
 
-        public void WriteItem(string name, int level, int data)
+        public void WriteItem(string name, int data)
         {
             throw new NotImplementedException();
         }
 
-        public void WriteItem(string name, int level, long data)
+        public void WriteItem(string name, long data)
         {
             throw new NotImplementedException();
         }
 
-        public void WriteItem(string name, int level, char data)
+        public void WriteItem(string name, char data)
         {
             throw new NotImplementedException();
         }

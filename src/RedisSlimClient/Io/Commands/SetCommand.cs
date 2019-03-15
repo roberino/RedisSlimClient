@@ -3,10 +3,10 @@ using System;
 
 namespace RedisSlimClient.Io.Commands
 {
-    class SetCommand : RedisCommand
+    internal class SetCommand : RedisCommand
     {
         readonly string _key;
-        private readonly byte[] _data;
+        readonly byte[] _data;
 
         public SetCommand(string key, byte[] data) : base("SET")
         {

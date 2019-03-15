@@ -2,7 +2,7 @@
 
 namespace RedisSlimClient.Serialization.Il
 {
-    class LocalVar
+    internal class LocalVar
     {
         public LocalVar(string name = null, Type type = null)
         {

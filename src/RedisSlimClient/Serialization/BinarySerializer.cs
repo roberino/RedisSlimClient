@@ -4,7 +4,7 @@ using System.Text;
 
 namespace RedisSlimClient.Serialization
 {
-    class BinarySerializer : IObjectSerializer
+    internal class BinarySerializer : IObjectSerializer
     {
         public IEnumerable<IObjectPart> Serialize<T>(T obj)
         {

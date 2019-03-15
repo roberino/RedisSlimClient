@@ -5,17 +5,17 @@ using System.Reflection;
 
 namespace RedisSlimClient.Serialization.Il
 {
-    class OverloadedMethodLookup<T>
+    internal class OverloadedMethodLookup<T>
     {
         readonly IDictionary<Type, MethodInfo> _methods;
 
-        public OverloadedMethodLookup(string methodName, int overloadIndex)
+        public OverloadedMethodLookup(string methodName, string overloadedParameterName)
         {
             var type = typeof(T);
 
             _methods = type.GetMethods(BindingFlags.Public | BindingFlags.Instance)
                 .Where(m => m.Name == methodName)
-                .GroupBy(m => m.GetParameters()[overloadIndex].ParameterType)
+                .GroupBy(m => m.GetParameters().Single(p => p.Name == overloadedParameterName).ParameterType)
                 .ToDictionary(g => g.Key, g => g.First());
         }
 
