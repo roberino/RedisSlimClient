@@ -6,6 +6,6 @@ namespace RedisSlimClient.Serialization
     {
         Dictionary<string, object> GetObjectData(object instance);
 
-        void WriteObjectData(object instance, IObjectWriter writer, int level);
+        void WriteObjectData(object instance, IObjectWriter writer);
     }
 }

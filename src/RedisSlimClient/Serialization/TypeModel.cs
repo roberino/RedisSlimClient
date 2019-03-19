@@ -37,7 +37,7 @@ namespace RedisSlimClient.Serialization
 
         public IDictionary<string, object> GetData(T instance) => _dataExtractor.GetObjectData(instance);
 
-        public void WriteData(T instance, IObjectWriter writer) => _dataExtractor.WriteObjectData(instance, writer, 0);
+        public void WriteData(T instance, IObjectWriter writer) => _dataExtractor.WriteObjectData(instance, writer);
 
         /// <summary>
         /// Create an assembly that will provide the get and set methods.

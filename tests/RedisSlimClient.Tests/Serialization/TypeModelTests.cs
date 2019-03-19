@@ -1,12 +1,22 @@
 ﻿using RedisSlimClient.Serialization;
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Text;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace RedisSlimClient.Tests.Serialization
 {
     public class TypeModelTests
     {
+        private readonly ITestOutputHelper _testOutput;
+
+        public TypeModelTests(ITestOutputHelper testOutput)
+        {
+            _testOutput = testOutput;
+        }
+
         [Fact]
         public void GetData_SimpleType_ReturnsPropertyData()
         {
@@ -26,14 +36,36 @@ namespace RedisSlimClient.Tests.Serialization
         public void WriteData_SimpleType_WritesPropertyData()
         {
             var model = TypeModel<AnotherTestDto>.Instance;
-            var writer = new ObjectWriter();
+            var writer = new ObjectWriter(new MemoryStream());
 
-            model.WriteData(new AnotherTestDto()
+            model.WriteData(new AnotherTestDto
                 {
                     DataItem1 = "abc"
                 },
                 writer
             );
+        }
+
+        [Fact]
+        public void WriteData_MultiPropertyType_ReturnsPropertyData()
+        {
+            var now = DateTime.UtcNow;
+
+            var model = TypeModel<TestDto>.Instance;
+            var output = new MemoryStream();
+            var writer = new ObjectWriter(output);
+
+            model.WriteData(new TestDto()
+            {
+                DataItem1 = "abc",
+                DataItem2 = now,
+                DataItem3 = new AnotherTestDto()
+                {
+                    DataItem1 = "efg"
+                }
+            }, writer);
+
+            _testOutput.WriteLine(Encoding.UTF8.GetString(output.ToArray()));
         }
 
         [Fact]

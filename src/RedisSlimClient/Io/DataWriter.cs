@@ -29,14 +29,19 @@ namespace RedisSlimClient.Io
 
         public static void Write(this Stream output, object[] data)
         {
-            output.Write(ResponseType.ArrayType);
-            output.WriteRaw(data.Length.ToString());
-            output.WriteEnd();
+            output.WriteStartArray(data.Length);
 
             for (var i = 0; i < data.Length; i++)
             {
                 output.Write(data[i]);
             }
+        }
+
+        public static void WriteStartArray(this Stream output, int arrayLength)
+        {
+            output.Write(ResponseType.ArrayType);
+            output.WriteRaw(arrayLength.ToString());
+            output.WriteEnd();
         }
 
         public static void Write(this Stream output, byte[] data)

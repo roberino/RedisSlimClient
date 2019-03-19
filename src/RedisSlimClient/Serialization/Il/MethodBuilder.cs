@@ -138,7 +138,9 @@ namespace RedisSlimClient.Serialization.Il
                 EmitValue(item.local, item.parameter.ParameterType);
             }
 
-            Il.EmitCall(OpCodes.Call, method, null);
+            var op = method.IsVirtual ? OpCodes.Callvirt : OpCodes.Call;
+
+            Il.EmitCall(op, method, null);
 
             if (localStore != null)
             {
@@ -153,7 +155,7 @@ namespace RedisSlimClient.Serialization.Il
                 {
                     Il.Emit(OpCodes.Box, localInf.type);
                 }
-
+                
                 Il.Emit(OpCodes.Stloc, localInf.index);
             }
         }

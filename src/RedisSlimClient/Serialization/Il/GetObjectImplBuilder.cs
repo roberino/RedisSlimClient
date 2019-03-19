@@ -25,21 +25,24 @@ namespace RedisSlimClient.Serialization.Il
 
         protected override void OnProperty(MethodBuilder methodBuilder, LocalVar propertyLocal, PropertyInfo property)
         {
+            var x = methodBuilder.GetLocalByIndex(0);
+
             if (property.PropertyType.RequiresDecomposition())
             {
                 var extract = GetExtractor(property.PropertyType);
 
-                methodBuilder.Scope(() =>
-                {
-                    var extractLocal = methodBuilder.Define(extract.prop.ReturnType);
-                    methodBuilder.CallStaticFunction(extractLocal, extract.prop);
-                    methodBuilder.CallFunction(propertyLocal, extractLocal, extract.meth, propertyLocal);
-                });
+                var extractLocal = methodBuilder.Define(extract.prop.ReturnType);
+                var extractedDataLocal = methodBuilder.Define(typeof(Dictionary<string, object>));
+
+                methodBuilder.CallStaticFunction(extractLocal, extract.prop);
+                methodBuilder.CallFunction(extractedDataLocal, extractLocal, extract.meth, propertyLocal);
+
+                methodBuilder.CallMethod(x, _addMethod, property.Name, extractedDataLocal);
             }
-
-            var x = methodBuilder.GetLocalByIndex(0);
-
-            methodBuilder.CallMethod(x, _addMethod, property.Name, propertyLocal);
+            else
+            {
+                methodBuilder.CallMethod(x, _addMethod, property.Name, propertyLocal);
+            }
         }
 
         (MethodInfo prop, MethodInfo meth) GetExtractor(Type type)

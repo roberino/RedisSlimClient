@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -55,16 +54,20 @@ namespace RedisSlimClient.Serialization.Il
                 returnLocal = _methodWriter.Define(TargetMethod.ReturnType, true);
             }
 
-            var propertyLocal = _methodWriter.Define(typeof(object));
             var arg0 = TargetMethod.GetParameters().First();
 
             OnInit(_methodWriter);
 
             foreach (var property in Properties)
             {
-                _methodWriter.CallFunction(propertyLocal, arg0, property.GetMethod);
+                _methodWriter.Scope(() =>
+                {
+                    var propertyLocal = _methodWriter.Define(property.GetMethod.ReturnType);
 
-                OnProperty(_methodWriter, propertyLocal, property);
+                    _methodWriter.CallFunction(propertyLocal, arg0, property.GetMethod);
+
+                    OnProperty(_methodWriter, propertyLocal, property);
+                });
             }
 
             _methodWriter.Return(returnLocal);

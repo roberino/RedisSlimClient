@@ -1,7 +1,8 @@
-﻿using System;
-using System.Collections;
+﻿using RedisSlimClient.Io;
+using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Xml;
 
@@ -9,18 +10,18 @@ namespace RedisSlimClient.Serialization
 {
     internal class ObjectWriter : IObjectWriter
     {
+        readonly Stream _stream;
         readonly Encoding _textEncoding;
-        readonly IList<(string name, TypeCode type, SubType subType, byte[] data)> _objectData;
 
-        public ObjectWriter(Encoding textEncoding = null)
+        public ObjectWriter(Stream stream, Encoding textEncoding = null)
         {
+            _stream = stream;
             _textEncoding = textEncoding ?? Encoding.UTF8;
-            _objectData = new List<(string name, TypeCode type, SubType subType, byte[] data)>();
         }
 
         public void BeginWrite(int itemCount)
         {
-
+            _stream.WriteStartArray(itemCount);
         }
 
         public void EndWrite()
@@ -44,46 +45,66 @@ namespace RedisSlimClient.Serialization
 
         public void WriteItem<T>(string name, IEnumerable<T> data)
         {
-            throw new NotImplementedException();
+            Write(name, TypeCode.Object, SubType.Collection, output =>
+            {
+                var itemCount = data.Count();
+
+                output.WriteStartArray(itemCount);
+
+                foreach (var item in data)
+                {
+                    TypeModel<T>.Instance.WriteData(item, this);
+                }
+            });
         }
 
         public void WriteItem(string name, DateTime data)
         {
             Write(name, TypeCode.DateTime, SubType.None,
-                Encoding.ASCII.GetBytes(XmlConvert.ToString(data, XmlDateTimeSerializationMode.Utc)));
+                XmlConvert.ToString(data, XmlDateTimeSerializationMode.Utc));
         }
 
         public void WriteItem(string name, short data)
         {
-            throw new NotImplementedException();
+            Write(name, TypeCode.Int16, SubType.None, data.ToString());
         }
 
         public void WriteItem(string name, int data)
         {
-            throw new NotImplementedException();
+            Write(name, TypeCode.Int32, SubType.None, data.ToString());
         }
 
         public void WriteItem(string name, long data)
         {
-            throw new NotImplementedException();
+            Write(name, TypeCode.Int64, SubType.None, data.ToString());
         }
 
         public void WriteItem(string name, char data)
         {
-            throw new NotImplementedException();
+            Write(name, TypeCode.Char, SubType.None, data.ToString());
+        }
+
+        void Write(string name, TypeCode type, SubType subType, string data)
+        {
+            Write(name, type, subType, Encoding.ASCII.GetBytes(data));
         }
 
         void Write(string name, TypeCode type, SubType subType, byte[] data)
         {
-            _objectData.Add((name, type, subType, data));
+            _stream.WriteStartArray(4);
+            _stream.Write(name);
+            _stream.Write((int)type);
+            _stream.Write((int)subType);
+            _stream.Write(data);
         }
 
-        public void Output(Stream output)
+        void Write(string name, TypeCode type, SubType subType, Action<Stream> content)
         {
-            foreach (var item in _objectData)
-            {
-                output.Write(item.data, 0, item.data.Length);
-            }
+            _stream.WriteStartArray(4);
+            _stream.Write(name);
+            _stream.Write((int)type);
+            _stream.Write((int)subType);
+            content(_stream);
         }
     }
 

@@ -28,21 +28,18 @@ namespace RedisSlimClient.Serialization.Il
 
         protected override void OnProperty(MethodBuilder methodBuilder, LocalVar propertyLocal, PropertyInfo property)
         {
-            var writeMethod = _objectWriterMethods.Bind(property.PropertyType);
-
             if (property.PropertyType.RequiresDecomposition())
             {
                 var extract = GetExtractor(property.PropertyType);
 
-                methodBuilder.Scope(() =>
-                {
-                    var extractLocal = methodBuilder.Define(extract.prop.ReturnType);
-                    methodBuilder.CallStaticFunction(extractLocal, extract.prop);
-                    methodBuilder.CallFunction(propertyLocal, extractLocal, extract.meth, propertyLocal);
-                });
+                var extractLocal = methodBuilder.Define(extract.prop.ReturnType);
+                methodBuilder.CallStaticFunction(extractLocal, extract.prop);
+                methodBuilder.CallMethod(extractLocal, extract.meth, propertyLocal, _writerParam);
             }
             else
             {
+                var writeMethod = _objectWriterMethods.Bind(property.PropertyType);
+
                 methodBuilder.CallMethod(_writerParam,
                     writeMethod,
                     property.Name, propertyLocal);
