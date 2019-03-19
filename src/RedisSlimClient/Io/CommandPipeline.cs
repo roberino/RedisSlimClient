@@ -1,13 +1,9 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.ComponentModel;
-using RedisSlimClient.Io.Commands;
-using System.IO;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using RedisSlimClient.Io.Commands;
 using RedisSlimClient.Types;
+using System;
+using System.IO;
+using System.Threading.Tasks;
+using RedisSlimClient.Serialization;
 
 namespace RedisSlimClient.Io
 {
@@ -19,7 +15,7 @@ namespace RedisSlimClient.Io
     internal class CommandPipeline : ICommandPipeline
     {
         readonly Stream _writeStream;
-        readonly DataReader _reader;
+        readonly ByteReader _reader;
         readonly CommandQueue _commandQueue;
 
         bool _disposed;
@@ -27,7 +23,7 @@ namespace RedisSlimClient.Io
         public CommandPipeline(Stream writeStream)
         {
             _writeStream = writeStream;
-            _reader = new DataReader(new StreamIterator(writeStream));
+            _reader = new ByteReader(new StreamIterator(writeStream));
             _commandQueue = new CommandQueue();
 
             Task.Run(() => ProcessQueue());
@@ -51,7 +47,7 @@ namespace RedisSlimClient.Io
         {
             _writeStream.Flush();
 
-            foreach (var nextResult in _reader)
+            foreach (var nextResult in _reader.ToObjects())
             {
                 while (!_commandQueue.ProcessNextCommand(cmd =>
                 {

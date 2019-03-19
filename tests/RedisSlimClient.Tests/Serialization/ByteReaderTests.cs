@@ -1,20 +1,21 @@
-﻿using RedisSlimClient.Io;
-using System.IO;
+﻿using System.IO;
 using System.Linq;
 using System.Text;
+using RedisSlimClient.Io;
+using RedisSlimClient.Serialization;
 using RedisSlimClient.Types;
 using Xunit;
 
-namespace RedisSlimClient.Tests.Io
+namespace RedisSlimClient.Tests.Serialization
 {
-    public class DataReaderTests
+    public class ByteReaderTests
     {
         [Fact]
         public void Read_SimpleString()
         {
             var reader = GetReader("+hello\r\n");
 
-            var parsedObject = (RedisString)reader.Single();
+            var parsedObject = (RedisString)reader.ToObjects().Single();
             var value = parsedObject.ToString();
 
             Assert.Equal("hello", value);
@@ -26,7 +27,7 @@ namespace RedisSlimClient.Tests.Io
         {
             var reader = GetReader("*3\r\n:1234\r\n+hi\r\n-me-error\r\n");
 
-            var parsedObject = (RedisArray)reader.Single();
+            var parsedObject = (RedisArray)reader.ToObjects().Single();
 
             Assert.Equal(3, parsedObject.Count);
             Assert.Equal(RedisType.Array, parsedObject.Type);
@@ -50,7 +51,7 @@ namespace RedisSlimClient.Tests.Io
         {
             var reader = GetReader($"${str.Length}\r\n{str}\r\n");
 
-            var parsedObject = (RedisString)reader.Single();
+            var parsedObject = (RedisString)reader.ToObjects().Single();
             var value = parsedObject.ToString();
 
             Assert.Equal(str, value);
@@ -62,7 +63,7 @@ namespace RedisSlimClient.Tests.Io
         {
             var reader = GetReader("+abcd\r\n$4\r\nefgh\r\n$4\r\nijkl\r\n");
 
-            var parsedObjects = reader.ToArray();
+            var parsedObjects = reader.ToObjects().ToArray();
             var value1 = parsedObjects[0].ToString();
             var value2 = parsedObjects[1].ToString();
             var value3 = parsedObjects[2].ToString();
@@ -77,18 +78,18 @@ namespace RedisSlimClient.Tests.Io
         {
             var reader = GetReader(":12345678\r\n");
 
-            var parsedObject = (RedisInteger)reader.Single();
+            var parsedObject = (RedisInteger)reader.ToObjects().Single();
             var value = parsedObject.Value;
 
             Assert.Equal(12345678, value);
             Assert.Equal(RedisType.Integer, parsedObject.Type);
         }
 
-        static DataReader GetReader(string data)
+        static ByteReader GetReader(string data)
         {
             var stream = new MemoryStream(GetData(data));
 
-            return new DataReader(new StreamIterator(stream));
+            return new ByteReader(new StreamIterator(stream));
         }
 
         static byte[] GetData(string value) => Encoding.ASCII.GetBytes(value);

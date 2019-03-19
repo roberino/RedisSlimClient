@@ -53,7 +53,7 @@ namespace RedisSlimClient.Serialization
 
                 foreach (var item in data)
                 {
-                    TypeModel<T>.Instance.WriteData(item, this);
+                    TypeProxy<T>.Instance.WriteData(item, this);
                 }
             });
         }

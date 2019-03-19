@@ -8,21 +8,16 @@ using System.Threading;
 
 namespace RedisSlimClient.Serialization
 {
-    public interface ITypeModel<T>
-    {
-        void WriteData(T instance, IObjectWriter writer);
-    }
-
-    public sealed class TypeModel<T> : ITypeModel<T>
+    public sealed class TypeProxy<T> : IObjectSerializer<T>
     {
         static readonly string TypeName = $"{typeof(T).Namespace}.{typeof(T).Name}.TypeReader";
 
-        static readonly Lazy<TypeModel<T>> SingleInstance =
-            new Lazy<TypeModel<T>>(() => new TypeModel<T>(), LazyThreadSafetyMode.ExecutionAndPublication);
+        static readonly Lazy<TypeProxy<T>> SingleInstance =
+            new Lazy<TypeProxy<T>>(() => new TypeProxy<T>(), LazyThreadSafetyMode.ExecutionAndPublication);
 
         readonly IObjectGraphExporter _dataExtractor;
 
-        TypeModel()
+        TypeProxy()
         {
             TargetType = typeof(T);
 
@@ -31,7 +26,7 @@ namespace RedisSlimClient.Serialization
             _dataExtractor = Activator.CreateInstance(newType) as IObjectGraphExporter;
         }
 
-        public static TypeModel<T> Instance => SingleInstance.Value;
+        public static TypeProxy<T> Instance => SingleInstance.Value;
 
         public Type TargetType { get; }
 

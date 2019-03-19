@@ -1,11 +1,7 @@
-﻿using System.Collections.Generic;
-
-namespace RedisSlimClient.Serialization
+﻿namespace RedisSlimClient.Serialization
 {
-    public interface IObjectSerializer
+    public interface IObjectSerializer<T>
     {
-        IEnumerable<IObjectPart> Serialize<T>(T obj);
-
-        T Deserialize<T>(IEnumerable<IObjectPart> parts);
+        void WriteData(T instance, IObjectWriter writer);
     }
 }

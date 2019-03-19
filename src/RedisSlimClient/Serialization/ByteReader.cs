@@ -3,24 +3,25 @@ using System.Collections;
 using System.Collections.Generic;
 using RedisSlimClient.Types;
 
-namespace RedisSlimClient.Io
+namespace RedisSlimClient.Serialization
 {
-    internal class DataReader : IEnumerable<RedisObject>, IDisposable
+    internal class ByteReader : IEnumerable<RedisObjectPart>, IDisposable
     {
         readonly IEnumerable<ArraySegment<byte>> _byteStream;
 
         ReadState _currentState;
         (ResponseType type, long length, int offset) _currentType;
-        RedisArray _currentArray;
+        int _arrayIndex;
+        long? _currentArrayLength;
 
-        public DataReader(IEnumerable<ArraySegment<byte>> byteStream)
+        public ByteReader(IEnumerable<ArraySegment<byte>> byteStream)
         {
             _byteStream = byteStream;
             _currentState = ReadState.Type;
             _currentType = (ResponseType.Unknown, 0, 0);
         }
 
-        public IEnumerator<RedisObject> GetEnumerator()
+        public IEnumerator<RedisObjectPart> GetEnumerator()
         {
             foreach (var segment in _byteStream)
             {
@@ -38,11 +39,11 @@ namespace RedisSlimClient.Io
                             continue;
                         case ResponseType.IntType:
                         {
-                            var value = YieldObject(new RedisInteger(_currentType.length));
+                            var part = YieldObjectPart(new RedisInteger(_currentType.length));
 
-                            if (value != null)
+                            if (!part.IsEmpty)
                             {
-                                yield return value;
+                                yield return part;
                             }
 
                             continue;
@@ -51,11 +52,11 @@ namespace RedisSlimClient.Io
                 }
 
                 {
-                    var value = YieldObject(GetCurrentValue(segment));
+                    var part = YieldObjectPart(GetCurrentValue(segment));
 
-                    if (value != null)
+                    if (!part.IsEmpty)
                     {
-                        yield return value;
+                        yield return part;
                     }
                 }
             }
@@ -64,30 +65,34 @@ namespace RedisSlimClient.Io
         void OpenArray(long length)
         {
             _currentState = ReadState.Type;
-            _currentArray = new RedisArray(length);
+            _currentArrayLength = length;
         }
 
-        RedisObject YieldObject(RedisObject value)
+        RedisObjectPart YieldObjectPart(RedisObject value)
         {
             _currentState = ReadState.Type;
-
-            if (_currentArray == null || value == null)
+            
+            if (!_currentArrayLength.HasValue || value == null)
             {
-                return value;
+                return new RedisObjectPart
+                {
+                    Value = value
+                };
             }
 
-            _currentArray.Items.Add(value);
-
-            if (_currentArray.IsComplete)
+            var item = new RedisObjectPart
             {
-                value = _currentArray;
+                Value = value,
+                ArrayIndex = _arrayIndex++,
+                Length = _currentArrayLength.Value
+            };
 
-                _currentArray = null;
-
-                return value;
+            if (_arrayIndex == _currentArrayLength.Value)
+            {
+                _currentArrayLength = null;
             }
 
-            return null;
+            return item;
         }
 
         RedisObject GetCurrentValue(ArraySegment<byte> segment)

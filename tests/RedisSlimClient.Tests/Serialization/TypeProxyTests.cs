@@ -8,11 +8,11 @@ using Xunit.Abstractions;
 
 namespace RedisSlimClient.Tests.Serialization
 {
-    public class TypeModelTests
+    public class TypeProxyTests
     {
         private readonly ITestOutputHelper _testOutput;
 
-        public TypeModelTests(ITestOutputHelper testOutput)
+        public TypeProxyTests(ITestOutputHelper testOutput)
         {
             _testOutput = testOutput;
         }
@@ -20,7 +20,7 @@ namespace RedisSlimClient.Tests.Serialization
         [Fact]
         public void GetData_SimpleType_ReturnsPropertyData()
         {
-            var model = TypeModel<AnotherTestDto>.Instance;
+            var model = TypeProxy<AnotherTestDto>.Instance;
 
             var items = model.GetData(new AnotherTestDto()
                 {
@@ -35,7 +35,7 @@ namespace RedisSlimClient.Tests.Serialization
         [Fact]
         public void WriteData_SimpleType_WritesPropertyData()
         {
-            var model = TypeModel<AnotherTestDto>.Instance;
+            var model = TypeProxy<AnotherTestDto>.Instance;
             var writer = new ObjectWriter(new MemoryStream());
 
             model.WriteData(new AnotherTestDto
@@ -51,7 +51,7 @@ namespace RedisSlimClient.Tests.Serialization
         {
             var now = DateTime.UtcNow;
 
-            var model = TypeModel<TestDto>.Instance;
+            var model = TypeProxy<TestDto>.Instance;
             var output = new MemoryStream();
             var writer = new ObjectWriter(output);
 
@@ -71,7 +71,7 @@ namespace RedisSlimClient.Tests.Serialization
         [Fact]
         public void GetData_NullReference_ReturnsPropertyData()
         {
-            var model = TypeModel<AnotherTestDto>.Instance;
+            var model = TypeProxy<AnotherTestDto>.Instance;
 
             var items = model.GetData(new AnotherTestDto()
                 {
@@ -86,8 +86,8 @@ namespace RedisSlimClient.Tests.Serialization
         [Fact]
         public void GetData_TwoTypes_ReturnsPropertyData()
         {
-            var model1 = TypeModel<AnotherTestDto>.Instance;
-            var model2 = TypeModel<OtherTestDto>.Instance;
+            var model1 = TypeProxy<AnotherTestDto>.Instance;
+            var model2 = TypeProxy<OtherTestDto>.Instance;
 
             var items1 = model1.GetData(new AnotherTestDto()
                 {
@@ -112,7 +112,7 @@ namespace RedisSlimClient.Tests.Serialization
         {
             var now = DateTime.UtcNow;
 
-            var model = TypeModel<TestDto>.Instance;
+            var model = TypeProxy<TestDto>.Instance;
 
             var items = model.GetData(new TestDto()
             {

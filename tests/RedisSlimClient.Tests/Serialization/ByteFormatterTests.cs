@@ -1,16 +1,16 @@
 using System;
 using System.IO;
 using System.Text;
-using RedisSlimClient.Io;
+using RedisSlimClient.Serialization;
 using Xunit;
 
-namespace RedisSlimClient.Tests.Io
+namespace RedisSlimClient.Tests.Serialization
 {
-    public class DataWriterTests : IDisposable
+    public class ByteFormatterTests : IDisposable
     {
         readonly MemoryStream _output;
 
-        public DataWriterTests()
+        public ByteFormatterTests()
         {
             _output = new MemoryStream();
         }

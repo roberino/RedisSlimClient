@@ -47,7 +47,7 @@ namespace RedisSlimClient.Serialization.Il
 
         (MethodInfo prop, MethodInfo meth) GetExtractor(Type type)
         {
-            return GetTypeModelMethod(type, nameof(TypeModel<object>.GetData));
+            return GetTypeModelMethod(type, nameof(TypeProxy<object>.GetData));
         }
     }
 }

@@ -2,7 +2,7 @@
 using System.Text;
 using RedisSlimClient.Types;
 
-namespace RedisSlimClient.Io
+namespace RedisSlimClient.Serialization
 {
     internal static class PrimitiveExtensions
     {

@@ -1,8 +1,9 @@
 ﻿using System;
 using System.IO;
-namespace RedisSlimClient.Io
+
+namespace RedisSlimClient.Serialization
 {
-    internal static class DataWriter
+    internal static class ByteFormatter
     {
         public static void Write(this Stream output, object item)
         {

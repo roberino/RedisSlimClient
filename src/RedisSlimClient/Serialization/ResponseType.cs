@@ -1,4 +1,4 @@
-﻿namespace RedisSlimClient.Io
+﻿namespace RedisSlimClient.Serialization
 {
     internal enum ResponseType : byte
     {

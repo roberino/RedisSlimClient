@@ -31,9 +31,9 @@ namespace RedisSlimClient.Serialization.Il
         {
             if (!_extractMethods.TryGetValue(type, out var extractMethods))
             {
-                var m = typeof(TypeModel<>).MakeGenericType(type);
+                var m = typeof(TypeProxy<>).MakeGenericType(type);
 
-                var instanceProp = m.GetProperty(nameof(TypeModel<object>.Instance), BindingFlags.Public | BindingFlags.Static);
+                var instanceProp = m.GetProperty(nameof(TypeProxy<object>.Instance), BindingFlags.Public | BindingFlags.Static);
                 var instance = instanceProp.GetValue(null);
                 var method = instance.GetType().GetMethod(methodName);
 
