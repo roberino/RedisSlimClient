@@ -4,7 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 
-namespace RedisSlimClient.Serialization.Il
+namespace RedisSlimClient.Serialization.Emit
 {
     abstract class TypeProxyBuilder<T>
     {

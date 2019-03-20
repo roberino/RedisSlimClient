@@ -1,5 +1,4 @@
-﻿using RedisSlimClient.Io;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -8,25 +7,22 @@ using System.Xml;
 
 namespace RedisSlimClient.Serialization
 {
-    internal class ObjectWriter : IObjectWriter
+    class ObjectWriter : IObjectWriter
     {
         readonly Stream _stream;
+        readonly IObjectSerializerFactory _serializerFactory;
         readonly Encoding _textEncoding;
 
-        public ObjectWriter(Stream stream, Encoding textEncoding = null)
+        public ObjectWriter(Stream stream, Encoding textEncoding = null, IObjectSerializerFactory serializerFactory = null)
         {
             _stream = stream;
+            _serializerFactory = serializerFactory ?? SerializerFactory.Instance;
             _textEncoding = textEncoding ?? Encoding.UTF8;
         }
 
         public void BeginWrite(int itemCount)
         {
             _stream.WriteStartArray(itemCount);
-        }
-
-        public void EndWrite()
-        {
-
         }
 
         public void WriteItem(string name, object data)
@@ -43,8 +39,20 @@ namespace RedisSlimClient.Serialization
             Write(name, TypeCode.Object, SubType.ByteArray, data);
         }
 
+        public void WriteItem<T>(string name, T data)
+        {
+            var serializer = _serializerFactory.Create<T>();
+
+            Write(name, TypeCode.Object, SubType.None, output =>
+            {
+                serializer.WriteData(data, this);
+            });
+        }
+
         public void WriteItem<T>(string name, IEnumerable<T> data)
         {
+            var serializer = _serializerFactory.Create<T>();
+
             Write(name, TypeCode.Object, SubType.Collection, output =>
             {
                 var itemCount = data.Count();
@@ -53,7 +61,7 @@ namespace RedisSlimClient.Serialization
 
                 foreach (var item in data)
                 {
-                    TypeProxy<T>.Instance.WriteData(item, this);
+                    serializer.WriteData(item, this);
                 }
             });
         }
@@ -106,12 +114,5 @@ namespace RedisSlimClient.Serialization
             _stream.Write((int)subType);
             content(_stream);
         }
-    }
-
-    public enum SubType
-    {
-        None,
-        Collection,
-        ByteArray
     }
 }

@@ -11,6 +11,11 @@ namespace RedisSlimClient.Tests.Serialization
         public AnotherTestDto DataItem3 { get; set; }
     }
 
+    public class TestDtoWithCollection
+    {
+        public AnotherTestDto[] DataItems { get; set; }
+    }
+
     public class OtherTestDto
     {
         public int DataItem1 { get; set; }

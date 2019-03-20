@@ -1,14 +1,12 @@
-﻿using RedisSlimClient.Serialization.Il;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Threading;
 
-namespace RedisSlimClient.Serialization
+namespace RedisSlimClient.Serialization.Emit
 {
-    public sealed class TypeProxy<T> : IObjectSerializer<T>
+    sealed class TypeProxy<T> : IObjectSerializer<T>
     {
         static readonly string TypeName = $"{typeof(T).Namespace}.{typeof(T).Name}.TypeReader";
 
@@ -29,8 +27,6 @@ namespace RedisSlimClient.Serialization
         public static TypeProxy<T> Instance => SingleInstance.Value;
 
         public Type TargetType { get; }
-
-        public IDictionary<string, object> GetData(T instance) => _dataExtractor.GetObjectData(instance);
 
         public void WriteData(T instance, IObjectWriter writer) => _dataExtractor.WriteObjectData(instance, writer);
 
@@ -62,7 +58,6 @@ namespace RedisSlimClient.Serialization
                 .Where(p => p.CanRead && p.CanWrite)
                 .ToArray();
 
-            new GetObjectImplBuilder<T>(newAccessorType, targetProps).Build();
             new WriteObjectImplBuilder<T>(newAccessorType, targetProps).Build();
             
             return newAccessorType.CreateTypeInfo();

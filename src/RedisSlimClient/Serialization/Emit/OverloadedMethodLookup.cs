@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
-namespace RedisSlimClient.Serialization.Il
+namespace RedisSlimClient.Serialization.Emit
 {
     internal class OverloadedMethodLookup<T>
     {
@@ -17,6 +17,22 @@ namespace RedisSlimClient.Serialization.Il
                 .Where(m => m.Name == methodName)
                 .GroupBy(m => m.GetParameters().Single(p => p.Name == overloadedParameterName).ParameterType)
                 .ToDictionary(g => g.Key, g => g.First());
+        }
+
+        public MethodInfo BindToGeneric(Func<ParameterInfo, bool> genericParamFilter, params Type[] typeArgs)
+        {
+            var genMethod = _methods.Values
+                .FirstOrDefault(m => 
+                    m.IsGenericMethod 
+                    && m.ContainsGenericParameters
+                    && m.GetParameters().Where(p => p.ParameterType.ContainsGenericParameter()).Any(genericParamFilter));
+
+            if (genMethod != null)
+            {
+                return genMethod.MakeGenericMethod(typeArgs);
+            }
+
+            throw new InvalidOperationException();
         }
 
         public MethodInfo Bind(Type type)

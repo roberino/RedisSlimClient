@@ -4,7 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 
-namespace RedisSlimClient.Serialization.Il
+namespace RedisSlimClient.Serialization.Emit
 {
     internal class WriteObjectImplBuilder<T> : TypeProxyBuilder<T>
     {
@@ -30,11 +30,39 @@ namespace RedisSlimClient.Serialization.Il
         {
             if (property.PropertyType.RequiresDecomposition())
             {
-                var extract = GetExtractor(property.PropertyType);
+                var collectionType = property.PropertyType.CollectionType();
 
-                var extractLocal = methodBuilder.Define(extract.prop.ReturnType);
-                methodBuilder.CallStaticFunction(extractLocal, extract.prop);
-                methodBuilder.CallMethod(extractLocal, extract.meth, propertyLocal, _writerParam);
+                if (collectionType == null)
+                {
+                    GetExtractor(property.PropertyType);
+
+                    var writeMethod = _objectWriterMethods
+                        .BindToGeneric(p => p.ParameterType.IsGenericParameter, property.PropertyType);
+
+                    methodBuilder.CallMethod(_writerParam,
+                        writeMethod,
+                        property.Name, propertyLocal);
+
+                    //var extract = GetExtractor(property.PropertyType);
+
+                    //var extractLocal = methodBuilder.Define(extract.prop.ReturnType);
+                    //methodBuilder.CallStaticFunction(extractLocal, extract.prop);
+                    //methodBuilder.CallMethod(extractLocal, extract.meth, propertyLocal, _writerParam);
+                }
+                else
+                {
+                    GetExtractor(collectionType);
+
+                    var targetType = typeof(IEnumerable<>);
+
+                    var writeMethod = _objectWriterMethods
+                        .BindToGeneric(p => p.ParameterType.IsGenericType 
+                                            && p.ParameterType.GetGenericTypeDefinition() == targetType, collectionType);
+                    
+                    methodBuilder.CallMethod(_writerParam,
+                        writeMethod,
+                        property.Name, propertyLocal);
+                }
             }
             else
             {

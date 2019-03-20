@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace RedisSlimClient.Serialization.Il
+namespace RedisSlimClient.Serialization.Emit
 {
     internal class LocalVar
     {
