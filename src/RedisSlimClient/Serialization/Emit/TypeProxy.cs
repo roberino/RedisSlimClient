@@ -13,7 +13,7 @@ namespace RedisSlimClient.Serialization.Emit
         static readonly Lazy<TypeProxy<T>> SingleInstance =
             new Lazy<TypeProxy<T>>(() => new TypeProxy<T>(), LazyThreadSafetyMode.ExecutionAndPublication);
 
-        readonly IObjectGraphExporter _dataExtractor;
+        readonly IObjectGraphExporter<T> _dataExtractor;
 
         TypeProxy()
         {
@@ -21,7 +21,7 @@ namespace RedisSlimClient.Serialization.Emit
 
             var newType = CreateAssembly();
 
-            _dataExtractor = Activator.CreateInstance(newType) as IObjectGraphExporter;
+            _dataExtractor = Activator.CreateInstance(newType) as IObjectGraphExporter<T>;
         }
 
         public static TypeProxy<T> Instance => SingleInstance.Value;
@@ -50,7 +50,7 @@ namespace RedisSlimClient.Serialization.Emit
         {
             var newAccessorType = newModule.DefineType(TypeName, TypeAttributes.Public);
 
-            newAccessorType.AddInterfaceImplementation(typeof(IObjectGraphExporter));
+            newAccessorType.AddInterfaceImplementation(typeof(IObjectGraphExporter<T>));
 
             newAccessorType.DefineDefaultConstructor(MethodAttributes.Public);
 
@@ -59,7 +59,8 @@ namespace RedisSlimClient.Serialization.Emit
                 .ToArray();
 
             new WriteObjectImplBuilder<T>(newAccessorType, targetProps).Build();
-            
+            //new ReadObjectImplBuilder<T>(newAccessorType, targetProps).Build();
+
             return newAccessorType.CreateTypeInfo();
         }
     }

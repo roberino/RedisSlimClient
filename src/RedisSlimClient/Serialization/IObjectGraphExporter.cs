@@ -1,7 +1,8 @@
 ﻿namespace RedisSlimClient.Serialization
 {
-    public interface IObjectGraphExporter
+    public interface IObjectGraphExporter<T>
     {
-        void WriteObjectData(object instance, IObjectWriter writer);
+        void WriteObjectData(T instance, IObjectWriter writer);
+        //void ReadObjectData(T instance, IObjectReader writer);
     }
 }

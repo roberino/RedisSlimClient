@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 
@@ -23,7 +22,7 @@ namespace RedisSlimClient.Serialization.Emit
 
         protected IReadOnlyCollection<PropertyInfo> Properties { get; }
 
-        protected abstract void OnProperty(MethodBuilder methodBuilder, LocalVar propertyLocal, PropertyInfo property);
+        protected abstract void OnProperty(MethodBuilder methodBuilder, PropertyInfo property);
 
         protected abstract void OnInit(MethodBuilder methodBuilder);
 
@@ -54,19 +53,13 @@ namespace RedisSlimClient.Serialization.Emit
                 returnLocal = _methodWriter.Define(TargetMethod.ReturnType, true);
             }
 
-            var arg0 = TargetMethod.GetParameters().First();
-
             OnInit(_methodWriter);
 
             foreach (var property in Properties)
             {
                 _methodWriter.Scope(() =>
                 {
-                    var propertyLocal = _methodWriter.Define(property.GetMethod.ReturnType);
-
-                    _methodWriter.CallFunction(propertyLocal, arg0, property.GetMethod);
-
-                    OnProperty(_methodWriter, propertyLocal, property);
+                    OnProperty(_methodWriter, property);
                 });
             }
 

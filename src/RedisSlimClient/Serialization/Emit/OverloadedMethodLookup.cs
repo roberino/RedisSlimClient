@@ -5,17 +5,35 @@ using System.Reflection;
 
 namespace RedisSlimClient.Serialization.Emit
 {
-    internal class OverloadedMethodLookup<T>
+    static class OverloadedMethodLookupExtensions
     {
-        readonly IDictionary<Type, MethodInfo> _methods;
+        public static OverloadedMethodLookup<T, Type> CreateParameterOverload<T>(string methodName, string overloadedParameterName)
+        {
+            return new OverloadedMethodLookup<T, Type>(methodName,
+                m => m.GetParameters().Single(p => p.Name == overloadedParameterName).ParameterType)
+            {
+                DefaultBinding = x => x.methodType != typeof(object) && x.methodType.IsAssignableFrom(x.targetType),
+                FallbackBinding = x => x.methodType == typeof(object)
+            };
+        }
+    }
 
-        public OverloadedMethodLookup(string methodName, string overloadedParameterName)
+    class OverloadedMethodLookup<T, TKey>
+    {
+        readonly IDictionary<TKey, MethodInfo> _methods;
+
+        public OverloadedMethodLookup(string methodName, Func<MethodInfo, TKey> grouping)
+            : this(m => m.Name == methodName, grouping)
+        {
+        }
+
+        public OverloadedMethodLookup(Func<MethodInfo, bool> methodFilter, Func<MethodInfo, TKey> grouping)
         {
             var type = typeof(T);
 
             _methods = type.GetMethods(BindingFlags.Public | BindingFlags.Instance)
-                .Where(m => m.Name == methodName)
-                .GroupBy(m => m.GetParameters().Single(p => p.Name == overloadedParameterName).ParameterType)
+                .Where(methodFilter)
+                .GroupBy(grouping)
                 .ToDictionary(g => g.Key, g => g.First());
         }
 
@@ -35,21 +53,25 @@ namespace RedisSlimClient.Serialization.Emit
             throw new InvalidOperationException();
         }
 
-        public MethodInfo Bind(Type type)
+        public Func<(TKey targetType, TKey methodType), bool> DefaultBinding { get; set; }
+
+        public Func<(TKey targetType, TKey methodType), bool> FallbackBinding { get; set; }
+
+        public MethodInfo Bind(TKey type)
         {
             if (_methods.TryGetValue(type, out var method))
             {
                 return method;
             }
 
-            var assignable = _methods.FirstOrDefault(kv => kv.Key != typeof(object) && kv.Key.IsAssignableFrom(type));
+            var assignable = _methods.FirstOrDefault(kv => DefaultBinding.Invoke((type, kv.Key)));
 
             if (assignable.Value != null)
             {
                 return assignable.Value;
             }
 
-            return _methods.SingleOrDefault(kv => kv.Key == typeof(object)).Value;
+            return _methods.SingleOrDefault(kv => FallbackBinding.Invoke((type, kv.Key))).Value;
         }
     }
 }

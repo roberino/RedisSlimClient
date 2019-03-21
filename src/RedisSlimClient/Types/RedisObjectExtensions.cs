@@ -10,7 +10,7 @@ namespace RedisSlimClient.Types
 
             foreach (var part in parts)
             {
-                if (part.ArrayIndex.HasValue)
+                if (part.IsArrayPart)
                 {
                     if (currentArray == null)
                     {
@@ -33,6 +33,16 @@ namespace RedisSlimClient.Types
             {
                 yield return currentArray;
             }
+        }
+
+        public static long ToLong(this RedisObject value)
+        {
+            if (value is RedisInteger i)
+            {
+                return i.Value;
+            }
+
+            return 0;
         }
     }
 }

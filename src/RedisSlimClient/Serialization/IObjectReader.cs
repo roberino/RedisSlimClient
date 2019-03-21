@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace RedisSlimClient.Serialization
 {
@@ -9,6 +10,8 @@ namespace RedisSlimClient.Serialization
         int ReadInt32(string name);
         long ReadInt64(string name);
         char ReadChar(string name);
+        T ReadObject<T>(string name);
+        IEnumerable<T> ReadEnumerable<T>(string name);
 
         void EndRead();
     }

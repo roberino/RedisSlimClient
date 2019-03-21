@@ -3,19 +3,23 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Xml;
 
 namespace RedisSlimClient.Serialization
 {
     class ObjectWriter : IObjectWriter
     {
         readonly Stream _stream;
+        readonly IBinaryFormatter _dataFormatter;
         readonly IObjectSerializerFactory _serializerFactory;
         readonly Encoding _textEncoding;
 
-        public ObjectWriter(Stream stream, Encoding textEncoding = null, IObjectSerializerFactory serializerFactory = null)
+        public ObjectWriter(Stream stream, 
+            Encoding textEncoding = null,
+            IBinaryFormatter dataFormatter = null,
+            IObjectSerializerFactory serializerFactory = null)
         {
             _stream = stream;
+            _dataFormatter = dataFormatter ?? BinaryFormatter.Default;
             _serializerFactory = serializerFactory ?? SerializerFactory.Instance;
             _textEncoding = textEncoding ?? Encoding.UTF8;
         }
@@ -68,28 +72,27 @@ namespace RedisSlimClient.Serialization
 
         public void WriteItem(string name, DateTime data)
         {
-            Write(name, TypeCode.DateTime, SubType.None,
-                XmlConvert.ToString(data, XmlDateTimeSerializationMode.Utc));
+            Write(name, TypeCode.DateTime, SubType.None, _dataFormatter.ToBytes(data));
         }
 
         public void WriteItem(string name, short data)
         {
-            Write(name, TypeCode.Int16, SubType.None, data.ToString());
+            Write(name, TypeCode.Int16, SubType.None, _dataFormatter.ToBytes(data));
         }
 
         public void WriteItem(string name, int data)
         {
-            Write(name, TypeCode.Int32, SubType.None, data.ToString());
+            Write(name, TypeCode.Int32, SubType.None, _dataFormatter.ToBytes(data));
         }
 
         public void WriteItem(string name, long data)
         {
-            Write(name, TypeCode.Int64, SubType.None, data.ToString());
+            Write(name, TypeCode.Int64, SubType.None, _dataFormatter.ToBytes(data));
         }
 
         public void WriteItem(string name, char data)
         {
-            Write(name, TypeCode.Char, SubType.None, data.ToString());
+            Write(name, TypeCode.Char, SubType.None, _dataFormatter.ToBytes(data));
         }
 
         void Write(string name, TypeCode type, SubType subType, string data)
@@ -99,11 +102,7 @@ namespace RedisSlimClient.Serialization
 
         void Write(string name, TypeCode type, SubType subType, byte[] data)
         {
-            _stream.WriteStartArray(4);
-            _stream.Write(name);
-            _stream.Write((int)type);
-            _stream.Write((int)subType);
-            _stream.Write(data);
+            Write(name, type, subType, s => s.Write(data));
         }
 
         void Write(string name, TypeCode type, SubType subType, Action<Stream> content)
