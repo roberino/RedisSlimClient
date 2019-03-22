@@ -1,6 +1,6 @@
-﻿using RedisSlimClient.Serialization;
+﻿using RedisSlimClient.Io;
+using RedisSlimClient.Serialization;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using Xunit;
@@ -30,7 +30,7 @@ namespace RedisSlimClient.Tests.Serialization
                 }
             );
 
-            ThenOutputIsValid();
+            ThenOutputIsValid<AnotherTestDto>(x => Assert.Equal("abc", x.DataItem1));
         }
 
         [Fact]
@@ -73,9 +73,27 @@ namespace RedisSlimClient.Tests.Serialization
             SerializerFactory.Instance.Create<T>().WriteData(obj, _writer);
         }
 
+        T ReadObject<T>()
+        {
+            _output.Position = 0;
+            var iterator = new StreamIterator(_output);
+            var objectStream = new ByteReader(iterator);
+            var reader = new ObjectReader(objectStream);
+            return SerializerFactory.Instance.Create<T>().ReadData(reader);
+        }
+
         void ThenOutputIsValid()
         {
             _testOutput.WriteLine(Encoding.UTF8.GetString(_output.ToArray()));
+        }
+
+        void ThenOutputIsValid<T>(Action<T> assertion = null)
+        {
+            ThenOutputIsValid();
+
+            var obj = ReadObject<T>();
+
+            assertion?.Invoke(obj);
         }
     }
 }

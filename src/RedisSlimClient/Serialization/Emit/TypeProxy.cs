@@ -30,6 +30,15 @@ namespace RedisSlimClient.Serialization.Emit
 
         public void WriteData(T instance, IObjectWriter writer) => _dataExtractor.WriteObjectData(instance, writer);
 
+        public T ReadData(IObjectReader reader)
+        {
+            var newObject = (T) typeof(T).GetConstructor(Type.EmptyTypes)?.Invoke(new object[0]);
+
+            _dataExtractor.ReadObjectData(newObject, reader);
+
+            return newObject;
+        }
+
         /// <summary>
         /// Create an assembly that will provide the get and set methods.
         /// </summary>

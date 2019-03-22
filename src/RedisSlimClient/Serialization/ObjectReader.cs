@@ -8,7 +8,7 @@ namespace RedisSlimClient.Serialization
 {
     class ObjectReader : IObjectReader
     {
-        readonly IEnumerable<RedisObjectPart> _enumerator;
+        readonly IEnumerator<RedisObjectPart> _enumerator;
         readonly IBinaryFormatter _dataFormatter;
         readonly IDictionary<string, RedisObjectPart[]> _cache;
         readonly Encoding _encoding;
@@ -17,7 +17,7 @@ namespace RedisSlimClient.Serialization
             Encoding encoding = null,
             IBinaryFormatter dataFormatter = null)
         {
-            _enumerator = objectStream;
+            _enumerator = objectStream.GetEnumerator();
             _dataFormatter = dataFormatter ?? BinaryFormatter.Default;
             _encoding = encoding ?? Encoding.UTF8;
             _cache = new Dictionary<string, RedisObjectPart[]>();
@@ -62,7 +62,7 @@ namespace RedisSlimClient.Serialization
         {
         }
 
-        public RedisString ReadStringProperty(string name)
+        RedisString ReadStringProperty(string name)
         {
             return (RedisString)ReadProperty(name).Single().Value;
         }
@@ -87,23 +87,42 @@ namespace RedisSlimClient.Serialization
             }
         }
 
+        RedisObject[] Read(int count)
+        {
+            var items = new RedisObject[count];
+
+            for (var i = 0; i < count; i++)
+            {
+                if (!_enumerator.MoveNext())
+                {
+                    break;
+                }
+
+                items[i] = _enumerator.Current.Value;
+            }
+
+            return items;
+        }
+
         (string name, TypeCode type, SubType subType) ReadNextProperty()
         {
-            var nextTuple = _enumerator.Take(3).Select(x => x.Value).ToArray();
+            var nextTuple = Read(3);
 
             return (nextTuple[0].ToString(), (TypeCode)nextTuple[1].ToLong(), (SubType)nextTuple[2].ToLong());
         }
 
         IEnumerable<RedisObjectPart> ReadNextObject()
         {
-            long len = 0;
-            int i = 0;
+            var len = 0L;
+            var i = 0;
 
-            foreach (var part in _enumerator)
+            while (_enumerator.MoveNext())
             {
-                if (len == 0)
+                var part = _enumerator.Current;
+
+                if (len == 0 && part.ArrayIndex.HasValue)
                 {
-                    len = part.Length;
+                    len = part.Length - part.ArrayIndex.Value;
                 }
 
                 yield return part;
