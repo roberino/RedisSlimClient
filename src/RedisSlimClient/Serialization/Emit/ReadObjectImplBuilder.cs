@@ -13,7 +13,7 @@ namespace RedisSlimClient.Serialization.Emit
         readonly ParameterInfo _targetParam;
 
         public ReadObjectImplBuilder(TypeBuilder newType, IReadOnlyCollection<PropertyInfo> properties)
-            : base(newType, typeof(IObjectGraphExporter<T>).GetMethod(nameof(IObjectGraphExporter<T>.WriteObjectData)), properties)
+            : base(newType, typeof(IObjectGraphExporter<T>).GetMethod(nameof(IObjectGraphExporter<T>.ReadObjectData)), properties)
         {
             var objectReaderType = typeof(IObjectReader);
             _objectReaderMethods = new OverloadedMethodLookup<IObjectReader, Type>(m => m.Name.StartsWith(nameof(IObjectReader.ReadChar).Substring(0, 4)), x => x.ReturnType);
@@ -44,7 +44,7 @@ namespace RedisSlimClient.Serialization.Emit
                     LoadExtractor(property.PropertyType);
 
                     readMethod = _objectReaderMethods
-                        .BindToGeneric(p => p.ParameterType.IsGenericParameter, property.PropertyType);
+                        .BindByGenericReturnValue(t => t.IsGenericParameter, property.PropertyType);
                 }
                 else
                 {
@@ -53,8 +53,8 @@ namespace RedisSlimClient.Serialization.Emit
                     var targetType = typeof(IEnumerable<>);
 
                     readMethod = _objectReaderMethods
-                        .BindToGeneric(p => p.ParameterType.IsGenericType 
-                                            && p.ParameterType.GetGenericTypeDefinition() == targetType, collectionType);
+                        .BindByGenericReturnValue(t => t.IsGenericType && t.GetGenericTypeDefinition() == targetType, 
+                            collectionType);
                 }
             }
             else

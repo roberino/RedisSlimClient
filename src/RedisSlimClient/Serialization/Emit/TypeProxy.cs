@@ -8,7 +8,7 @@ namespace RedisSlimClient.Serialization.Emit
 {
     sealed class TypeProxy<T> : IObjectSerializer<T>
     {
-        static readonly string TypeName = $"{typeof(T).Namespace}.{typeof(T).Name}.TypeReader";
+        static readonly string TypeName = $"{typeof(T).Namespace}.{typeof(T).Name}.TypeProxy";
 
         static readonly Lazy<TypeProxy<T>> SingleInstance =
             new Lazy<TypeProxy<T>>(() => new TypeProxy<T>(), LazyThreadSafetyMode.ExecutionAndPublication);
@@ -59,7 +59,7 @@ namespace RedisSlimClient.Serialization.Emit
                 .ToArray();
 
             new WriteObjectImplBuilder<T>(newAccessorType, targetProps).Build();
-            //new ReadObjectImplBuilder<T>(newAccessorType, targetProps).Build();
+            new ReadObjectImplBuilder<T>(newAccessorType, targetProps).Build();
 
             return newAccessorType.CreateTypeInfo();
         }

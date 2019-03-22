@@ -47,7 +47,7 @@ namespace RedisSlimClient.Serialization.Emit
                     LoadExtractor(property.PropertyType);
 
                     writeMethod = _objectWriterMethods
-                        .BindToGeneric(p => p.ParameterType.IsGenericParameter, property.PropertyType);
+                        .BindByGenericParam(p => p.ParameterType.IsGenericParameter, property.PropertyType);
                 }
                 else
                 {
@@ -56,7 +56,7 @@ namespace RedisSlimClient.Serialization.Emit
                     var targetType = typeof(IEnumerable<>);
 
                     writeMethod = _objectWriterMethods
-                        .BindToGeneric(p => p.ParameterType.IsGenericType 
+                        .BindByGenericParam(p => p.ParameterType.IsGenericType 
                                             && p.ParameterType.GetGenericTypeDefinition() == targetType, collectionType);
                     }
             }

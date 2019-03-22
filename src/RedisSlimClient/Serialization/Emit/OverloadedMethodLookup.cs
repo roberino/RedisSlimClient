@@ -37,13 +37,28 @@ namespace RedisSlimClient.Serialization.Emit
                 .ToDictionary(g => g.Key, g => g.First());
         }
 
-        public MethodInfo BindToGeneric(Func<ParameterInfo, bool> genericParamFilter, params Type[] typeArgs)
+        public MethodInfo BindByGenericParam(Func<ParameterInfo, bool> genericParamFilter, params Type[] typeArgs)
         {
             var genMethod = _methods.Values
                 .FirstOrDefault(m => 
                     m.IsGenericMethod 
                     && m.ContainsGenericParameters
                     && m.GetParameters().Where(p => p.ParameterType.ContainsGenericParameter()).Any(genericParamFilter));
+
+            if (genMethod != null)
+            {
+                return genMethod.MakeGenericMethod(typeArgs);
+            }
+
+            throw new InvalidOperationException();
+        }
+
+        public MethodInfo BindByGenericReturnValue(Func<Type, bool> returnTypeFilter, params Type[] typeArgs)
+        {
+            var genMethod = _methods.Values
+                .FirstOrDefault(m =>
+                    m.IsGenericMethod
+                    && returnTypeFilter(m.ReturnType));
 
             if (genMethod != null)
             {
