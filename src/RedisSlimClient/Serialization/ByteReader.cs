@@ -8,17 +8,20 @@ namespace RedisSlimClient.Serialization
     internal class ByteReader : IEnumerable<RedisObjectPart>, IDisposable
     {
         readonly IEnumerable<ArraySegment<byte>> _byteStream;
+        readonly Stack<int> _currentArrayIndex;
 
         ReadState _currentState;
         (ResponseType type, long length, int offset) _currentType;
+        int _level;
         int _arrayIndex;
         long? _currentArrayLength;
-
+        
         public ByteReader(IEnumerable<ArraySegment<byte>> byteStream)
         {
             _byteStream = byteStream;
             _currentState = ReadState.Type;
             _currentType = (ResponseType.Unknown, 0, 0);
+            _currentArrayIndex = new Stack<int>();
         }
 
         public IEnumerator<RedisObjectPart> GetEnumerator()
@@ -35,7 +38,7 @@ namespace RedisSlimClient.Serialization
                             _currentState = ReadState.Value;
                             continue;
                         case ResponseType.ArrayType:
-                            OpenArray(_currentType.length);
+                            yield return OpenArray(_currentType.length);
                             continue;
                         case ResponseType.IntType:
                         {
@@ -62,10 +65,27 @@ namespace RedisSlimClient.Serialization
             }
         }
 
-        void OpenArray(long length)
+        RedisObjectPart OpenArray(long length)
         {
             _currentState = ReadState.Type;
             _currentArrayLength = length;
+
+            if (_level > 0)
+            {
+                _currentArrayIndex.Push(_arrayIndex);
+            }
+
+            var array = new RedisObjectPart()
+            {
+                IsArrayStart = true,
+                Length = length,
+                Level = _level++,
+                ArrayIndex = _arrayIndex
+            };
+
+            _arrayIndex = 0;
+
+            return array;
         }
 
         RedisObjectPart YieldObjectPart(RedisObject value)
@@ -84,12 +104,19 @@ namespace RedisSlimClient.Serialization
             {
                 Value = value,
                 ArrayIndex = _arrayIndex++,
+                Level = _level,
                 Length = _currentArrayLength.Value
             };
 
             if (_arrayIndex == _currentArrayLength.Value)
             {
                 _currentArrayLength = null;
+                _level--;
+
+                if (_currentArrayIndex.Count > 0)
+                {
+                    _arrayIndex = _currentArrayIndex.Pop();
+                }
             }
 
             return item;

@@ -41,6 +41,28 @@ namespace RedisSlimClient.Tests.Serialization
             Assert.Equal("me-error", err1.Message);
         }
 
+        [Fact]
+        public void Read_NestedArray_ReturnsExpectedMembers()
+        {
+            var reader = GetReader("*3\r\n+abc\r\n*2\r\n:123\r\n:456\r\n+efg\r\n");
+
+            var parsedObjects = reader.ToObjects().ToList();
+
+            Assert.Equal(2, parsedObjects.Count);
+
+            var arr1 = (RedisArray)parsedObjects[0];
+            var str1 = (RedisString)arr1.Items[0];
+            var arr2 = (RedisArray) arr1.Items[1];
+            var int1 = (RedisInteger) arr2.Items[0];
+            var int2 = (RedisInteger)arr2.Items[1];
+            var str2 = (RedisString)parsedObjects[1];
+
+            Assert.Equal("abc", str1.ToString());
+            Assert.Equal(123, int1.Value);
+            Assert.Equal(456, int2.Value);
+            Assert.Equal("efg", str2.ToString());
+        }
+
         [Theory]
         [InlineData("hello")]
         [InlineData("abcdefghijklmnopqrstuvwxzy")]

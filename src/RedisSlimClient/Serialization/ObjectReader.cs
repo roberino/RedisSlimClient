@@ -113,21 +113,21 @@ namespace RedisSlimClient.Serialization
 
         IEnumerable<RedisObjectPart> ReadNextObject()
         {
-            var len = 0L;
+            var maxIndex = 0L;
             var i = 0;
 
             while (_enumerator.MoveNext())
             {
                 var part = _enumerator.Current;
 
-                if (len == 0 && part.ArrayIndex.HasValue)
+                if (maxIndex == 0 && part.ArrayIndex.HasValue)
                 {
-                    len = part.Length - part.ArrayIndex.Value;
+                    maxIndex = part.Length - part.ArrayIndex.Value - 1;
                 }
 
                 yield return part;
 
-                if (i >= len)
+                if (i >= maxIndex)
                 {
                     break;
                 }
