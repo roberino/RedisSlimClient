@@ -13,7 +13,7 @@ namespace RedisSlimClient.Serialization
         readonly IBinaryFormatter _dataFormatter;
         readonly Encoding _encoding;
 
-        readonly IDictionary<string, RedisObjectPart[]> _buffer;
+        readonly IDictionary<string, IList<RedisObjectPart>> _buffer;
 
         readonly int _level;
 
@@ -35,7 +35,7 @@ namespace RedisSlimClient.Serialization
             _dataFormatter = dataFormatter ?? BinaryFormatter.Default;
             _encoding = encoding ?? Encoding.UTF8;
             _serializerFactory = serializerFactory ?? SerializerFactory.Instance;
-            _buffer = new Dictionary<string, RedisObjectPart[]>();
+            _buffer = new Dictionary<string, IList<RedisObjectPart>>();
             _level = level;
         }
 
@@ -135,7 +135,7 @@ namespace RedisSlimClient.Serialization
             }
         }
 
-        RedisObjectPart[] ReadNext()
+        IList<RedisObjectPart> ReadNext()
         {
             var first = true;
             var level = -1;
@@ -160,7 +160,7 @@ namespace RedisSlimClient.Serialization
                 items.Add(_enumerator.Current);
             }
 
-            return items.ToArray();
+            return items;
         }
 
         RedisObjectPart[] Read(int count)
@@ -200,26 +200,6 @@ namespace RedisSlimClient.Serialization
             var nextTuple = Read(3);
 
             return (nextTuple[0].Value.ToString(), (TypeCode)nextTuple[1].Value.ToLong(), (SubType)nextTuple[2].Value.ToLong());
-        }
-
-        IEnumerable<RedisObject> ReadNextCollection()
-        {
-            return AsEnumerable(_enumerator.ReadObject());
-        }
-
-        RedisObject ReadNextObject()
-        {
-            return Read(1)[0].Value;
-        }
-
-        IEnumerable<RedisObject> AsEnumerable(RedisObject robj)
-        {
-            if (robj is RedisArray ra)
-            {
-                return ra.Items;
-            }
-
-            return new[] { robj };
         }
     }
 }
