@@ -15,7 +15,7 @@ namespace RedisSlimClient.Io
     internal class CommandPipeline : ICommandPipeline
     {
         readonly Stream _writeStream;
-        readonly ByteReader _reader;
+        readonly RedisSequenceReader _reader;
         readonly CommandQueue _commandQueue;
 
         bool _disposed;
@@ -23,7 +23,7 @@ namespace RedisSlimClient.Io
         public CommandPipeline(Stream writeStream)
         {
             _writeStream = writeStream;
-            _reader = new ByteReader(new StreamIterator(writeStream));
+            _reader = new RedisSequenceReader(new StreamIterator(writeStream));
             _commandQueue = new CommandQueue();
 
             Task.Run(() => ProcessQueue());

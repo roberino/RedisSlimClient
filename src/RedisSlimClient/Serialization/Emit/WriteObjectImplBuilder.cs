@@ -30,6 +30,10 @@ namespace RedisSlimClient.Serialization.Emit
             methodBuilder.CallMethod(_writerParam, _beginWriteMethod, Properties.Count);
         }
 
+        protected override void OnFinalize(MethodBuilder methodBuilder)
+        {
+        }
+
         protected override void OnProperty(MethodBuilder methodBuilder, PropertyInfo property)
         {
             var propertyValueLocal = methodBuilder.Define(property.GetMethod.ReturnType);

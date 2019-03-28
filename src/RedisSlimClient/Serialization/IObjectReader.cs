@@ -5,6 +5,8 @@ namespace RedisSlimClient.Serialization
 {
     public interface IObjectReader
     {
+        void BeginRead(int itemCount);
+
         string ReadString(string name);
         DateTime ReadDateTime(string name);
         int ReadInt32(string name);

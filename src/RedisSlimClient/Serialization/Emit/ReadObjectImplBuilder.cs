@@ -8,16 +8,15 @@ namespace RedisSlimClient.Serialization.Emit
     internal class ReadObjectImplBuilder<T> : TypeProxyBuilder<T>
     {
         readonly OverloadedMethodLookup<IObjectReader, Type> _objectReaderMethods;
-        readonly MethodInfo _endReadMethod;
+        readonly Type _objectReaderType;
         readonly ParameterInfo _readerParam;
         readonly ParameterInfo _targetParam;
 
         public ReadObjectImplBuilder(TypeBuilder newType, IReadOnlyCollection<PropertyInfo> properties)
             : base(newType, typeof(IObjectGraphExporter<T>).GetMethod(nameof(IObjectGraphExporter<T>.ReadObjectData)), properties)
         {
-            var objectReaderType = typeof(IObjectReader);
+            _objectReaderType = typeof(IObjectReader);
             _objectReaderMethods = new OverloadedMethodLookup<IObjectReader, Type>(m => m.Name.StartsWith(nameof(IObjectReader.ReadChar).Substring(0, 4)), x => x.ReturnType);
-            _endReadMethod = objectReaderType.GetMethod(nameof(IObjectReader.EndRead), BindingFlags.Public | BindingFlags.Instance);
 
             var paramz = TargetMethod.GetParameters();
 
@@ -27,6 +26,14 @@ namespace RedisSlimClient.Serialization.Emit
 
         protected override void OnInit(MethodBuilder methodBuilder)
         {
+            var endMethod = GetMethod(nameof(IObjectReader.BeginRead));
+            methodBuilder.CallMethod(_readerParam, endMethod, Properties.Count);
+        }
+
+        protected override void OnFinalize(MethodBuilder methodBuilder)
+        {
+            var endMethod = GetMethod(nameof(IObjectReader.EndRead));
+            methodBuilder.CallMethod(_readerParam, endMethod);
         }
 
         protected override void OnProperty(MethodBuilder methodBuilder, PropertyInfo property)
@@ -69,6 +76,9 @@ namespace RedisSlimClient.Serialization.Emit
 
             methodBuilder.CallMethod(_targetParam, property.SetMethod, propertyLocal);
         }
+
+        MethodInfo GetMethod(string name) =>
+            _objectReaderType.GetMethod(name, BindingFlags.Public | BindingFlags.Instance);
 
         void LoadExtractor(Type type)
         {

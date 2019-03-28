@@ -26,6 +26,8 @@ namespace RedisSlimClient.Serialization.Emit
 
         protected abstract void OnInit(MethodBuilder methodBuilder);
 
+        protected abstract void OnFinalize(MethodBuilder methodBuilder);
+
         protected (MethodInfo prop, MethodInfo meth) GetTypeModelMethod(Type type, string methodName)
         {
             if (!_extractMethods.TryGetValue(type, out var extractMethods))
@@ -62,6 +64,8 @@ namespace RedisSlimClient.Serialization.Emit
                     OnProperty(_methodWriter, property);
                 });
             }
+
+            OnFinalize(_methodWriter);
 
             _methodWriter.Return(returnLocal);
         }

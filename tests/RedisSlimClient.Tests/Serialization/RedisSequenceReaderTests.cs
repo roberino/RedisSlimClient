@@ -8,7 +8,7 @@ using Xunit;
 
 namespace RedisSlimClient.Tests.Serialization
 {
-    public class ByteReaderTests
+    public class RedisSequenceReaderTests
     {
         [Fact]
         public void Read_SimpleString()
@@ -107,11 +107,11 @@ namespace RedisSlimClient.Tests.Serialization
             Assert.Equal(RedisType.Integer, parsedObject.Type);
         }
 
-        static ByteReader GetReader(string data)
+        static RedisSequenceReader GetReader(string data)
         {
             var stream = new MemoryStream(GetData(data));
 
-            return new ByteReader(new StreamIterator(stream));
+            return new RedisSequenceReader(new StreamIterator(stream));
         }
 
         static byte[] GetData(string value) => Encoding.ASCII.GetBytes(value);

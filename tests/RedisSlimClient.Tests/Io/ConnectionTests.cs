@@ -20,7 +20,7 @@ namespace RedisSlimClient.Tests.Io
             _output = output;
         }
 
-        [Fact]
+        [Fact (Skip = "Flakey")]
         public async Task ConnectAsync_LocalServer_CanConnect()
         {
             using (var server = new TcpServer(_localEndpoint))
@@ -36,7 +36,7 @@ namespace RedisSlimClient.Tests.Io
             }
         }
 
-        [Fact]
+        [Fact(Skip = "Flakey")]
         public async Task ConnectAsync_LocalServer_CanPing()
         {
             using (var server = new TcpServer(_localEndpoint))

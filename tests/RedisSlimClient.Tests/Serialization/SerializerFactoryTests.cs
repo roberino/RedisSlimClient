@@ -48,7 +48,12 @@ namespace RedisSlimClient.Tests.Serialization
                 }
             });
 
-            ThenOutputIsValid();
+            ThenOutputIsValid<TestDto>(x =>
+            {
+                Assert.Equal("abc", x.DataItem1);
+                Assert.Equal(now, x.DataItem2);
+                Assert.Equal("efg", x.DataItem3.DataItem1);
+            });
         }
 
         [Fact]
@@ -77,7 +82,7 @@ namespace RedisSlimClient.Tests.Serialization
         {
             _output.Position = 0;
             var iterator = new StreamIterator(_output);
-            var objectStream = new ByteReader(iterator);
+            var objectStream = new RedisSequenceReader(iterator);
             var reader = new ObjectReader(objectStream);
             return SerializerFactory.Instance.Create<T>().ReadData(reader);
         }

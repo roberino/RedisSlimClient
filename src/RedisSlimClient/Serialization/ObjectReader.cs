@@ -8,19 +8,44 @@ namespace RedisSlimClient.Serialization
 {
     class ObjectReader : IObjectReader
     {
+        readonly IObjectSerializerFactory _serializerFactory;
         readonly IEnumerator<RedisObjectPart> _enumerator;
         readonly IBinaryFormatter _dataFormatter;
-        readonly IDictionary<string, RedisObjectPart[]> _cache;
         readonly Encoding _encoding;
 
-        public ObjectReader(IEnumerable<RedisObjectPart> objectStream, 
+        readonly IDictionary<string, RedisObjectPart[]> _buffer;
+
+        readonly int _level;
+
+        public ObjectReader(IEnumerable<RedisObjectPart> objectStream,
             Encoding encoding = null,
-            IBinaryFormatter dataFormatter = null)
+            IBinaryFormatter dataFormatter = null,
+            IObjectSerializerFactory serializerFactory = null) :
+            this(objectStream.GetEnumerator(), 0, encoding, dataFormatter, serializerFactory)
         {
-            _enumerator = objectStream.GetEnumerator();
+        }
+
+        ObjectReader(IEnumerator<RedisObjectPart> objectStream,
+            int level,
+            Encoding encoding = null,
+            IBinaryFormatter dataFormatter = null,
+            IObjectSerializerFactory serializerFactory = null)
+        {
+            _enumerator = objectStream;
             _dataFormatter = dataFormatter ?? BinaryFormatter.Default;
             _encoding = encoding ?? Encoding.UTF8;
-            _cache = new Dictionary<string, RedisObjectPart[]>();
+            _serializerFactory = serializerFactory ?? SerializerFactory.Instance;
+            _buffer = new Dictionary<string, RedisObjectPart[]>();
+            _level = level;
+        }
+
+        public void BeginRead(int itemCount)
+        {
+        }
+
+        public void EndRead()
+        {
+            _buffer.Clear();
         }
 
         public string ReadString(string name)
@@ -50,7 +75,14 @@ namespace RedisSlimClient.Serialization
 
         public T ReadObject<T>(string name)
         {
-            throw new NotImplementedException();
+            var sz = _serializerFactory.Create<T>();
+
+            return ReadToProperty(name, e =>
+            {
+                var subReader = new ObjectReader(e, _level + 1, _encoding, _dataFormatter);
+
+                return sz.ReadData(subReader);
+            });
         }
 
         public IEnumerable<T> ReadEnumerable<T>(string name)
@@ -58,20 +90,16 @@ namespace RedisSlimClient.Serialization
             throw new NotImplementedException();
         }
 
-        public void EndRead()
-        {
-        }
-
         RedisString ReadStringProperty(string name)
         {
-            return (RedisString)ReadProperty(name).Single().Value;
+            return (RedisString)ReadSingleProperty(name);
         }
 
-        IEnumerable<RedisObjectPart> ReadProperty(string name)
+        RedisObject ReadSingleProperty(string name)
         {
-            if (_cache.TryGetValue(name, out var parts))
+            if (_buffer.TryGetValue(name, out var parts))
             {
-                return parts;
+                return parts.Single().Value;
             }
 
             while (true)
@@ -80,25 +108,80 @@ namespace RedisSlimClient.Serialization
 
                 if (string.Equals(next.name, name))
                 {
-                    return ReadNextObject();
+                    return Read(1)[0].Value;
                 }
 
-                _cache[next.name] = ReadNextObject().ToArray();
+                _buffer[next.name] = ReadNext();
             }
         }
 
-        RedisObject[] Read(int count)
+        T ReadToProperty<T>(string name, Func<IEnumerator<RedisObjectPart>, T> dataReader)
         {
-            var items = new RedisObject[count];
-
-            for (var i = 0; i < count; i++)
+            if (_buffer.TryGetValue(name, out var parts))
             {
-                if (!_enumerator.MoveNext())
+                return dataReader.Invoke(((IEnumerable<RedisObjectPart>)parts).GetEnumerator());
+            }
+
+            while (true)
+            {
+                var next = ReadNextProperty();
+
+                if (string.Equals(next.name, name))
+                {
+                    return dataReader.Invoke(_enumerator);
+                }
+
+                _buffer[next.name] = ReadNext();
+            }
+        }
+
+        RedisObjectPart[] ReadNext()
+        {
+            var first = true;
+            var level = -1;
+
+            var items = new List<RedisObjectPart>();
+
+            while (_enumerator.MoveNext() && _enumerator.Current.Level >= level)
+            {
+                if (first)
+                {
+                    first = false;
+
+                    if (!_enumerator.Current.IsArrayStart)
+                    {
+                        items.Add(_enumerator.Current);
+                        break;
+                    }
+
+                    level = _enumerator.Current.Level;
+                }
+
+                items.Add(_enumerator.Current);
+            }
+
+            return items.ToArray();
+        }
+
+        RedisObjectPart[] Read(int count)
+        {
+            var items = new RedisObjectPart[count];
+
+            var i = 0;
+
+            while (_enumerator.MoveNext())
+            {
+                if (_enumerator.Current.IsArrayStart)
+                {
+                    continue;
+                }
+
+                items[i++] = _enumerator.Current;
+
+                if (i == count)
                 {
                     break;
                 }
-
-                items[i] = _enumerator.Current.Value;
             }
 
             return items;
@@ -106,34 +189,37 @@ namespace RedisSlimClient.Serialization
 
         (string name, TypeCode type, SubType subType) ReadNextProperty()
         {
-            var nextTuple = Read(3);
-
-            return (nextTuple[0].ToString(), (TypeCode)nextTuple[1].ToLong(), (SubType)nextTuple[2].ToLong());
-        }
-
-        IEnumerable<RedisObjectPart> ReadNextObject()
-        {
-            var maxIndex = 0L;
-            var i = 0;
-
             while (_enumerator.MoveNext())
             {
-                var part = _enumerator.Current;
-
-                if (maxIndex == 0 && part.ArrayIndex.HasValue)
-                {
-                    maxIndex = part.Length - part.ArrayIndex.Value - 1;
-                }
-
-                yield return part;
-
-                if (i >= maxIndex)
+                if (_enumerator.Current.IsArrayStart && _enumerator.Current.Level == (_level + 1))
                 {
                     break;
                 }
-
-                i++;
             }
+
+            var nextTuple = Read(3);
+
+            return (nextTuple[0].Value.ToString(), (TypeCode)nextTuple[1].Value.ToLong(), (SubType)nextTuple[2].Value.ToLong());
+        }
+
+        IEnumerable<RedisObject> ReadNextCollection()
+        {
+            return AsEnumerable(_enumerator.ReadObject());
+        }
+
+        RedisObject ReadNextObject()
+        {
+            return Read(1)[0].Value;
+        }
+
+        IEnumerable<RedisObject> AsEnumerable(RedisObject robj)
+        {
+            if (robj is RedisArray ra)
+            {
+                return ra.Items;
+            }
+
+            return new[] { robj };
         }
     }
 }

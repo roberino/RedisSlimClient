@@ -30,7 +30,7 @@ namespace RedisSlimClient.Tests
             }
         }
 
-        [Fact] //Skip = "Integration")]
+        [Fact(Skip = "Integration")]
         public async Task ConnectAsync_RemoteServer_CanSetAndGet()
         {
             using (var client = new RedisClient(new ClientConfiguration(_localEndpoint.ToString())))
@@ -47,7 +47,7 @@ namespace RedisSlimClient.Tests
             }
         }
 
-        [Fact]
+        [Fact(Skip = "Integration")]
         public async Task ConnectAsync_TwoGetCallsSameData_ReturnsTwoResults()
         {
             using (var client = new RedisClient(new ClientConfiguration(_localEndpoint.ToString())))
@@ -72,7 +72,7 @@ namespace RedisSlimClient.Tests
             }
         }
 
-        [Fact] //Skip = "Integration")]
+        [Fact(Skip = "Integration")]
         public async Task ConnectAsync_RemoteServerMultipleThreads_CanGet()
         {
             using (var client = new RedisClient(new ClientConfiguration(_localEndpoint.ToString())))
