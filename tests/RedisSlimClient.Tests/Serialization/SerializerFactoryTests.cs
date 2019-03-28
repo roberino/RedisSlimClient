@@ -82,7 +82,7 @@ namespace RedisSlimClient.Tests.Serialization
         {
             _output.Position = 0;
             var iterator = new StreamIterator(_output);
-            var objectStream = new RedisSequenceReader(iterator);
+            var objectStream = new RedisByteSequenceReader(iterator);
             var reader = new ObjectReader(objectStream);
             return SerializerFactory.Instance.Create<T>().ReadData(reader);
         }

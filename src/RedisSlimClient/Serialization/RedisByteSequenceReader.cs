@@ -5,7 +5,7 @@ using RedisSlimClient.Types;
 
 namespace RedisSlimClient.Serialization
 {
-    internal class RedisSequenceReader : IEnumerable<RedisObjectPart>, IDisposable
+    internal class RedisByteSequenceReader : IEnumerable<RedisObjectPart>, IDisposable
     {
         readonly IEnumerable<ArraySegment<byte>> _byteStream;
         readonly Stack<int> _currentArrayIndex;
@@ -16,7 +16,7 @@ namespace RedisSlimClient.Serialization
         int _arrayIndex;
         long? _currentArrayLength;
         
-        public RedisSequenceReader(IEnumerable<ArraySegment<byte>> byteStream)
+        public RedisByteSequenceReader(IEnumerable<ArraySegment<byte>> byteStream)
         {
             _byteStream = byteStream;
             _currentState = ReadState.Type;

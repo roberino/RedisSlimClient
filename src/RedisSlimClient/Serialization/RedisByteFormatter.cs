@@ -3,7 +3,7 @@ using System.IO;
 
 namespace RedisSlimClient.Serialization
 {
-    internal static class ByteFormatter
+    internal static class RedisByteFormatter
     {
         public static void Write(this Stream output, object item)
         {

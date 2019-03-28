@@ -6,11 +6,11 @@ using Xunit;
 
 namespace RedisSlimClient.Tests.Serialization
 {
-    public class ByteFormatterTests : IDisposable
+    public class RedisByteFormatterTests : IDisposable
     {
         readonly MemoryStream _output;
 
-        public ByteFormatterTests()
+        public RedisByteFormatterTests()
         {
             _output = new MemoryStream();
         }

@@ -35,14 +35,12 @@ namespace RedisSlimClient.Serialization
         {
             var value = BitConverter.ToInt64(data, 0);
 
-            return Epoch.AddSeconds(value);
+            return DateTime.FromBinary(value);
         }
 
         public byte[] ToBytes(DateTime date)
         {
-            var value = Convert.ToInt64((date - Epoch).TotalSeconds);
-
-            return BitConverter.GetBytes(value);
+            return BitConverter.GetBytes(date.ToBinary());
         }
     }
 }

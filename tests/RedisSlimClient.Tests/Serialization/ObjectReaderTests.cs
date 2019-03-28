@@ -104,7 +104,7 @@ namespace RedisSlimClient.Tests.Serialization
                 data.Position = 0;
 
                 var iterator = new StreamIterator(data);
-                var byteReader = new RedisSequenceReader(iterator).ToArray();
+                var byteReader = new RedisByteSequenceReader(iterator).ToArray();
 
                 return new ObjectReader(byteReader);
             }
