@@ -65,12 +65,21 @@ namespace RedisSlimClient.Tests.Serialization
                 {
                     new AnotherTestDto()
                     {
-                        DataItem1 = "1"
+                        DataItem1 = "i1"
+                    },
+                    new AnotherTestDto()
+                    {
+                        DataItem1 = "i2"
                     }
                 }
             });
 
-            ThenOutputIsValid();
+            ThenOutputIsValid<TestDtoWithCollection>(x =>
+            {
+                Assert.Equal(2, x.DataItems.Length);
+                Assert.Equal("i1", x.DataItems[0].DataItem1);
+                Assert.Equal("i2", x.DataItems[1].DataItem1);
+            });
         }
 
         void WhenWritingObject<T>(T obj)

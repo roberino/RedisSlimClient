@@ -4,18 +4,19 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using RedisSlimClient.Serialization;
+using System.Collections.Generic;
 
 namespace RedisSlimClient.Io
 {
     internal interface ICommandPipeline : IDisposable
     {
-        Task<RedisObject> Execute(RedisCommand command, TimeSpan timeout);
+        Task<T> Execute<T>(IRedisResult<T> command, TimeSpan timeout);
     }
 
     internal class CommandPipeline : ICommandPipeline
     {
         readonly Stream _writeStream;
-        readonly RedisByteSequenceReader _reader;
+        readonly IEnumerable<RedisObjectPart> _reader;
         readonly CommandQueue _commandQueue;
 
         bool _disposed;
@@ -29,39 +30,31 @@ namespace RedisSlimClient.Io
             Task.Run(() => ProcessQueue());
         }
 
-        public async Task<RedisObject> Execute(RedisCommand command, TimeSpan timeout)
+        public async Task<T> Execute<T>(IRedisResult<T> command, TimeSpan timeout)
         {
             if (_disposed)
             {
                 throw new ObjectDisposedException(nameof(CommandPipeline));
             }
 
-            return await _commandQueue.Enqueue(() =>
+            await _commandQueue.Enqueue(() =>
             {
-                command.Write(x => _writeStream.Write(x));
+                command.Write(_writeStream);
                 return command;
             }, timeout);
+
+            return await command;
         }
 
         void ProcessQueue()
         {
             _writeStream.Flush();
 
-            foreach (var nextResult in _reader.ToObjects())
+            while (!_commandQueue.ProcessNextCommand(cmd =>
             {
-                while (!_commandQueue.ProcessNextCommand(cmd =>
-                {
-                    try
-                    {
-                        cmd.CompletionSource.SetResult(nextResult);
-                    }
-                    catch (Exception ex)
-                    {
-                        cmd.CompletionSource.SetException(ex);
-                    }
-                }))
-                {
-                }
+                cmd.Read(_reader);
+            }))
+            {
             }
         }
 

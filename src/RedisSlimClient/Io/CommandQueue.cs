@@ -10,17 +10,17 @@ namespace RedisSlimClient.Io
     internal class CommandQueue
     {
         readonly SemaphoreSlim _semaphore;
-        readonly ConcurrentQueue<RedisCommand> _commandQueue;
+        readonly ConcurrentQueue<IRedisCommand> _commandQueue;
 
         public CommandQueue()
         {
-            _commandQueue = new ConcurrentQueue<RedisCommand>();
+            _commandQueue = new ConcurrentQueue<IRedisCommand>();
             _semaphore = new SemaphoreSlim(1, 1);
         }
 
-        public async Task<RedisObject> Enqueue(Func<RedisCommand> commandFactory, TimeSpan timeout)
+        public async Task Enqueue(Func<IRedisCommand> commandFactory, TimeSpan timeout)
         {
-            RedisCommand cmd;
+            IRedisCommand cmd;
 
             await _semaphore.WaitAsync(timeout);
 
@@ -35,10 +35,10 @@ namespace RedisSlimClient.Io
                 _semaphore.Release();
             }
 
-            return await cmd;
+            await cmd;
         }
 
-        public bool ProcessNextCommand(Action<RedisCommand> action)
+        public bool ProcessNextCommand(Action<IRedisCommand> action)
         {
             if (_commandQueue.Count > 0 && _commandQueue.TryDequeue(out var next))
             {

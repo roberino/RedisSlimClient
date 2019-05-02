@@ -26,8 +26,8 @@ namespace RedisSlimClient.Tests.Serialization
         public void Read_Array_ReturnsExpectedMembers()
         {
             var reader = GetReader("*3\r\n:1234\r\n+hi\r\n-me-error\r\n");
-
-            var parsedObject = (RedisArray)reader.ToObjects().Single();
+            var items = reader.ToList();
+            var parsedObject = (RedisArray)items.ToObjects().Single();
 
             Assert.Equal(3, parsedObject.Count);
             Assert.Equal(RedisType.Array, parsedObject.Type);
@@ -46,21 +46,36 @@ namespace RedisSlimClient.Tests.Serialization
         {
             var reader = GetReader("*3\r\n+abc\r\n*2\r\n:123\r\n:456\r\n+efg\r\n");
 
-            var parsedObjects = reader.ToObjects().ToList();
+            var items = reader.ToArray();
+            var parsedObjects = items.ToObjects().ToList();
 
-            Assert.Equal(2, parsedObjects.Count);
+            Assert.Single(parsedObjects);
 
             var arr1 = (RedisArray)parsedObjects[0];
             var str1 = (RedisString)arr1.Items[0];
             var arr2 = (RedisArray) arr1.Items[1];
             var int1 = (RedisInteger) arr2.Items[0];
             var int2 = (RedisInteger)arr2.Items[1];
-            var str2 = (RedisString)parsedObjects[1];
+            var str2 = (RedisString)arr1.Items[2];
 
             Assert.Equal("abc", str1.ToString());
             Assert.Equal(123, int1.Value);
             Assert.Equal(456, int2.Value);
             Assert.Equal("efg", str2.ToString());
+        }
+
+        [Theory]
+        [InlineData("*3\r\n+a\r\n*2\r\n:123\r\n:456\r\n+efg\r\n", 3, 1)]
+        [InlineData("*3\r\n+a\r\n*2\r\n:123\r\n:456\r\n+efg\r\n", 1, 0)]
+        [InlineData("*2\r\n*1\r\n*2\r\n+a\r\n+b\r\n*1\r\n*2\r\n+a\r\n+b\r\n", 3, 2)]
+        [InlineData("*2\r\n*1\r\n*2\r\n+a\r\n+b\r\n*1\r\n*2\r\n+a\r\n+b\r\n", 7, 2)]
+        public void Read_Array_ReturnsExpectedLevels(string data, int targetIndex, int expectedLevel)
+        {
+            var reader = GetReader(data);
+
+            var items = reader.ToList();
+
+            Assert.Equal(expectedLevel, items[targetIndex].Level);
         }
 
         [Theory]

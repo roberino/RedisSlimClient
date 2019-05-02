@@ -8,20 +8,19 @@ namespace RedisSlimClient.Serialization
     internal class RedisByteSequenceReader : IEnumerable<RedisObjectPart>, IDisposable
     {
         readonly IEnumerable<ArraySegment<byte>> _byteStream;
-        readonly Stack<int> _currentArrayIndex;
+        readonly Stack<ArrayState> _arrayState;
 
         ReadState _currentState;
         (ResponseType type, long length, int offset) _currentType;
-        int _level;
-        int _arrayIndex;
-        long? _currentArrayLength;
-        
+
+        ArrayState _currentArrayState;
+
         public RedisByteSequenceReader(IEnumerable<ArraySegment<byte>> byteStream)
         {
             _byteStream = byteStream;
             _currentState = ReadState.Type;
             _currentType = (ResponseType.Unknown, 0, 0);
-            _currentArrayIndex = new Stack<int>();
+            _arrayState = new Stack<ArrayState>();
         }
 
         public IEnumerator<RedisObjectPart> GetEnumerator()
@@ -68,22 +67,36 @@ namespace RedisSlimClient.Serialization
         RedisObjectPart OpenArray(long length)
         {
             _currentState = ReadState.Type;
-            _currentArrayLength = length;
 
-            if (_level > 0)
+            var level = 0;
+            var index = 0;
+
+            if (_currentArrayState != null)
             {
-                _currentArrayIndex.Push(_arrayIndex);
+                _currentArrayState.Increment();
+
+                level = _currentArrayState.Level + 1;
+                index = _currentArrayState.Index;
+
+                _arrayState.Push(_currentArrayState);
             }
+
+            _currentArrayState = new ArrayState()
+            {
+                Index = 0,
+                Length = length,
+                Level = level
+            };
 
             var array = new RedisObjectPart()
             {
                 IsArrayStart = true,
                 Length = length,
-                Level = _level++,
-                ArrayIndex = _arrayIndex
+                Level = _currentArrayState.Level,
+                ArrayIndex = index
             };
 
-            _arrayIndex = 0;
+            CompleteArray();
 
             return array;
         }
@@ -92,7 +105,7 @@ namespace RedisSlimClient.Serialization
         {
             _currentState = ReadState.Type;
             
-            if (!_currentArrayLength.HasValue || value == null)
+            if (_currentArrayState == null || value == null)
             {
                 return new RedisObjectPart
                 {
@@ -100,26 +113,34 @@ namespace RedisSlimClient.Serialization
                 };
             }
 
+            _currentArrayState.Increment();
+
             var item = new RedisObjectPart
             {
                 Value = value,
-                ArrayIndex = _arrayIndex++,
-                Level = _level,
-                Length = _currentArrayLength.Value
+                ArrayIndex = _currentArrayState.Index,
+                Level = _currentArrayState.Level,
+                Length = _currentArrayState.Length
             };
 
-            if (_arrayIndex == _currentArrayLength.Value)
-            {
-                _currentArrayLength = null;
-                _level--;
-
-                if (_currentArrayIndex.Count > 0)
-                {
-                    _arrayIndex = _currentArrayIndex.Pop();
-                }
-            }
+            CompleteArray();
 
             return item;
+        }
+
+        void CompleteArray()
+        {
+            while ((_currentArrayState?.IsComplete).GetValueOrDefault())
+            {
+                if (_arrayState.Count > 0)
+                {
+                    _currentArrayState = _arrayState.Pop();
+                }
+                else
+                {
+                    _currentArrayState = null;
+                }
+            }
         }
 
         RedisObject GetCurrentValue(ArraySegment<byte> segment)
@@ -145,6 +166,19 @@ namespace RedisSlimClient.Serialization
         {
             Type,
             Value
+        }
+
+        class ArrayState
+        {
+            public int Level;
+            public int Index;
+            public long Length;
+            public bool IsComplete => Index == Length;
+
+            public void Increment()
+            {
+                Index++;
+            }
         }
 
         IEnumerator IEnumerable.GetEnumerator()

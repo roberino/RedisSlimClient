@@ -39,6 +39,16 @@ namespace RedisSlimClient.Serialization
             _level = level;
         }
 
+        public void Dump(Action<string> writer)
+        {
+            while(_enumerator.MoveNext())
+            {
+                var item = _enumerator.Current;
+                var pad = "".PadLeft(item.Level);
+                writer($"{item.Level}{pad}arr:{item.IsArrayStart},len{item.Length},{item.Value}");
+            }
+        }
+
         public void BeginRead(int itemCount)
         {
         }
@@ -87,7 +97,30 @@ namespace RedisSlimClient.Serialization
 
         public IEnumerable<T> ReadEnumerable<T>(string name)
         {
-            throw new NotImplementedException();
+            var sz = _serializerFactory.Create<T>();
+
+            return ReadToProperty(name, e =>
+            {
+                var next = e.MoveNext();
+
+                var arrayDim = e.Current;
+
+                if (!arrayDim.IsArrayStart)
+                {
+                    throw new FormatException();
+                }
+
+                var subReader = new ObjectReader(e, arrayDim.Level, _encoding, _dataFormatter);
+
+                var results = new T[arrayDim.Length];
+
+                for (var x = 0; x < arrayDim.Length; x++)
+                {
+                    results[x] = sz.ReadData(subReader);
+                }
+
+                return results;
+            });
         }
 
         RedisString ReadStringProperty(string name)
@@ -114,12 +147,12 @@ namespace RedisSlimClient.Serialization
                 _buffer[next.name] = ReadNext();
             }
         }
-
+        
         T ReadToProperty<T>(string name, Func<IEnumerator<RedisObjectPart>, T> dataReader)
         {
             if (_buffer.TryGetValue(name, out var parts))
             {
-                return dataReader.Invoke(((IEnumerable<RedisObjectPart>)parts).GetEnumerator());
+                return dataReader.Invoke(parts.GetEnumerator());
             }
 
             while (true)
@@ -191,7 +224,7 @@ namespace RedisSlimClient.Serialization
         {
             while (_enumerator.MoveNext())
             {
-                if (_enumerator.Current.IsArrayStart && _enumerator.Current.Level == (_level + 1))
+                if (_enumerator.Current.IsArrayStart && _enumerator.Current.Level == _level + 1)
                 {
                     break;
                 }

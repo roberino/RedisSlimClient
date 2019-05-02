@@ -81,9 +81,13 @@ namespace RedisSlimClient.Types
                     var prev = currentArray;
 
                     currentArray = new RedisArray(part.Length);
-                    objectStack.Push(currentArray);
 
-                    prev?.Items.Add(currentArray);
+                    if (prev != null)
+                    {
+                        prev.Items.Add(currentArray);
+
+                        objectStack.Push(prev);
+                    }
 
                     continue;
                 }

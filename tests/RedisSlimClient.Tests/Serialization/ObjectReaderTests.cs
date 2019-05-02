@@ -7,11 +7,19 @@ using System.Linq;
 using System.Text;
 using RedisSlimClient.Io;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace RedisSlimClient.Tests.Serialization
 {
     public class ObjectReaderTests
     {
+        readonly ITestOutputHelper testOutput;
+
+        public ObjectReaderTests(ITestOutputHelper testOutput)
+        {
+            this.testOutput = testOutput;
+        }
+
         [Fact]
         public void ReadString_SingleStringItem_ReturnsCorrectValue()
         {
@@ -73,7 +81,7 @@ namespace RedisSlimClient.Tests.Serialization
         {
             var reader = CreateReader(w =>
             {
-                w.BeginWrite(2);
+                w.BeginWrite(3);
                 w.WriteItem("name1", "value1");
                 w.WriteItem("name3", "value3");
                 w.WriteItem("name2", new AnotherTestDto()
@@ -82,6 +90,8 @@ namespace RedisSlimClient.Tests.Serialization
                 });
             });
 
+            // reader.Dump(testOutput.WriteLine);
+            
             Assert.Equal("value1", reader.ReadString("name1"));
 
             var subOb = reader.ReadObject<AnotherTestDto>("name2");

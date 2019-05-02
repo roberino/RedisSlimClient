@@ -4,6 +4,7 @@ using RedisSlimClient.Io.Commands;
 using System;
 using System.Threading.Tasks;
 using RedisSlimClient.Types;
+using RedisSlimClient.Serialization;
 
 namespace RedisSlimClient
 {
@@ -28,6 +29,13 @@ namespace RedisSlimClient
             return await CompareStringResponse(new SetCommand(key, data), "OK");
         }
 
+        public async Task<bool> SetObjectAsync<T>(string key, T obj)
+        {
+            var cmd = new ObjectSetCommand<T>(key, _configuration, obj);
+
+            return await CompareStringResponse(cmd, "OK");
+        }
+
         public async Task<byte[]> GetDataAsync(string key)
         {
             var cmd = new GetCommand(key);
@@ -44,7 +52,7 @@ namespace RedisSlimClient
             _connection.Dispose();
         }
 
-        async Task<bool> CompareStringResponse(RedisCommand cmd, string expectedResponse)
+        async Task<bool> CompareStringResponse<T>(IRedisResult<T> cmd, string expectedResponse)
         {
             var cmdPipe = await _connection.ConnectAsync();
 

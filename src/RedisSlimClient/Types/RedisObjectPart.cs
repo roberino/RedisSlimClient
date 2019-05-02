@@ -1,5 +1,8 @@
-﻿namespace RedisSlimClient.Types
+﻿using System.Diagnostics;
+
+namespace RedisSlimClient.Types
 {
+    [DebuggerDisplay("Len:{Length};Level:{Level};Index:{ArrayIndex};StartOfArray:{IsArrayStart}")]
     struct RedisObjectPart
     {
         public bool IsArrayStart { get; set; }

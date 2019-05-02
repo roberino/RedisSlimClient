@@ -1,11 +1,15 @@
-﻿using System;
+﻿using RedisSlimClient.Types;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-using RedisSlimClient.Types;
+using RedisSlimClient.Serialization;
 
 namespace RedisSlimClient.Io.Commands
 {
-    internal abstract class RedisCommand
+    internal abstract class RedisCommand : IRedisResult<RedisObject>
     {
         protected RedisCommand(string commandText)
         {
@@ -15,19 +19,31 @@ namespace RedisSlimClient.Io.Commands
 
         public string CommandText { get; }
 
-        public abstract Task WriteAsync(Func<object[], Task> commandWriter);
+        public virtual object[] GetArgs() => new[] { CommandText };
 
-        public void Write(Action<object[]> commandWriter)
+        public void Write(Stream commandWriter)
         {
-            WriteAsync(x =>
+            commandWriter.Write(GetArgs());
+        }
+
+        public virtual void Read(IEnumerable<RedisObjectPart> objectParts)
+        {
+            var nextResult = objectParts.ToObjects().First();
+
+            try
             {
-                commandWriter(x);
-                return Task.CompletedTask;
-            });
+                CompletionSource.SetResult(nextResult);
+            }
+            catch (Exception ex)
+            {
+                CompletionSource.SetException(ex);
+            }
         }
 
         public TaskCompletionSource<RedisObject> CompletionSource { get; }
 
         public TaskAwaiter<RedisObject> GetAwaiter() => CompletionSource.Task.GetAwaiter();
+
+        TaskAwaiter IRedisCommand.GetAwaiter() => ((Task)CompletionSource.Task).GetAwaiter();
     }
 }

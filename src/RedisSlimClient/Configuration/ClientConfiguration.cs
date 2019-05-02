@@ -1,5 +1,7 @@
-﻿using System;
+﻿using RedisSlimClient.Serialization;
+using System;
 using System.Collections.Generic;
+using System.Text;
 
 namespace RedisSlimClient.Configuration
 {
@@ -14,5 +16,9 @@ namespace RedisSlimClient.Configuration
         public Uri ServerUri { get; }
 
         public TimeSpan DefaultTimeout { get; }
+
+        public Encoding Encoding { get; set; } = Encoding.UTF8;
+
+        public IObjectSerializerFactory SerializerFactory { get; set; } = Serialization.SerializerFactory.Instance;
     }
 }

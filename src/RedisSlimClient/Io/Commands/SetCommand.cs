@@ -1,7 +1,4 @@
-﻿using System.Threading.Tasks;
-using System;
-
-namespace RedisSlimClient.Io.Commands
+﻿namespace RedisSlimClient.Io.Commands
 {
     internal class SetCommand : RedisCommand
     {
@@ -14,9 +11,6 @@ namespace RedisSlimClient.Io.Commands
             _data = data;
         }
 
-        public override Task WriteAsync(Func<object[], Task> commandWriter)
-        {
-            return commandWriter(new object[] { CommandText, _key, _data });
-        }
+        public override object[] GetArgs() => new object[] { CommandText, _key, _data };
     }
 }
