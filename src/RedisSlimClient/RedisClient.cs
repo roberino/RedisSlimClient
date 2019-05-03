@@ -1,22 +1,26 @@
 ﻿using RedisSlimClient.Configuration;
 using RedisSlimClient.Io;
 using RedisSlimClient.Io.Commands;
-using System;
-using System.Threading.Tasks;
 using RedisSlimClient.Types;
-using RedisSlimClient.Serialization;
+using System;
+using System.Net;
+using System.Threading.Tasks;
 
 namespace RedisSlimClient
 {
     public class RedisClient : IDisposable
     {
         readonly ClientConfiguration _configuration;
-        readonly Connection _connection;
+        readonly IConnection _connection;
 
-        public RedisClient(ClientConfiguration configuration)
+        public RedisClient(ClientConfiguration configuration) : this(configuration, e => new Connection(e))
+        {
+        }
+
+        internal RedisClient(ClientConfiguration configuration, Func<EndPoint, IConnection> connectionFactory)
         {
             _configuration = configuration;
-            _connection = new Connection(_configuration.ServerUri.AsEndpoint());
+            _connection = connectionFactory(_configuration.ServerUri.AsEndpoint());
         }
 
         public async Task<bool> PingAsync()
@@ -33,7 +37,20 @@ namespace RedisSlimClient
         {
             var cmd = new ObjectSetCommand<T>(key, _configuration, obj);
 
-            return await CompareStringResponse(cmd, "OK");
+            var cmdPipe = await _connection.ConnectAsync();
+
+            return await cmdPipe.Execute(cmd, _configuration.DefaultTimeout);
+        }
+
+        public async Task<T> GetObjectAsync<T>(string key)
+        {
+            var cmd = new ObjectGetCommand<T>(key, _configuration);
+
+            var cmdPipe = await _connection.ConnectAsync();
+
+            var result = await cmdPipe.Execute(cmd, _configuration.DefaultTimeout);
+
+            return result;
         }
 
         public async Task<byte[]> GetDataAsync(string key)

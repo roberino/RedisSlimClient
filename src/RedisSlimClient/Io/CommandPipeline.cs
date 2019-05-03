@@ -21,10 +21,10 @@ namespace RedisSlimClient.Io
 
         bool _disposed;
 
-        public CommandPipeline(Stream writeStream)
+        public CommandPipeline(Stream networkStream)
         {
-            _writeStream = writeStream;
-            _reader = new RedisByteSequenceReader(new StreamIterator(writeStream));
+            _writeStream = networkStream;
+            _reader = new RedisByteSequenceReader(new StreamIterator(networkStream));
             _commandQueue = new CommandQueue();
 
             Task.Run(() => ProcessQueue());
@@ -50,7 +50,7 @@ namespace RedisSlimClient.Io
         {
             _writeStream.Flush();
 
-            while (!_commandQueue.ProcessNextCommand(cmd =>
+            while (!_disposed && !_commandQueue.ProcessNextCommand(cmd =>
             {
                 cmd.Read(_reader);
             }))

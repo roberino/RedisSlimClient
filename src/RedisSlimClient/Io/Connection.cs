@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace RedisSlimClient.Io
 {
-    internal class Connection : IDisposable
+    internal class Connection : IConnection
     {
         readonly EndPoint _endPoint;
         readonly Socket _socket;
