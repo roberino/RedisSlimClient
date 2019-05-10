@@ -29,8 +29,9 @@ namespace RedisSlimClient.Serialization
             _stream.WriteStartArray(itemCount);
         }
 
-        public void WriteItem(string name, object data)
+        public void WriteRaw(byte[] data)
         {
+            _stream.Write(data);
         }
 
         public void WriteItem(string name, string data)
@@ -91,6 +92,11 @@ namespace RedisSlimClient.Serialization
         }
 
         public void WriteItem(string name, char data)
+        {
+            Write(name, TypeCode.Char, SubType.None, _dataFormatter.ToBytes(data));
+        }
+
+        public void WriteItem(string name, bool data)
         {
             Write(name, TypeCode.Char, SubType.None, _dataFormatter.ToBytes(data));
         }

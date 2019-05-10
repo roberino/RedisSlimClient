@@ -4,6 +4,7 @@ using RedisSlimClient.Types;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
@@ -27,17 +28,29 @@ namespace RedisSlimClient.Io.Commands
 
         public void Read(IEnumerable<RedisObjectPart> objectParts)
         {
-            var objReader = new ObjectReader(objectParts, _configuration.Encoding, null, _configuration.SerializerFactory);
+            var result = objectParts.ToObjects().First();
 
-            try
+            if (result is RedisError err)
             {
-                var obj = _serializer.ReadData(objReader);
-
-                _taskCompletionSource.SetResult(obj);
+                _taskCompletionSource.SetException(new RedisServerException(err.Message));
+                return;
             }
-            catch(Exception ex)
+
+            if (result is RedisString strData)
             {
-                _taskCompletionSource.SetException(ex);
+                var byteSeq = new RedisByteSequenceReader(new StreamIterator(strData.ToStream()));
+                var objReader = new ObjectReader(byteSeq, _configuration.Encoding, null, _configuration.SerializerFactory);
+
+                try
+                {
+                    var obj = _serializer.ReadData(objReader, default);
+
+                    _taskCompletionSource.SetResult(obj);
+                }
+                catch (Exception ex)
+                {
+                    _taskCompletionSource.SetException(ex);
+                }
             }
         }
 

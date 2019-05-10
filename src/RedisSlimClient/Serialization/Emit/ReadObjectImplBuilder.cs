@@ -63,16 +63,24 @@ namespace RedisSlimClient.Serialization.Emit
                         .BindByGenericReturnValue(t => t.IsGenericType && t.GetGenericTypeDefinition() == targetType, 
                             collectionType);
                 }
+
+                methodBuilder.CallFunction(propertyLocal, _targetParam, property.GetMethod);
+
+                methodBuilder.CallFunction(propertyLocal,
+                    _readerParam,
+                    readMethod,
+                    property.Name,
+                    propertyLocal);
             }
             else
             {
                 readMethod = _objectReaderMethods.Bind(property.PropertyType);
-            }
 
-            methodBuilder.CallFunction(propertyLocal,
-                _readerParam,
-                readMethod,
-                property.Name);
+                methodBuilder.CallFunction(propertyLocal,
+                    _readerParam,
+                    readMethod,
+                    property.Name);
+            }
 
             methodBuilder.CallMethod(_targetParam, property.SetMethod, propertyLocal);
         }

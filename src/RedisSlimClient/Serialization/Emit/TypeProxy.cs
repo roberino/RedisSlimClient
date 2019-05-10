@@ -30,9 +30,18 @@ namespace RedisSlimClient.Serialization.Emit
 
         public void WriteData(T instance, IObjectWriter writer) => _dataExtractor.WriteObjectData(instance, writer);
 
-        public T ReadData(IObjectReader reader)
+        public T ReadData(IObjectReader reader, T defaultValue)
         {
-            var newObject = (T) typeof(T).GetConstructor(Type.EmptyTypes)?.Invoke(new object[0]);
+            T newObject;
+
+            if (defaultValue == null)
+            {
+                newObject = (T)typeof(T).GetConstructor(Type.EmptyTypes)?.Invoke(new object[0]);
+            }
+            else
+            {
+                newObject = defaultValue;
+            }
 
             _dataExtractor.ReadObjectData(newObject, reader);
 

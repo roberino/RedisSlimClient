@@ -39,5 +39,35 @@ namespace RedisSlimClient.Serialization
         {
             return BitConverter.GetBytes(date.ToBinary());
         }
+
+        public byte[] ToBytes(bool data)
+        {
+            return BitConverter.GetBytes(data);
+        }
+
+        public bool ToBool(byte[] data)
+        {
+            return BitConverter.ToBoolean(data, 0);
+        }
+
+        public double ToDouble(byte[] data)
+        {
+            return BitConverter.ToDouble(data, 0);
+        }
+
+        public byte[] ToBytes(double value)
+        {
+            return BitConverter.GetBytes(value);
+        }
+
+        public decimal ToDecimal(byte[] data)
+        {
+            return (decimal)BitConverter.ToDouble(data, 0);
+        }
+
+        public byte[] ToBytes(decimal value)
+        {
+            return BitConverter.GetBytes((double)value);
+        }
     }
 }

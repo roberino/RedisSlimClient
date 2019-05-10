@@ -28,6 +28,24 @@ namespace RedisSlimClient.Tests.Io
         }
 
         [Fact]
+        public void Iterate_StringWithNewLine_ReturnsExpectedItems()
+        {
+            var stream = new MemoryStream();
+            var iterator = new StreamIterator(stream);
+
+            var data = Encoding.ASCII.GetBytes("hello\nworld\r\n");
+
+            stream.Write(data);
+            stream.Position = 0;
+
+            var items = iterator
+                .Select(s => Encoding.ASCII.GetString(s)).ToArray();
+
+            Assert.Single(items);
+            Assert.Equal("hello\nworld", items[0]);
+        }
+
+        [Fact]
         public void Iterate_BufferOverflow_ReturnsExpectedItems()
         {
             var stream = new MemoryStream();
@@ -47,6 +65,27 @@ namespace RedisSlimClient.Tests.Io
             Assert.Equal("efgh", items[2]);
             Assert.Equal("$4", items[3]);
             Assert.Equal("ijkl", items[4]);
+        }
+
+        [Fact]
+        public void Iterate_BulkStringContainingDelimittingChars_ReturnsExpectedItems()
+        {
+            var stream = new MemoryStream();
+            var iterator = new StreamIterator(stream);
+
+            var data = Encoding.ASCII.GetBytes("+abcd\r\n$6\r\nef\r\ngh\r\n+hi\r\n");
+
+            stream.Write(data);
+            stream.Position = 0;
+
+            var items = iterator
+                .Select(s => Encoding.ASCII.GetString(s)).ToArray();
+
+            Assert.Equal(4, items.Length);
+            Assert.Equal("+abcd", items[0]);
+            Assert.Equal("$6", items[1]);
+            Assert.Equal("ef\r\ngh", items[2]);
+            Assert.Equal("+hi", items[3]);
         }
     }
 }

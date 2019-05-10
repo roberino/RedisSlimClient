@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using RedisSlimClient.Io;
 using Xunit;
 using Xunit.Abstractions;
+using RedisSlimClient.Tests.Serialization;
 
 namespace RedisSlimClient.Tests
 {
@@ -27,6 +28,31 @@ namespace RedisSlimClient.Tests
                 var result = await client.PingAsync();
 
                 Assert.True(result);
+            }
+        }
+
+        [Fact]
+        public async Task SetObjectAsync_WritesObjectDataToStream()
+        {
+            using (var client = new RedisClient(new ClientConfiguration(_localEndpoint.ToString())))
+            {
+                var data = new TestDto()
+                {
+                    DataItem1 = "y",
+                    DataItem2 = DateTime.UtcNow,
+                    DataItem3 = new AnotherTestDto()
+                    {
+                        DataItem1 = "x"
+                    }
+                };
+
+                var ok = await client.SetObjectAsync("x", data);
+
+                Assert.True(ok);
+
+                var data2 = await client.GetObjectAsync<TestDto>("x");
+
+                Assert.Equal("y", data2.DataItem1);
             }
         }
 

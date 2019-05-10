@@ -58,6 +58,13 @@ namespace RedisSlimClient.Serialization
             _buffer.Clear();
         }
 
+        public byte[] ReadRaw()
+        {
+            var obj = ReadNext();
+
+            return ((RedisString)obj.ToObjects().Single()).Value;
+        }
+
         public string ReadString(string name)
         {
             return ReadStringProperty(name).ToString(_encoding);
@@ -83,7 +90,12 @@ namespace RedisSlimClient.Serialization
             return _dataFormatter.ToChar(ReadStringProperty(name).Value);
         }
 
-        public T ReadObject<T>(string name)
+        public bool ReadBool(string name)
+        {
+            return _dataFormatter.ToBool(ReadStringProperty(name).Value);
+        }
+
+        public T ReadObject<T>(string name, T defaultValue)
         {
             var sz = _serializerFactory.Create<T>();
 
@@ -91,11 +103,11 @@ namespace RedisSlimClient.Serialization
             {
                 var subReader = new ObjectReader(e, _level + 1, _encoding, _dataFormatter);
 
-                return sz.ReadData(subReader);
+                return sz.ReadData(subReader, defaultValue);
             });
         }
 
-        public IEnumerable<T> ReadEnumerable<T>(string name)
+        public IEnumerable<T> ReadEnumerable<T>(string name, IList<T> defaultValue)
         {
             var sz = _serializerFactory.Create<T>();
 
@@ -116,7 +128,7 @@ namespace RedisSlimClient.Serialization
 
                 for (var x = 0; x < arrayDim.Length; x++)
                 {
-                    results[x] = sz.ReadData(subReader);
+                    results[x] = sz.ReadData(subReader, default);
                 }
 
                 return results;

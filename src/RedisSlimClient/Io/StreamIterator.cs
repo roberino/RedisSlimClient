@@ -1,7 +1,9 @@
-﻿using System;
+﻿using RedisSlimClient.Serialization;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using System.Threading;
 
 namespace RedisSlimClient.Io
@@ -15,6 +17,8 @@ namespace RedisSlimClient.Io
         readonly CancellationTokenSource _cancellationToken;
 
         bool _startEndFlag;
+        int? _currentReadLength;
+        int _counter;
 
         public StreamIterator(Stream stream, int bufferSize = 1024)
         {
@@ -62,14 +66,18 @@ namespace RedisSlimClient.Io
                 {
                     if (c == '\n' && _startEndFlag)
                     {
-                        yield return GetNextSegment(currentOffset, i - currentOffset - 1);
-                        currentOffset = i + 1;
-                    }
+                        if (!_currentReadLength.HasValue || _currentReadLength.Value < _counter)
+                        {
+                            yield return GetNextSegment(currentOffset, i - currentOffset - 1);
 
+                            currentOffset = i + 1;
+                        }
+                    }
                     _startEndFlag = false;
                 }
 
                 i++;
+                _counter++;
             }
 
             if (currentOffset < length)
@@ -78,8 +86,19 @@ namespace RedisSlimClient.Io
             }
         }
 
+        enum ReadMode
+        {
+            Default,
+            StartOfTerminator,
+            BulkString,
+            Null
+        }
+
         ArraySegment<byte> GetNextSegment(int offset, int count)
         {
+            _currentReadLength = null;
+            _counter = 0;
+
             var newBuffer = _buffer;
 
             if (_overflow.Position > 0)
@@ -101,7 +120,14 @@ namespace RedisSlimClient.Io
                 _overflow.Position = 0;
             }
 
-            return new ArraySegment<byte>(newBuffer, offset, count);
+            var seg = new ArraySegment<byte>(newBuffer, offset, count);
+
+            if (seg.Count > 0 && seg.Array[seg.Offset] == (byte)ResponseType.BulkStringType)
+            {
+                _currentReadLength = int.Parse(Encoding.ASCII.GetString(seg.Array, seg.Offset + 1, seg.Count - 1));
+            }
+
+            return seg;
         }
 
         IEnumerator IEnumerable.GetEnumerator()

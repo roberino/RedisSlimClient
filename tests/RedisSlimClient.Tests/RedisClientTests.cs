@@ -36,7 +36,7 @@ namespace RedisSlimClient.Tests
             var writtenData = fakeStream.GetDataWritten();
 
             Assert.True(ok);
-            Assert.StartsWith("+SET\r\n+x\r\n", writtenData);
+            Assert.StartsWith("*3\r\n$3\r\nSET\r\n$1\r\nx\r\n", writtenData);
         }
     }
 

@@ -93,7 +93,7 @@ namespace RedisSlimClient.Tests.Serialization
             var iterator = new StreamIterator(_output);
             var objectStream = new RedisByteSequenceReader(iterator);
             var reader = new ObjectReader(objectStream);
-            return SerializerFactory.Instance.Create<T>().ReadData(reader);
+            return SerializerFactory.Instance.Create<T>().ReadData(reader, default);
         }
 
         void ThenOutputIsValid()

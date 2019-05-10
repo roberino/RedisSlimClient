@@ -71,7 +71,7 @@ namespace RedisSlimClient.Tests.Serialization
 
             Assert.Equal("value1", reader.ReadString("name1"));
 
-            var subOb = reader.ReadObject<AnotherTestDto>("name2");
+            var subOb = reader.ReadObject<AnotherTestDto>("name2", null);
 
             Assert.Equal("value2", subOb.DataItem1);
         }
@@ -94,7 +94,7 @@ namespace RedisSlimClient.Tests.Serialization
             
             Assert.Equal("value1", reader.ReadString("name1"));
 
-            var subOb = reader.ReadObject<AnotherTestDto>("name2");
+            var subOb = reader.ReadObject<AnotherTestDto>("name2", null);
 
             Assert.Equal("value2", subOb.DataItem1);
 

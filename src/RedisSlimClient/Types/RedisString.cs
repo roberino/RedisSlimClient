@@ -1,6 +1,5 @@
 ﻿using System.IO;
 using System.Text;
-using RedisSlimClient.Io;
 
 namespace RedisSlimClient.Types
 {
@@ -16,5 +15,7 @@ namespace RedisSlimClient.Types
         public string ToString(Encoding encoding) => encoding.GetString(Value);
 
         public override string ToString() => ToString(Encoding.ASCII);
+
+        public Stream ToStream() => new MemoryStream(Value);
     }
 }

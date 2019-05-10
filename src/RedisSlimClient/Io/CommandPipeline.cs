@@ -50,11 +50,12 @@ namespace RedisSlimClient.Io
         {
             _writeStream.Flush();
 
-            while (!_disposed && !_commandQueue.ProcessNextCommand(cmd =>
+            while (!_disposed)
             {
-                cmd.Read(_reader);
-            }))
-            {
+                _commandQueue.ProcessNextCommand(cmd =>
+                {
+                    cmd.Read(_reader);
+                });
             }
         }
 

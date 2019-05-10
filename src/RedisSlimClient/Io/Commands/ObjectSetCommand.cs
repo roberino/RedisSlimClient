@@ -44,12 +44,18 @@ namespace RedisSlimClient.Io.Commands
 
         public void Write(Stream commandWriter)
         {
-            commandWriter.Write("SET");
-            commandWriter.Write(_key);
+            commandWriter.WriteStartArray(3);
+            commandWriter.Write("SET", true);
+            commandWriter.Write(_key, true);
 
-            var objWriter = new ObjectWriter(commandWriter, _configuration.Encoding, null, _configuration.SerializerFactory);
+            using(var ms = new MemoryStream())
+            {
+                var objWriter = new ObjectWriter(ms, _configuration.Encoding, null, _configuration.SerializerFactory);
 
-            _serializer.WriteData(_objectData, objWriter);
+                _serializer.WriteData(_objectData, objWriter);
+
+                commandWriter.Write(ms.ToArray());
+            }
         }
 
         public TaskAwaiter<bool> GetAwaiter() => _taskCompletionSource.Task.GetAwaiter();
