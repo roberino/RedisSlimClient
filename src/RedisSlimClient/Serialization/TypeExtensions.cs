@@ -18,11 +18,6 @@ namespace RedisSlimClient.Serialization
                 return true;
             }
 
-            //if (type.IsGenericType && type.GetGenericArguments().Any(a => a.ContainsGenericParameter()))
-            //{
-            //    return true;
-            //}
-
             return false;
         }
 

@@ -36,11 +36,11 @@ namespace RedisSlimClient.Tests
         {
             using (var client = new RedisClient(new ClientConfiguration(_localEndpoint.ToString())))
             {
-                var data = new TestDto()
+                var data = new TestComplexDto()
                 {
                     DataItem1 = "y",
                     DataItem2 = DateTime.UtcNow,
-                    DataItem3 = new AnotherTestDto()
+                    DataItem3 = new TestDtoWithString()
                     {
                         DataItem1 = "x"
                     }
@@ -50,7 +50,7 @@ namespace RedisSlimClient.Tests
 
                 Assert.True(ok);
 
-                var data2 = await client.GetObjectAsync<TestDto>("x");
+                var data2 = await client.GetObjectAsync<TestComplexDto>("x");
 
                 Assert.Equal("y", data2.DataItem1);
             }

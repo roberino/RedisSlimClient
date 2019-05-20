@@ -1,6 +1,7 @@
 ﻿using RedisSlimClient.Types;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 
@@ -51,6 +52,12 @@ namespace RedisSlimClient.Serialization
 
         public void BeginRead(int itemCount)
         {
+            var arr = MoveNextArray();
+
+            if (arr.dim != itemCount)
+            {
+                Trace.WriteLine($"exp:{itemCount}/act:{arr}");
+            }
         }
 
         public void EndRead()
@@ -94,8 +101,8 @@ namespace RedisSlimClient.Serialization
         {
             return _dataFormatter.ToBool(ReadStringProperty(name).Value);
         }
-
         public T ReadObject<T>(string name, T defaultValue)
+
         {
             var sz = _serializerFactory.Create<T>();
 
@@ -107,32 +114,77 @@ namespace RedisSlimClient.Serialization
             });
         }
 
-        public IEnumerable<T> ReadEnumerable<T>(string name, IList<T> defaultValue)
+        public IEnumerable<T> ReadEnumerable<T>(string name, ICollection<T> defaultValue)
         {
-            var sz = _serializerFactory.Create<T>();
-
             return ReadToProperty(name, e =>
             {
-                var next = e.MoveNext();
+                var arrayDim = MoveNextArray();
+                var itemReader = CreateItemReader<T>(e, arrayDim.level);
 
-                var arrayDim = e.Current;
-
-                if (!arrayDim.IsArrayStart)
+                if (defaultValue != null && !defaultValue.IsReadOnly)
                 {
-                    throw new FormatException();
+                    for (var x = 0; x < arrayDim.dim; x++)
+                    {
+                        defaultValue.Add(itemReader());
+                    }
+
+                    return defaultValue;
                 }
-
-                var subReader = new ObjectReader(e, arrayDim.Level, _encoding, _dataFormatter);
-
-                var results = new T[arrayDim.Length];
-
-                for (var x = 0; x < arrayDim.Length; x++)
+                else
                 {
-                    results[x] = sz.ReadData(subReader, default);
-                }
+                    var results = new T[arrayDim.dim];
 
-                return results;
+                    for (var x = 0; x < arrayDim.dim; x++)
+                    {
+                        results[x] = itemReader();
+                    }
+
+                    return results;
+                }
             });
+        }
+
+        Func<T> CreateItemReader<T>(IEnumerator<RedisObjectPart> e, int level)
+        {
+            var type = typeof(T);
+            var tc = Type.GetTypeCode(type);
+
+            if (tc == TypeCode.Object)
+            {
+                var sz = _serializerFactory.Create<T>();
+                var subReader = new ObjectReader(e, level, _encoding, _dataFormatter);
+
+                return () => sz.ReadData(subReader, default);
+            }
+
+            if (tc == TypeCode.String)
+            {
+                return () =>
+                {
+                    if (e.MoveNext())
+                    {
+                        var str = e.Current.Value as RedisString;
+
+                        return (T)(object)str.ToString(_encoding);
+                    }
+
+                    return default;
+                };
+            }
+
+            var converter = PrimativeSerializer.CreateConverter<T>();
+
+            return () =>
+            {
+                if (e.MoveNext())
+                {
+                    var str = e.Current.Value as RedisString;
+
+                    return converter.GetValue(str.Value);
+                }
+
+                return default;
+            };
         }
 
         RedisString ReadStringProperty(string name)
@@ -232,7 +284,58 @@ namespace RedisSlimClient.Serialization
             return items;
         }
 
-        (string name, TypeCode type, SubType subType) ReadNextProperty()
+        (long dim, int level) MoveNextArray()
+        {
+            while (_enumerator.MoveNext())
+            {
+                if (_enumerator.Current.IsArrayStart) // && _enumerator.Current.Level == _level + 1)
+                {
+                    return (_enumerator.Current.Length, _enumerator.Current.Level);
+                }
+            }
+
+            throw new FormatException();
+        }
+
+        RedisObjectPart[] ReadNextArray(long? maxCount = null)
+        {
+            var actualCount = MoveNextArray().dim;
+            var count = maxCount.HasValue ? Math.Min(maxCount.Value, actualCount) : actualCount;
+            var items = new RedisObjectPart[count];
+
+            var i = 0;
+
+            while (_enumerator.MoveNext())
+            {
+                if (_enumerator.Current.IsArrayStart)
+                {
+                    throw new InvalidOperationException();
+                }
+
+                items[i++] = _enumerator.Current;
+
+                if (i == items.Length)
+                {
+                    break;
+                }
+            }
+
+            return items;
+        }
+
+        (string name, TypeCode type, SubType subType, bool eof) ReadNextProperty()
+        {
+            var nextTuple = ReadNextArray(3);
+
+            if(nextTuple.Length == 0 || nextTuple[0].IsEmpty)
+            {
+                return (null, TypeCode.Empty, SubType.None, true);
+            }
+
+            return (nextTuple[0].Value.ToString(), (TypeCode)nextTuple[1].Value.ToLong(), (SubType)nextTuple[2].Value.ToLong(), false);
+        }
+
+        (string name, TypeCode type, SubType subType, bool eof) ReadNextPropertyV1()
         {
             while (_enumerator.MoveNext())
             {
@@ -244,7 +347,12 @@ namespace RedisSlimClient.Serialization
 
             var nextTuple = Read(3);
 
-            return (nextTuple[0].Value.ToString(), (TypeCode)nextTuple[1].Value.ToLong(), (SubType)nextTuple[2].Value.ToLong());
+            if (nextTuple.Length == 0 || nextTuple[0].IsEmpty)
+            {
+                return (null, TypeCode.Empty, SubType.None, true);
+            }
+
+            return (nextTuple[0].Value.ToString(), (TypeCode)nextTuple[1].Value.ToLong(), (SubType)nextTuple[2].Value.ToLong(), false);
         }
     }
 }

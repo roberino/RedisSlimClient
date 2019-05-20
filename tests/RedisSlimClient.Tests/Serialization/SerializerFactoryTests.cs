@@ -2,6 +2,7 @@
 using RedisSlimClient.Serialization;
 using System;
 using System.IO;
+using System.Linq;
 using System.Text;
 using Xunit;
 using Xunit.Abstractions;
@@ -24,13 +25,49 @@ namespace RedisSlimClient.Tests.Serialization
         [Fact]
         public void WriteData_SimpleType_WritesPropertyData()
         {
-            WhenWritingObject(new AnotherTestDto
+            WhenWritingObject(new TestDtoWithString
                 {
                     DataItem1 = "abc"
                 }
             );
 
-            ThenOutputIsValid<AnotherTestDto>(x => Assert.Equal("abc", x.DataItem1));
+            ThenOutputIsValid<TestDtoWithString>(x => Assert.Equal("abc", x.DataItem1));
+        }
+
+        [Fact]
+        public void WriteData_ObjectCollection_CanWriteAndRead()
+        {
+            WhenWritingObject(new TestDtoWithGenericCollection<TestDtoWithInt> { Items = new[] { new TestDtoWithInt() { DataItem1 = 123 }, new TestDtoWithInt() { DataItem1 = 456 } } } );
+
+            ThenOutputIsValid<TestDtoWithGenericCollection<TestDtoWithInt>>(x =>
+            {
+                Assert.Equal(123, x.Items[0].DataItem1);
+                Assert.Equal(456, x.Items[1].DataItem1);
+            });
+        }
+
+        [Fact]
+        public void WriteData_PrimativeCollection_CanWriteAndRead()
+        {
+            WhenWritingObject(new TestDtoWithGenericCollection<int> { Items = new[] { 123, 456 } });
+
+            ThenOutputIsValid<TestDtoWithGenericCollection<int>>(x =>
+            {
+                Assert.Equal(123, x.Items[0]);
+                Assert.Equal(456, x.Items[1]);
+            });
+        }
+
+        [Fact]
+        public void WriteData_StringCollection_CanWriteAndRead()
+        {
+            WhenWritingObject(new TestDtoWithGenericCollection<string> { Items = new[] { "abc", "def" } });
+
+            ThenOutputIsValid<TestDtoWithGenericCollection<string>>(x =>
+            {
+                Assert.Equal("abc", x.Items[0]);
+                Assert.Equal("def", x.Items[1]);
+            });
         }
 
         [Fact]
@@ -38,17 +75,17 @@ namespace RedisSlimClient.Tests.Serialization
         {
             var now = DateTime.UtcNow;
 
-            WhenWritingObject(new TestDto()
+            WhenWritingObject(new TestComplexDto()
             {
                 DataItem1 = "abc",
                 DataItem2 = now,
-                DataItem3 = new AnotherTestDto()
+                DataItem3 = new TestDtoWithString()
                 {
                     DataItem1 = "efg"
                 }
             });
 
-            ThenOutputIsValid<TestDto>(x =>
+            ThenOutputIsValid<TestComplexDto>(x =>
             {
                 Assert.Equal("abc", x.DataItem1);
                 Assert.Equal(now, x.DataItem2);
@@ -63,11 +100,11 @@ namespace RedisSlimClient.Tests.Serialization
             {
                 DataItems = new[]
                 {
-                    new AnotherTestDto()
+                    new TestDtoWithString()
                     {
                         DataItem1 = "i1"
                     },
-                    new AnotherTestDto()
+                    new TestDtoWithString()
                     {
                         DataItem1 = "i2"
                     }

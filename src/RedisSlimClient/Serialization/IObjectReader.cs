@@ -14,7 +14,7 @@ namespace RedisSlimClient.Serialization
         long ReadInt64(string name);
         char ReadChar(string name);
         T ReadObject<T>(string name, T defaultValue);
-        IEnumerable<T> ReadEnumerable<T>(string name, IList<T> defaultValue);
+        IEnumerable<T> ReadEnumerable<T>(string name, ICollection<T> defaultValue);
 
         void EndRead();
     }

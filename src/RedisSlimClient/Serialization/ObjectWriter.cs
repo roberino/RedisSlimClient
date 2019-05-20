@@ -56,17 +56,44 @@ namespace RedisSlimClient.Serialization
 
         public void WriteItem<T>(string name, IEnumerable<T> data)
         {
-            var serializer = _serializerFactory.Create<T>();
+            var type = typeof(T);
+            var colType = data.GetType();
+            var tc = Type.GetTypeCode(type);
 
             Write(name, TypeCode.Object, SubType.Collection, output =>
             {
-                var itemCount = data.Count();
-
-                output.WriteStartArray(itemCount);
-
-                foreach (var item in data)
+                if (tc == TypeCode.Object)
                 {
-                    serializer.WriteData(item, this);
+                    var serializer = _serializerFactory.Create<T>();
+
+                    var itemCount = data.Count();
+
+                    output.WriteStartArray(itemCount);
+
+                    foreach (var item in data)
+                    {
+                        serializer.WriteData(item, this);
+                    }
+                }
+                else
+                {
+                    if (tc == TypeCode.String)
+                    {
+                        if (colType.IsArray)
+                        {
+                            output.Write((string[])(object)data);
+                        }
+                        else
+                        {
+                            output.Write(data.Select(x => (string)(object)x).ToArray());
+                        }
+                    }
+                    else
+                    {
+                        var converter = PrimativeSerializer.CreateConverter<T>();
+
+                        output.Write(data.Select(x => converter.GetBytes(x)).ToArray());
+                    }
                 }
             });
         }

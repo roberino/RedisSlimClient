@@ -18,16 +18,18 @@ namespace RedisSlimClient.Io
         readonly Stream _writeStream;
         readonly IEnumerable<RedisObjectPart> _reader;
         readonly CommandQueue _commandQueue;
+        readonly IWorkScheduler _scheduler;
 
         bool _disposed;
 
-        public CommandPipeline(Stream networkStream)
+        public CommandPipeline(Stream networkStream, IWorkScheduler scheduler = null)
         {
             _writeStream = networkStream;
             _reader = new RedisByteSequenceReader(new StreamIterator(networkStream));
             _commandQueue = new CommandQueue();
+            _scheduler = scheduler ?? new WorkScheduler();
 
-            Task.Run(() => ProcessQueue());
+            _scheduler.Schedule(ProcessQueue);
         }
 
         public async Task<T> Execute<T>(IRedisResult<T> command, TimeSpan timeout)
@@ -40,28 +42,27 @@ namespace RedisSlimClient.Io
             await _commandQueue.Enqueue(() =>
             {
                 command.Write(_writeStream);
+                _scheduler.Awake();
                 return command;
             }, timeout);
 
             return await command;
         }
 
-        void ProcessQueue()
+        bool ProcessQueue()
         {
             _writeStream.Flush();
 
-            while (!_disposed)
+            return _commandQueue.ProcessNextCommand(cmd =>
             {
-                _commandQueue.ProcessNextCommand(cmd =>
-                {
-                    cmd.Read(_reader);
-                });
-            }
+                cmd.Read(_reader);
+            });
         }
 
         public void Dispose()
         {
             _disposed = true;
+            _scheduler.Dispose();
         }
     }
 }

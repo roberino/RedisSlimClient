@@ -38,6 +38,26 @@ namespace RedisSlimClient.Serialization
             }
         }
 
+        public static void Write(this Stream output, string[] data)
+        {
+            output.WriteStartArray(data.Length);
+
+            for (var i = 0; i < data.Length; i++)
+            {
+                output.Write(data[i]);
+            }
+        }
+
+        public static void Write(this Stream output, byte[][] data)
+        {
+            output.WriteStartArray(data.Length);
+
+            for (var i = 0; i < data.Length; i++)
+            {
+                output.Write(data[i]);
+            }
+        }
+
         public static void WriteStartArray(this Stream output, int arrayLength)
         {
             output.Write(ResponseType.ArrayType);

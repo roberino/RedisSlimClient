@@ -63,15 +63,17 @@ namespace RedisSlimClient.Tests.Serialization
             {
                 w.BeginWrite(2);
                 w.WriteItem("name1", "value1");
-                w.WriteItem("name2", new AnotherTestDto()
+                w.WriteItem("name2", new TestDtoWithString()
                 {
                     DataItem1 = "value2"
                 });
             });
 
+            reader.BeginRead(2);
+
             Assert.Equal("value1", reader.ReadString("name1"));
 
-            var subOb = reader.ReadObject<AnotherTestDto>("name2", null);
+            var subOb = reader.ReadObject<TestDtoWithString>("name2", null);
 
             Assert.Equal("value2", subOb.DataItem1);
         }
@@ -84,17 +86,19 @@ namespace RedisSlimClient.Tests.Serialization
                 w.BeginWrite(3);
                 w.WriteItem("name1", "value1");
                 w.WriteItem("name3", "value3");
-                w.WriteItem("name2", new AnotherTestDto()
+                w.WriteItem("name2", new TestDtoWithString()
                 {
                     DataItem1 = "value2"
                 });
             });
 
             // reader.Dump(testOutput.WriteLine);
-            
+
+            reader.BeginRead(3);
+
             Assert.Equal("value1", reader.ReadString("name1"));
 
-            var subOb = reader.ReadObject<AnotherTestDto>("name2", null);
+            var subOb = reader.ReadObject<TestDtoWithString>("name2", null);
 
             Assert.Equal("value2", subOb.DataItem1);
 

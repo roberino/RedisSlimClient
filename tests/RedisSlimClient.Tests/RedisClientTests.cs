@@ -19,11 +19,11 @@ namespace RedisSlimClient.Tests
             var pipeline = new CommandPipeline(fakeStream);
             var client = new RedisClient(new ClientConfiguration("tcp://localhost:2344"), f => new FakeConnection(pipeline));
 
-            var data = new TestDto()
+            var data = new TestComplexDto()
             {
                 DataItem1 = "y",
                 DataItem2 = DateTime.UtcNow,
-                DataItem3 = new AnotherTestDto()
+                DataItem3 = new TestDtoWithString()
                 {
                     DataItem1 = "x"
                 }
