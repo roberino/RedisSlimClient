@@ -4,7 +4,7 @@ namespace RedisSlimClient.Serialization.CustomSerializers
 {
     class XDocumentSerializer : IObjectSerializer<XDocument>
     {
-        const string ItemName = "_data";
+        const string ItemName = "xml";
 
         public XDocument ReadData(IObjectReader reader, XDocument defaultValue)
         {

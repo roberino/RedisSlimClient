@@ -29,7 +29,7 @@ namespace RedisSlimClient.Serialization
             _stream.WriteStartArray(itemCount);
         }
 
-        public void WriteRaw(byte[] data)
+        public void Raw(byte[] data)
         {
             _stream.Write(data);
         }
@@ -46,6 +46,11 @@ namespace RedisSlimClient.Serialization
 
         public void WriteItem<T>(string name, T data)
         {
+            if (data == default)
+            {
+                return;
+            }
+
             var serializer = _serializerFactory.Create<T>();
 
             Write(name, TypeCode.Object, SubType.None, output =>
@@ -126,6 +131,21 @@ namespace RedisSlimClient.Serialization
         public void WriteItem(string name, bool data)
         {
             Write(name, TypeCode.Char, SubType.None, _dataFormatter.ToBytes(data));
+        }
+
+        public void WriteItem(string name, decimal data)
+        {
+            Write(name, TypeCode.Decimal, SubType.None, _dataFormatter.ToBytes(data));
+        }
+
+        public void WriteItem(string name, double data)
+        {
+            Write(name, TypeCode.Double, SubType.None, _dataFormatter.ToBytes(data));
+        }
+
+        public void WriteItem(string name, float data)
+        {
+            Write(name, TypeCode.Single, SubType.None, _dataFormatter.ToBytes(data));
         }
 
         void Write(string name, TypeCode type, SubType subType, string data)

@@ -6,7 +6,7 @@ namespace RedisSlimClient.Serialization
     public interface IObjectWriter
     {
         void BeginWrite(int itemCount);
-        void WriteRaw(byte[] data);
+        void Raw(byte[] data);
         void WriteItem<T>(string name, IEnumerable<T> data);
         void WriteItem<T>(string name, T data);
         void WriteItem(string name, string data);
@@ -17,5 +17,8 @@ namespace RedisSlimClient.Serialization
         void WriteItem(string name, long data);
         void WriteItem(string name, char data);
         void WriteItem(string name, bool data);
+        void WriteItem(string name, decimal data);
+        void WriteItem(string name, double data);
+        void WriteItem(string name, float data);
     }
 }

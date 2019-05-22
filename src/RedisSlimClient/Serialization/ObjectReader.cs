@@ -42,7 +42,7 @@ namespace RedisSlimClient.Serialization
 
         public void Dump(Action<string> writer)
         {
-            while(_enumerator.MoveNext())
+            while (_enumerator.MoveNext())
             {
                 var item = _enumerator.Current;
                 var pad = "".PadLeft(item.Level);
@@ -65,7 +65,7 @@ namespace RedisSlimClient.Serialization
             _buffer.Clear();
         }
 
-        public byte[] ReadRaw()
+        public byte[] Raw()
         {
             var obj = ReadNext();
 
@@ -75,6 +75,11 @@ namespace RedisSlimClient.Serialization
         public string ReadString(string name)
         {
             return ReadStringProperty(name).ToString(_encoding);
+        }
+
+        public byte[] ReadBytes(string name)
+        {
+            return ReadStringProperty(name).Value;
         }
 
         public DateTime ReadDateTime(string name)
@@ -101,13 +106,33 @@ namespace RedisSlimClient.Serialization
         {
             return _dataFormatter.ToBool(ReadStringProperty(name).Value);
         }
-        public T ReadObject<T>(string name, T defaultValue)
 
+        public decimal ReadDecimal(string name)
+        {
+            return _dataFormatter.ToDecimal(ReadStringProperty(name).Value);
+        }
+
+        public double ReadDouble(string name)
+        {
+            return _dataFormatter.ToDouble(ReadStringProperty(name).Value);
+        }
+
+        public float ReadFloat(string name)
+        {
+            return (float)_dataFormatter.ToDouble(ReadStringProperty(name).Value);
+        }
+
+        public T ReadObject<T>(string name, T defaultValue)
         {
             var sz = _serializerFactory.Create<T>();
 
             return ReadToProperty(name, e =>
             {
+                if (e == null)
+                {
+                    return default;
+                }
+
                 var subReader = new ObjectReader(e, _level + 1, _encoding, _dataFormatter);
 
                 return sz.ReadData(subReader, defaultValue);
@@ -203,6 +228,11 @@ namespace RedisSlimClient.Serialization
             {
                 var next = ReadNextProperty();
 
+                if (next.eof)
+                {
+                    return null;
+                }
+
                 if (string.Equals(next.name, name))
                 {
                     return Read(1)[0].Value;
@@ -211,7 +241,7 @@ namespace RedisSlimClient.Serialization
                 _buffer[next.name] = ReadNext();
             }
         }
-        
+
         T ReadToProperty<T>(string name, Func<IEnumerator<RedisObjectPart>, T> dataReader)
         {
             if (_buffer.TryGetValue(name, out var parts))
@@ -222,6 +252,11 @@ namespace RedisSlimClient.Serialization
             while (true)
             {
                 var next = ReadNextProperty();
+
+                if (next.eof)
+                {
+                    return dataReader.Invoke(null);
+                }
 
                 if (string.Equals(next.name, name))
                 {
@@ -288,18 +323,24 @@ namespace RedisSlimClient.Serialization
         {
             while (_enumerator.MoveNext())
             {
-                if (_enumerator.Current.IsArrayStart) // && _enumerator.Current.Level == _level + 1)
+                if (_enumerator.Current.IsArrayStart)
                 {
                     return (_enumerator.Current.Length, _enumerator.Current.Level);
                 }
             }
 
-            throw new FormatException();
+            return (-1, 0);
         }
 
         RedisObjectPart[] ReadNextArray(long? maxCount = null)
         {
             var actualCount = MoveNextArray().dim;
+
+            if (actualCount < 0)
+            {
+                return null;
+            }
+
             var count = maxCount.HasValue ? Math.Min(maxCount.Value, actualCount) : actualCount;
             var items = new RedisObjectPart[count];
 
@@ -327,27 +368,7 @@ namespace RedisSlimClient.Serialization
         {
             var nextTuple = ReadNextArray(3);
 
-            if(nextTuple.Length == 0 || nextTuple[0].IsEmpty)
-            {
-                return (null, TypeCode.Empty, SubType.None, true);
-            }
-
-            return (nextTuple[0].Value.ToString(), (TypeCode)nextTuple[1].Value.ToLong(), (SubType)nextTuple[2].Value.ToLong(), false);
-        }
-
-        (string name, TypeCode type, SubType subType, bool eof) ReadNextPropertyV1()
-        {
-            while (_enumerator.MoveNext())
-            {
-                if (_enumerator.Current.IsArrayStart && _enumerator.Current.Level == _level + 1)
-                {
-                    break;
-                }
-            }
-
-            var nextTuple = Read(3);
-
-            if (nextTuple.Length == 0 || nextTuple[0].IsEmpty)
+            if (nextTuple == null || nextTuple.Length <= 0 || nextTuple[0].IsEmpty)
             {
                 return (null, TypeCode.Empty, SubType.None, true);
             }

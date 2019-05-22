@@ -31,4 +31,9 @@ namespace RedisSlimClient.Tests.Serialization
     {
         public string DataItem1 { get; set; }
     }
+
+    public class TestDtoWithGeneric<T>
+    {
+        public T DataItem1 { get; set; }
+    }
 }

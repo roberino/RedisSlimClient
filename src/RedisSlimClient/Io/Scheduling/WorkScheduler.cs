@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 
-namespace RedisSlimClient.Io
+namespace RedisSlimClient.Io.Scheduling
 {
     class WorkScheduler : IWorkScheduler
     {

@@ -72,9 +72,7 @@ namespace RedisSlimClient.Serialization.Emit
 
             newAccessorType.DefineDefaultConstructor(MethodAttributes.Public);
 
-            var targetProps = TargetType.GetProperties(BindingFlags.Instance | BindingFlags.Public)
-                .Where(p => p.CanRead && p.CanWrite)
-                .ToArray();
+            var targetProps = TargetType.SerializableProperties();
 
             new WriteObjectImplBuilder<T>(newAccessorType, targetProps).Build();
             new ReadObjectImplBuilder<T>(newAccessorType, targetProps).Build();

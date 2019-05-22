@@ -1,10 +1,11 @@
 ﻿using RedisSlimClient.Io.Commands;
+using RedisSlimClient.Io.Scheduling;
+using RedisSlimClient.Serialization;
 using RedisSlimClient.Types;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
-using RedisSlimClient.Serialization;
-using System.Collections.Generic;
 
 namespace RedisSlimClient.Io
 {

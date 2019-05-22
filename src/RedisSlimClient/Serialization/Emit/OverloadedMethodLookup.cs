@@ -79,11 +79,14 @@ namespace RedisSlimClient.Serialization.Emit
                 return method;
             }
 
-            var assignable = _methods.FirstOrDefault(kv => DefaultBinding.Invoke((type, kv.Key)));
-
-            if (assignable.Value != null)
+            if (DefaultBinding != null)
             {
-                return assignable.Value;
+                var assignable = _methods.FirstOrDefault(kv => DefaultBinding.Invoke((type, kv.Key)));
+
+                if (assignable.Value != null)
+                {
+                    return assignable.Value;
+                }
             }
 
             return _methods.SingleOrDefault(kv => FallbackBinding.Invoke((type, kv.Key))).Value;

@@ -71,6 +71,66 @@ namespace RedisSlimClient.Tests.Serialization
         }
 
         [Fact]
+        public void WriteData_GenericCollection_CollectionIsWritable()
+        {
+            WhenWritingObject(new TestDtoWithGenericCollection<string> { Items = new[] { "abc", "def" } });
+
+            ThenOutputIsValid<TestDtoWithGenericCollection<string>>(x =>
+            {
+                Assert.False(x.Items.IsReadOnly);
+
+                x.Items.Add("hij");
+            });
+        }
+
+        [Fact]
+        public void WriteData_StringGenericProperty_CanWriteAndRead()
+        {
+            WhenWritingObject(new TestDtoWithGeneric<string> { DataItem1 = "abc" });
+
+            ThenOutputIsValid<TestDtoWithGeneric<string>>(x =>
+            {
+                Assert.Equal("abc", x.DataItem1);
+            });
+        }
+
+        [Fact]
+        public void WriteData_DecimalGenericProperty_CanWriteAndRead()
+        {
+            WhenWritingObject(new TestDtoWithGeneric<decimal> { DataItem1 = 123.456m });
+
+            ThenOutputIsValid<TestDtoWithGeneric<decimal>>(x =>
+            {
+                Assert.Equal(123.456m, x.DataItem1);
+            });
+        }
+
+        [Fact]
+        public void WriteData_ByteArrayGenericProperty_CanWriteAndRead()
+        {
+            WhenWritingObject(new TestDtoWithGeneric<byte[]> { DataItem1 = new byte[] { 1, 2, 3 } });
+
+            ThenOutputIsValid<TestDtoWithGeneric<byte[]>>(x =>
+            {
+                Assert.Equal(3, x.DataItem1.Length);
+                Assert.Equal(1, x.DataItem1[0]);
+                Assert.Equal(2, x.DataItem1[1]);
+                Assert.Equal(3, x.DataItem1[2]);
+            });
+        }
+
+        [Fact]
+        public void WriteData_BoolGenericProperty_CanWriteAndRead()
+        {
+            WhenWritingObject(new TestDtoWithGeneric<bool> { DataItem1 = true });
+
+            ThenOutputIsValid<TestDtoWithGeneric<bool>>(x =>
+            {
+                Assert.True(x.DataItem1);
+            });
+        }
+
+        [Fact]
         public void WriteData_MultiPropertyType_ReturnsPropertyData()
         {
             var now = DateTime.UtcNow;
@@ -90,6 +150,22 @@ namespace RedisSlimClient.Tests.Serialization
                 Assert.Equal("abc", x.DataItem1);
                 Assert.Equal(now, x.DataItem2);
                 Assert.Equal("efg", x.DataItem3.DataItem1);
+            });
+        }
+
+        [Fact]
+        public void WriteData_NullReference_CanSerializeAndDeserialize()
+        {
+            WhenWritingObject(new TestComplexDto()
+            {
+                DataItem1 = "abc",
+                DataItem2 = DateTime.Now,
+                DataItem3 = null
+            });
+
+            ThenOutputIsValid<TestComplexDto>(x =>
+            {
+                Assert.Null(x.DataItem3);
             });
         }
 

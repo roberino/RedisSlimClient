@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace RedisSlimClient.Io
+namespace RedisSlimClient.Io.Scheduling
 {
     interface IWorkScheduler : IDisposable
     {

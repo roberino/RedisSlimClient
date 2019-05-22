@@ -44,9 +44,9 @@ namespace RedisSlimClient.Serialization
 
             public T GetValue(byte[] data) => _bytesToItem(data);
 
-            public T ReadData(IObjectReader reader, T defaulValue) => _bytesToItem(reader.ReadRaw());
+            public T ReadData(IObjectReader reader, T defaulValue) => _bytesToItem(reader.Raw());
 
-            public void WriteData(T instance, IObjectWriter writer) => writer.WriteRaw(_itemToBytes(instance));
+            public void WriteData(T instance, IObjectWriter writer) => writer.Raw(_itemToBytes(instance));
         }
     }
 }
