@@ -1,4 +1,5 @@
 ﻿using RedisSlimClient.Io;
+using System;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -25,6 +26,30 @@ namespace RedisSlimClient.Tests.Io
             Assert.Equal(2, items.Length);
             Assert.Equal("hello", items[0]);
             Assert.Equal("world", items[1]);
+        }
+
+        [Fact]
+        public void Iterate_LargeStream_ReturnsExpectedItems()
+        {
+            var stream = new MemoryStream();
+            var iterator = new StreamIterator(stream);
+
+            var sb = new StringBuilder();
+
+            for (var i = 0; i < 500; i++)
+            {
+                sb.Append($"{Guid.NewGuid()}\r\n");
+            }
+
+            var data = Encoding.ASCII.GetBytes(sb.ToString());
+
+            stream.Write(data);
+            stream.Position = 0;
+
+            var items = iterator
+                .Select(s => Encoding.ASCII.GetString(s)).ToArray();
+
+            Assert.Equal(500, items.Length);
         }
 
         [Fact]
@@ -86,6 +111,23 @@ namespace RedisSlimClient.Tests.Io
             Assert.Equal("$6", items[1]);
             Assert.Equal("ef\r\ngh", items[2]);
             Assert.Equal("+hi", items[3]);
+        }
+
+        [Fact]
+        public void Iterate_BulkStringContainingBulkStringIdentifier_ReturnsExpectedItems()
+        {
+            var stream = new MemoryStream();
+            var iterator = new StreamIterator(stream);
+
+            var data = Encoding.ASCII.GetBytes("$4\r\n$\0\0\0\r\n");
+
+            stream.Write(data);
+            stream.Position = 0;
+
+            var items = iterator
+                .Select(s => Encoding.ASCII.GetString(s)).ToArray();
+
+            Assert.Equal(2, items.Length);
         }
     }
 }

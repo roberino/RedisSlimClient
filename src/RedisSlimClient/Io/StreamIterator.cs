@@ -96,6 +96,8 @@ namespace RedisSlimClient.Io
 
         ArraySegment<byte> GetNextSegment(int offset, int count)
         {
+            var wasBulkString = _currentReadLength.HasValue;
+
             _currentReadLength = null;
             _counter = 0;
 
@@ -122,7 +124,7 @@ namespace RedisSlimClient.Io
 
             var seg = new ArraySegment<byte>(newBuffer, offset, count);
 
-            if (seg.Count > 0 && seg.Array[seg.Offset] == (byte)ResponseType.BulkStringType)
+            if (!wasBulkString && seg.Count > 0 && seg.Array[seg.Offset] == (byte)ResponseType.BulkStringType)
             {
                 _currentReadLength = int.Parse(Encoding.ASCII.GetString(seg.Array, seg.Offset + 1, seg.Count - 1));
             }

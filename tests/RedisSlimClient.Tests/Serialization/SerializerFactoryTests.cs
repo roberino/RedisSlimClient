@@ -46,11 +46,14 @@ namespace RedisSlimClient.Tests.Serialization
             });
         }
 
-        [Fact]
-        public void WriteData_LargeObjectCollection_CanWriteAndRead()
+        [Theory]
+        [InlineData(10)]
+        [InlineData(36)]
+        [InlineData(50)]
+        [InlineData(100)]
+        [InlineData(500)]
+        public void WriteData_DifferentObjectCollectionSizes_CanWriteAndRead(int numberOfItems)
         {
-            const int numberOfItems = 500;
-
             WhenWritingObject(new TestDtoWithGenericCollection<TestDtoWithInt>
             {
                 Items = Enumerable.Range(1, numberOfItems).Select(x => new TestDtoWithInt()
