@@ -84,42 +84,42 @@ namespace RedisSlimClient.Serialization
 
         public DateTime ReadDateTime(string name)
         {
-            return _dataFormatter.ToDateTime(ReadStringProperty(name).Value);
+            return ReadPrimativeValue(name, _dataFormatter.ToDateTime);
         }
 
         public int ReadInt32(string name)
         {
-            return _dataFormatter.ToInt32(ReadStringProperty(name).Value);
+            return ReadPrimativeValue(name, _dataFormatter.ToInt32);
         }
 
         public long ReadInt64(string name)
         {
-            return _dataFormatter.ToInt64(ReadStringProperty(name).Value);
+            return ReadPrimativeValue(name, _dataFormatter.ToInt64);
         }
 
         public char ReadChar(string name)
         {
-            return _dataFormatter.ToChar(ReadStringProperty(name).Value);
+            return ReadPrimativeValue(name, _dataFormatter.ToChar);
         }
 
         public bool ReadBool(string name)
         {
-            return _dataFormatter.ToBool(ReadStringProperty(name).Value);
+            return ReadPrimativeValue(name, _dataFormatter.ToBool);
         }
 
         public decimal ReadDecimal(string name)
         {
-            return _dataFormatter.ToDecimal(ReadStringProperty(name).Value);
+            return ReadPrimativeValue(name, _dataFormatter.ToDecimal);
         }
 
         public double ReadDouble(string name)
         {
-            return _dataFormatter.ToDouble(ReadStringProperty(name).Value);
+            return ReadPrimativeValue(name, _dataFormatter.ToDouble);
         }
 
         public float ReadFloat(string name)
         {
-            return (float)_dataFormatter.ToDouble(ReadStringProperty(name).Value);
+            return (float)ReadPrimativeValue(name, _dataFormatter.ToDouble);
         }
 
         public T ReadObject<T>(string name, T defaultValue)
@@ -212,9 +212,26 @@ namespace RedisSlimClient.Serialization
             };
         }
 
+        T ReadPrimativeValue<T>(string name, Func<byte[], T> converter)
+        {
+            var x = ReadStringProperty(name).Value;
+            if (x == null)
+            {
+                return default;
+            }
+            return converter(x);
+        }
+
         RedisString ReadStringProperty(string name)
         {
-            return (RedisString)ReadSingleProperty(name);
+            var value = ReadSingleProperty(name);
+
+            if (value.IsNull)
+            {
+                return new RedisString(null);
+            }
+
+            return (RedisString)value;
         }
 
         RedisObject ReadSingleProperty(string name)
@@ -230,7 +247,7 @@ namespace RedisSlimClient.Serialization
 
                 if (next.eof)
                 {
-                    return null;
+                    return RedisNull.Value;
                 }
 
                 if (string.Equals(next.name, name))

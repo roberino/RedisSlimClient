@@ -12,7 +12,7 @@ namespace RedisSlimClient.Types
 
         public byte[] Value { get; }
 
-        public string ToString(Encoding encoding) => encoding.GetString(Value);
+        public string ToString(Encoding encoding) => Value == null ? null : encoding.GetString(Value);
 
         public override string ToString() => ToString(Encoding.ASCII);
 

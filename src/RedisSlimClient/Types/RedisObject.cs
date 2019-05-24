@@ -8,5 +8,7 @@
         }
 
         public RedisType Type { get; }
+
+        public bool IsNull => Type == RedisType.Null;
     }
 }

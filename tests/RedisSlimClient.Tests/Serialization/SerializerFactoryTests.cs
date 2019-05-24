@@ -47,6 +47,27 @@ namespace RedisSlimClient.Tests.Serialization
         }
 
         [Fact]
+        public void WriteData_LargeObjectCollection_CanWriteAndRead()
+        {
+            const int numberOfItems = 500;
+
+            WhenWritingObject(new TestDtoWithGenericCollection<TestDtoWithInt>
+            {
+                Items = Enumerable.Range(1, numberOfItems).Select(x => new TestDtoWithInt()
+                {
+                    DataItem1 = x
+                }).ToList()
+            });
+
+            ThenOutputIsValid<TestDtoWithGenericCollection<TestDtoWithInt>>(x =>
+            {
+                var i = 1;
+                Assert.Equal(numberOfItems, x.Items.Count);
+                Assert.True(x.Items.All(v => v.DataItem1 == i++));
+            });
+        }
+
+        [Fact]
         public void WriteData_PrimativeCollection_CanWriteAndRead()
         {
             WhenWritingObject(new TestDtoWithGenericCollection<int> { Items = new[] { 123, 456 } });
