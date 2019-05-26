@@ -8,16 +8,9 @@ init:
 install:
 before_build:
   - cmd: dotnet --version
-  - cmd: dotnet restore ./src/RedisSlimClient/RedisSlimClient.csproj --verbosity m
+  - cmd: dotnet restore ./RedisSlimClient.sln --verbosity m
 build_script:
-  - cmd: dotnet publish ./src/RedisSlimClient/RedisSlimClient.csproj
+  - cmd: dotnet publish ./RedisSlimClient.sln
 after_build:
-clone_depth: 1
 test_script:
-  - cmd: dotnet restore ./tests/RedisSlimClient.Tests/RedisSlimClient.Tests.csproj --verbosity m
-  - cmd: cd tests
-  - cmd: dotnet xunit
-on_finish :
-deploy: off
-build:
-  verbosity: minimal
+  - cmd: dotnet test
