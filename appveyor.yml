@@ -12,13 +12,12 @@ before_build:
 build_script:
   - cmd: dotnet publish ./src/RedisSlimClient/RedisSlimClient.csproj
 after_build:
-# clone_depth: 1
-# test_script:
-  # - cmd: dotnet restore ./tests/RedisSlimClient.Tests/RedisSlimClient.Tests.csproj --verbosity m
-  # - cmd: cd tests
-  # - cmd: dotnet xunit
-# on_finish :
-# deploy: off
-
-# build:
-  # verbosity: minimal
+clone_depth: 1
+test_script:
+  - cmd: dotnet restore ./tests/RedisSlimClient.Tests/RedisSlimClient.Tests.csproj --verbosity m
+  - cmd: cd tests
+  - cmd: dotnet xunit
+on_finish :
+deploy: off
+build:
+  verbosity: minimal
