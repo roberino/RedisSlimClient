@@ -31,7 +31,7 @@ namespace RedisSlimClient.Tests
             }
         }
 
-        [Fact]
+        [Fact(Skip = "Integration")]
         public async Task SetObjectAsync_WritesObjectDataToStream()
         {
             using (var client = new RedisClient(new ClientConfiguration(_localEndpoint.ToString())))

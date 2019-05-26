@@ -1,0 +1,1 @@
+[![Build status](https://ci.appveyor.com/api/projects/status/0eagkgc04t1jvg1m?svg=true)](https://ci.appveyor.com/project/roberino/redisslimclient)
