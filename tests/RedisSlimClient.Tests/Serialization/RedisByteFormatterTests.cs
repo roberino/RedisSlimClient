@@ -4,7 +4,7 @@ using System.Text;
 using RedisSlimClient.Serialization;
 using Xunit;
 
-namespace RedisSlimClient.Tests.Serialization
+namespace RedisSlimClient.UnitTests.Serialization
 {
     public class RedisByteFormatterTests : IDisposable
     {

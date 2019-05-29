@@ -3,12 +3,10 @@ using System;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using RedisSlimClient.Io;
 using Xunit;
 using Xunit.Abstractions;
-using RedisSlimClient.Tests.Serialization;
 
-namespace RedisSlimClient.Tests
+namespace RedisSlimClient.IntegrationTests
 {
     public class ClientIntegrationTests
     {
@@ -20,7 +18,7 @@ namespace RedisSlimClient.Tests
             _output = output;
         }
 
-        [Fact(Skip = "Integration")]
+        [Fact]
         public async Task ConnectAsync_RemoteServer_CanPing()
         {
             using (var client = new RedisClient(new ClientConfiguration(_localEndpoint.ToString())))
@@ -31,7 +29,7 @@ namespace RedisSlimClient.Tests
             }
         }
 
-        [Fact(Skip = "Integration")]
+        [Fact]
         public async Task SetObjectAsync_WritesObjectDataToStream()
         {
             using (var client = new RedisClient(new ClientConfiguration(_localEndpoint.ToString())))
@@ -56,7 +54,7 @@ namespace RedisSlimClient.Tests
             }
         }
 
-        [Fact(Skip = "Integration")]
+        [Fact]
         public async Task ConnectAsync_RemoteServer_CanSetAndGet()
         {
             using (var client = new RedisClient(new ClientConfiguration(_localEndpoint.ToString())))
@@ -73,14 +71,12 @@ namespace RedisSlimClient.Tests
             }
         }
 
-        [Fact(Skip = "Integration")]
+        [Fact]
         public async Task ConnectAsync_TwoGetCallsSameData_ReturnsTwoResults()
         {
             using (var client = new RedisClient(new ClientConfiguration(_localEndpoint.ToString())))
             {
                 var data = Encoding.ASCII.GetBytes("abcdefg");
-
-                DebugOutput.Output = s => _output.WriteLine(s);
 
                 await client.SetDataAsync("key1", data);
 
@@ -98,7 +94,7 @@ namespace RedisSlimClient.Tests
             }
         }
 
-        [Fact(Skip = "Integration")]
+        [Fact]
         public async Task ConnectAsync_RemoteServerMultipleThreads_CanGet()
         {
             using (var client = new RedisClient(new ClientConfiguration(_localEndpoint.ToString())))

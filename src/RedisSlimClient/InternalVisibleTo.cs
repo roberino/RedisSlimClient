@@ -1,3 +1,3 @@
 ﻿using System.Runtime.CompilerServices;
 
-[assembly: InternalsVisibleTo("RedisSlimClient.Tests")]
+[assembly: InternalsVisibleTo("RedisSlimClient.UnitTests")]

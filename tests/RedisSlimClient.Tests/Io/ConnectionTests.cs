@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace RedisSlimClient.Tests.Io
+namespace RedisSlimClient.UnitTests.Io
 {
     public class ConnectionTests
     {

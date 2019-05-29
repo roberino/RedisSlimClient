@@ -7,7 +7,7 @@ using System.Text;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace RedisSlimClient.Tests.Serialization
+namespace RedisSlimClient.UnitTests.Serialization
 {
     public class SerializerFactoryTests
     {

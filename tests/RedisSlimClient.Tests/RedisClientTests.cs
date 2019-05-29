@@ -1,14 +1,14 @@
 ﻿using RedisSlimClient.Configuration;
 using RedisSlimClient.Io;
 using RedisSlimClient.Serialization;
-using RedisSlimClient.Tests.Serialization;
+using RedisSlimClient.UnitTests.Serialization;
 using System;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 
-namespace RedisSlimClient.Tests
+namespace RedisSlimClient.UnitTests
 {
     public class RedisClientTests
     {

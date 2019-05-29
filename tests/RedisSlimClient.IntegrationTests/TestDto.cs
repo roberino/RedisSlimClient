@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace RedisSlimClient.UnitTests.Serialization
+namespace RedisSlimClient.IntegrationTests
 {
     public class TestComplexDto
     {

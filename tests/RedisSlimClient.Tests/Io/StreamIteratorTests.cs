@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using Xunit;
 
-namespace RedisSlimClient.Tests.Io
+namespace RedisSlimClient.UnitTests.Io
 {
     public class StreamIteratorTests
     {

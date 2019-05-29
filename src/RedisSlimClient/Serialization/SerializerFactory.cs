@@ -14,7 +14,8 @@ namespace RedisSlimClient.Serialization
         {
             [typeof(XDocument)] = new XDocumentSerializer(),
             [typeof(XmlDocument)] = new XmlDocumentSerializer(),
-            [typeof(Stream)] = new StreamSerializer()
+            [typeof(Stream)] = new StreamSerializer(),
+            [typeof(IDictionary<string, object>)] = new DictionarySerializer<object>()
         };
 
         SerializerFactory()
