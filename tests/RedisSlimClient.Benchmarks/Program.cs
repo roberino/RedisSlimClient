@@ -1,6 +1,6 @@
 ﻿using BenchmarkDotNet.Running;
 
-namespace CpuBoundTasks.Benchmarks
+namespace RedisSlimClient.Benchmarks
 {
     class Program
     {
