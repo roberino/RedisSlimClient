@@ -12,7 +12,7 @@ namespace RedisSlimClient.Io
         readonly INetworkStreamFactory _streamFactory;
         readonly AsyncLock<ICommandPipeline> _pipeline;
 
-        public Connection(EndPoint endPoint, Func<INetworkStreamFactory, Task<ICommandPipeline>> pipelineFactory) : this(new SocketStream(endPoint), pipelineFactory)
+        public Connection(EndPoint endPoint, Func<INetworkStreamFactory, Task<ICommandPipeline>> pipelineFactory) : this(new NetworkStreamFactory(endPoint), pipelineFactory)
         {
         }
 

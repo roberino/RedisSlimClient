@@ -5,20 +5,18 @@ using System.Threading.Tasks;
 
 namespace RedisSlimClient.Io
 {
-    class SocketStream : INetworkStreamFactory
+    class NetworkStreamFactory : INetworkStreamFactory
     {
         readonly EndPoint _endPoint;
         readonly Socket _socket;
 
-        public SocketStream(EndPoint endPoint)
+        public NetworkStreamFactory(EndPoint endPoint)
         {
             _endPoint = endPoint;
             _socket = new Socket(_endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
         }
 
         public Task ConnectAsync() => _socket.ConnectAsync(_endPoint);
-
-        public Stream CreateStream() => new NetworkStream(_socket, FileAccess.ReadWrite);
 
         public async Task<Stream> CreateStreamAsync()
         {
