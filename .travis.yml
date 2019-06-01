@@ -1,0 +1,12 @@
+language: csharp
+services: docker
+sudo: required
+mono: none
+dotnet: 2.1.502
+before_install:
+- docker run -d -p 6379:6379 --name redis-ci redis
+script:
+  - dotnet restore RedisSlimClient.sln
+  - dotnet build RedisSlimClient.sln
+  - dotnet test tests/RedisSlimClient.Tests/RedisSlimClient.UnitTests.csproj --filter TestCategory!=BuildOmit
+  - dotnet test tests/RedisSlimClient.IntegrationTests/RedisSlimClient.IntegrationTests.csproj --filter TestCategory!=BuildOmit

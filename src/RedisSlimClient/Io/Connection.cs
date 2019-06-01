@@ -1,7 +1,6 @@
 ﻿using RedisSlimClient.Util;
 using System;
 using System.Net;
-using System.Net.Sockets;
 using System.Threading.Tasks;
 
 namespace RedisSlimClient.Io
@@ -10,26 +9,28 @@ namespace RedisSlimClient.Io
     {
         static readonly SyncedCounter IdGenerator = new SyncedCounter();
 
-        readonly EndPoint _endPoint;
-        readonly Socket _socket;
+        readonly INetworkStreamFactory _streamFactory;
         readonly AsyncLock<ICommandPipeline> _pipeline;
 
-        public Connection(EndPoint endPoint, Func<Socket, ICommandPipeline> pipelineFactory)
+        public Connection(EndPoint endPoint, Func<INetworkStreamFactory, Task<ICommandPipeline>> pipelineFactory) : this(new SocketStream(endPoint), pipelineFactory)
         {
-            _endPoint = endPoint;
-            _socket = new Socket(_endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+        }
 
-            _pipeline = new AsyncLock<ICommandPipeline>(async () =>
-            {
-                await _socket.ConnectAsync(_endPoint);
+        public Connection(INetworkStreamFactory streamFactory, Func<INetworkStreamFactory, Task<ICommandPipeline>> pipelineFactory)
+        {
+            _streamFactory = streamFactory;
 
-                return pipelineFactory(_socket);
-            });
+            _pipeline = new AsyncLock<ICommandPipeline>(() => pipelineFactory(_streamFactory));
 
             Id = IdGenerator.Increment().ToString();
         }
 
-        public float WorkLoad => 1f;
+        public float WorkLoad => _pipeline.TryGet(p =>
+        {
+            var pending = p.PendingWork;
+
+            return pending.PendingReads * pending.PendingWrites;
+        });
 
         public string Id { get; }
 
@@ -40,7 +41,7 @@ namespace RedisSlimClient.Io
 
         public void Dispose()
         {
-            _socket.Dispose();
+            _streamFactory.Dispose();
             _pipeline.Dispose();
         }
     }

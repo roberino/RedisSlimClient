@@ -1,7 +1,5 @@
 ﻿using RedisSlimClient.Configuration;
-using System.IO;
 using System.Linq;
-using System.Net.Sockets;
 
 namespace RedisSlimClient.Io
 {
@@ -22,12 +20,10 @@ namespace RedisSlimClient.Io
         {
             if (configuration.UseAsyncronousPipeline)
             {
-                return new Connection(configuration.ServerUri.AsEndpoint(), s => new CommandPipeline(CreateStream(s)));
+                return new Connection(configuration.ServerUri.AsEndpoint(), async s => new CommandPipeline(await s.CreateStreamAsync()));
             }
 
-            return new Connection(configuration.ServerUri.AsEndpoint(), s => new SyncCommandPipeline(CreateStream(s)));
+            return new Connection(configuration.ServerUri.AsEndpoint(), async s => new SyncCommandPipeline(await s.CreateStreamAsync()));
         }
-
-        static Stream CreateStream(Socket socket) => new NetworkStream(socket, FileAccess.ReadWrite);
     }
 }

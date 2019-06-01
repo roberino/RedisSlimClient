@@ -1,10 +1,5 @@
 ﻿using NSubstitute;
 using RedisSlimClient.Io;
-using RedisSlimClient.Io.Commands;
-using RedisSlimClient.Io.Server;
-using System;
-using System.Net;
-using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
@@ -14,51 +9,64 @@ namespace RedisSlimClient.UnitTests.Io
     public class ConnectionTests
     {
         readonly ITestOutputHelper _output;
-        readonly EndPoint _localEndpoint = new Uri("tcp://localhost:8080/").AsEndpoint();
         readonly ICommandPipeline _pipeline;
+        readonly INetworkStreamFactory _streamFactory;
 
         public ConnectionTests(ITestOutputHelper output)
         {
             _output = output;
             _pipeline = Substitute.For<ICommandPipeline>();
+            _streamFactory = Substitute.For<INetworkStreamFactory>();
         }
 
-        [Fact(Skip = "Flakey")]
-        public async Task ConnectAsync_LocalServer_CanConnect()
+        [Fact]
+        public async Task ConnectAsync_ReturnsPipelineFromFactory()
         {
-            using (var server = new TcpServer(_localEndpoint))
+            using (var connection = new Connection(_streamFactory, s => Task.FromResult(_pipeline)))
             {
-                await server.StartAsync(new RequestHandler(x => new Response(x.Data)));
+                var pipeline = await connection.ConnectAsync();
 
-                using (var connection = new Connection(_localEndpoint, s => _pipeline))
-                {
-                    var pipeline = await connection.ConnectAsync();
-
-                    Assert.NotNull(pipeline);
-                }
+                Assert.Same(pipeline, _pipeline);
             }
         }
 
-        [Fact(Skip = "Flakey")]
-        public async Task ConnectAsync_LocalServer_CanPing()
+        [Fact]
+        public async Task Dispose_CallsDisposeOnHeldResources()
         {
-            using (var server = new TcpServer(_localEndpoint))
+            using (var connection = new Connection(_streamFactory, s => Task.FromResult(_pipeline)))
             {
-                await server.StartAsync(new RequestHandler(x =>
-                {
-                    _output.WriteLine(Encoding.ASCII.GetString(x.Data, 0, x.BytesRead));
-                    return new Response(x.Data);
-                }));
+                await connection.ConnectAsync();
+            }
 
-                using (var connection = new Connection(_localEndpoint, s => _pipeline))
-                {
-                    var pipeline = await connection.ConnectAsync();
-                    var cmd = new PingCommand();
+            _pipeline.Received().Dispose();
+            _streamFactory.Received().Dispose();
+        }
 
-                    var result = await pipeline.Execute(cmd, TimeSpan.FromMilliseconds(100));
+        [Fact]
+        public void WorkLoad_BeforeConnect_ReturnsZero()
+        {
+            _pipeline.PendingWork.Returns((7, 13));
 
-                    Assert.NotNull(result);
-                }
+            using (var connection = new Connection(_streamFactory, s => Task.FromResult(_pipeline)))
+            {
+                var load = connection.WorkLoad;
+
+                Assert.Equal(0, load);
+            }
+        }
+
+        [Fact]
+        public async Task WorkLoad_AfterConnect_ReturnsPendingReadsAndWritesMultiplied()
+        {
+            _pipeline.PendingWork.Returns((7, 13));
+
+            using (var connection = new Connection(_streamFactory, s => Task.FromResult(_pipeline)))
+            {
+                await connection.ConnectAsync();
+
+                var load = connection.WorkLoad;
+
+                Assert.Equal(7 * 13, load);
             }
         }
     }

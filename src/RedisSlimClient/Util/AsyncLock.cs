@@ -17,6 +17,18 @@ namespace RedisSlimClient.Util
             _semaphore = new SemaphoreSlim(1, 1);
         }
 
+        public TValue TryGet<TValue>(Func<T, TValue> valueFactory)
+        {
+            var instance = _instance;
+
+            if (instance != null)
+            {
+                return valueFactory(instance);
+            }
+
+            return default;
+        }
+
         public async Task Execute(Func<T, Task> work)
         {
             await _semaphore.WaitAsync();
