@@ -1,4 +1,5 @@
-﻿using RedisSlimClient.Io;
+﻿using NSubstitute;
+using RedisSlimClient.Io;
 using RedisSlimClient.Io.Commands;
 using RedisSlimClient.Io.Server;
 using System;
@@ -14,20 +15,22 @@ namespace RedisSlimClient.UnitTests.Io
     {
         readonly ITestOutputHelper _output;
         readonly EndPoint _localEndpoint = new Uri("tcp://localhost:8080/").AsEndpoint();
+        readonly ICommandPipeline _pipeline;
 
         public ConnectionTests(ITestOutputHelper output)
         {
             _output = output;
+            _pipeline = Substitute.For<ICommandPipeline>();
         }
 
-        [Fact (Skip = "Flakey")]
+        [Fact(Skip = "Flakey")]
         public async Task ConnectAsync_LocalServer_CanConnect()
         {
             using (var server = new TcpServer(_localEndpoint))
             {
                 await server.StartAsync(new RequestHandler(x => new Response(x.Data)));
 
-                using (var connection = new Connection(_localEndpoint))
+                using (var connection = new Connection(_localEndpoint, s => _pipeline))
                 {
                     var pipeline = await connection.ConnectAsync();
 
@@ -47,7 +50,7 @@ namespace RedisSlimClient.UnitTests.Io
                     return new Response(x.Data);
                 }));
 
-                using (var connection = new Connection(_localEndpoint))
+                using (var connection = new Connection(_localEndpoint, s => _pipeline))
                 {
                     var pipeline = await connection.ConnectAsync();
                     var cmd = new PingCommand();

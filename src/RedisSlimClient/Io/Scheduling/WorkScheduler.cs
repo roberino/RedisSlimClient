@@ -1,17 +1,33 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace RedisSlimClient.Io.Scheduling
 {
     class WorkScheduler : IWorkScheduler
     {
+        readonly object _lockObj = new object();
         bool _disposed;
 
-        public void Awake() { }
+        public void Awake()
+        {
+            lock (_lockObj)
+            {
+                Monitor.Pulse(_lockObj);
+            }
+        }
 
         public void Dispose()
         {
-            _disposed = true;
+            if (!_disposed)
+            {
+                _disposed = true;
+
+                lock (_lockObj)
+                {
+                    Monitor.PulseAll(_lockObj);
+                }
+            }
         }
 
         public void Schedule(Func<bool> work)
@@ -20,7 +36,13 @@ namespace RedisSlimClient.Io.Scheduling
             {
                 while (!_disposed)
                 {
-                    work();
+                    if (!work())
+                    {
+                        lock (_lockObj)
+                        {
+                            Monitor.Wait(_lockObj);
+                        }
+                    }
                 }
             });
         }

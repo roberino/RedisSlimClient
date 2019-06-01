@@ -1,5 +1,5 @@
-﻿using System;
-using System.IO;
+﻿using RedisSlimClient.Util;
+using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
@@ -8,37 +8,40 @@ namespace RedisSlimClient.Io
 {
     internal class Connection : IConnection
     {
+        static readonly SyncedCounter IdGenerator = new SyncedCounter();
+
         readonly EndPoint _endPoint;
         readonly Socket _socket;
+        readonly AsyncLock<ICommandPipeline> _pipeline;
 
-        NetworkStream _stream;
-        CommandPipeline _commandPipeline;
-
-        public Connection(EndPoint endPoint)
+        public Connection(EndPoint endPoint, Func<Socket, ICommandPipeline> pipelineFactory)
         {
             _endPoint = endPoint;
-
             _socket = new Socket(_endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-        }
 
-        public async Task<ICommandPipeline> ConnectAsync()
-        {
-            if (_commandPipeline == null)
+            _pipeline = new AsyncLock<ICommandPipeline>(async () =>
             {
                 await _socket.ConnectAsync(_endPoint);
 
-                _stream = new NetworkStream(_socket, FileAccess.ReadWrite);
-                _commandPipeline = new CommandPipeline(_stream);
-            }
+                return pipelineFactory(_socket);
+            });
 
-            return _commandPipeline;
+            Id = IdGenerator.Increment().ToString();
+        }
+
+        public float WorkLoad => 1f;
+
+        public string Id { get; }
+
+        public async Task<ICommandPipeline> ConnectAsync()
+        {
+            return await _pipeline.GetValue();
         }
 
         public void Dispose()
         {
-            _socket?.Dispose();
-            _stream?.Dispose();
-            _commandPipeline?.Dispose();
+            _socket.Dispose();
+            _pipeline.Dispose();
         }
     }
 }

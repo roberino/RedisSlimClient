@@ -3,7 +3,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
-using RedisSlimClient.Types;
 
 namespace RedisSlimClient.Io
 {
@@ -17,6 +16,8 @@ namespace RedisSlimClient.Io
             _commandQueue = new ConcurrentQueue<IRedisCommand>();
             _semaphore = new SemaphoreSlim(1, 1);
         }
+
+        public int QueueSize => _commandQueue.Count;
 
         public async Task Enqueue(Func<IRedisCommand> commandFactory, TimeSpan timeout)
         {
@@ -34,13 +35,11 @@ namespace RedisSlimClient.Io
             {
                 _semaphore.Release();
             }
-
-            await cmd;
         }
 
         public bool ProcessNextCommand(Action<IRedisCommand> action)
         {
-            if (_commandQueue.Count > 0 && _commandQueue.TryDequeue(out var next))
+            if (_commandQueue.TryDequeue(out var next))
             {
                 action(next);
 

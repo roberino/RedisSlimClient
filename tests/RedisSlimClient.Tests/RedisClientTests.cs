@@ -42,12 +42,20 @@ namespace RedisSlimClient.UnitTests
 
     class FakeConnection : IConnection
     {
+        static int _idCount = 1;
+
         private readonly CommandPipeline _commandPipeline;
+        readonly int _id;
 
         public FakeConnection(CommandPipeline commandPipeline)
         {
             _commandPipeline = commandPipeline;
+            _id = _idCount++;
         }
+
+        public string Id => _id.ToString();
+
+        public float WorkLoad => 1f;
 
         public Task<ICommandPipeline> ConnectAsync() => Task.FromResult<ICommandPipeline>(_commandPipeline);
 

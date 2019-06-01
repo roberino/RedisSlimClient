@@ -3,7 +3,6 @@ using RedisSlimClient.Io;
 using RedisSlimClient.Io.Commands;
 using RedisSlimClient.Types;
 using System;
-using System.Net;
 using System.Threading.Tasks;
 
 namespace RedisSlimClient
@@ -13,14 +12,14 @@ namespace RedisSlimClient
         readonly ClientConfiguration _configuration;
         readonly IConnection _connection;
 
-        public RedisClient(ClientConfiguration configuration) : this(configuration, e => new Connection(e))
+        public RedisClient(ClientConfiguration configuration) : this(configuration, e => new ConnectionFactory().Create(e))
         {
         }
 
-        internal RedisClient(ClientConfiguration configuration, Func<EndPoint, IConnection> connectionFactory)
+        internal RedisClient(ClientConfiguration configuration, Func<ClientConfiguration, IConnection> connectionFactory)
         {
             _configuration = configuration;
-            _connection = connectionFactory(_configuration.ServerUri.AsEndpoint());
+            _connection = connectionFactory(_configuration);
         }
 
         public async Task<bool> PingAsync()

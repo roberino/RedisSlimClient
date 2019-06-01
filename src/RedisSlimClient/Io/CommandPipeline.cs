@@ -2,6 +2,7 @@
 using RedisSlimClient.Io.Scheduling;
 using RedisSlimClient.Serialization;
 using RedisSlimClient.Types;
+using RedisSlimClient.Util;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -11,6 +12,8 @@ namespace RedisSlimClient.Io
 {
     internal class CommandPipeline : ICommandPipeline
     {
+        readonly SyncedCounter _pendingWrites = new SyncedCounter();
+
         readonly Stream _writeStream;
         readonly IEnumerable<RedisObjectPart> _reader;
         readonly CommandQueue _commandQueue;
@@ -28,6 +31,8 @@ namespace RedisSlimClient.Io
             _scheduler.Schedule(ProcessQueue);
         }
 
+        public (int PendingWrites, int PendingReads) PendingWork => ((int)_pendingWrites.Value, _commandQueue.QueueSize);
+
         public async Task<T> Execute<T>(IRedisResult<T> command, TimeSpan timeout)
         {
             if (_disposed)
@@ -35,12 +40,22 @@ namespace RedisSlimClient.Io
                 throw new ObjectDisposedException(nameof(CommandPipeline));
             }
 
+            _pendingWrites.Increment();
+
             await _commandQueue.Enqueue(() =>
             {
-                command.Write(_writeStream);
-                _scheduler.Awake();
-                return command;
+                try
+                {
+                    command.Write(_writeStream);
+                    return command;
+                }
+                finally
+                {
+                    _pendingWrites.Decrement();
+                }
             }, timeout);
+
+            _scheduler.Awake();
 
             return await command;
         }

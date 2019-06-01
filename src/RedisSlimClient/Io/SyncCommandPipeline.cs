@@ -14,12 +14,16 @@ namespace RedisSlimClient.Io
         readonly IEnumerable<RedisObjectPart> _reader;
 
         bool _disposed;
+        int _pendingWrites;
+        int _pendingReads;
 
         public SyncCommandPipeline(Stream networkStream)
         {
             _writeStream = networkStream;
             _reader = new RedisByteSequenceReader(new StreamIterator(networkStream));
         }
+
+        public (int PendingWrites, int PendingReads) PendingWork => (_pendingWrites, _pendingReads);
 
         public async Task<T> Execute<T>(IRedisResult<T> command, TimeSpan timeout)
         {
@@ -30,8 +34,27 @@ namespace RedisSlimClient.Io
 
             lock (_writeStream)
             {
-                command.Write(_writeStream);
-                command.Read(_reader);
+                _pendingWrites++;
+
+                try
+                {
+                    command.Write(_writeStream);
+                }
+                finally
+                {
+                    _pendingWrites--;
+                }
+
+                _pendingReads++;
+
+                try
+                {
+                    command.Read(_reader);
+                }
+                finally
+                {
+                    _pendingReads--;
+                }
             }
 
             return await command;
