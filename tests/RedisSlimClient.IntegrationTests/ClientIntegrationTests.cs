@@ -1,5 +1,6 @@
 ﻿using RedisSlimClient.Configuration;
 using System;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -21,7 +22,7 @@ namespace RedisSlimClient.IntegrationTests
         [Fact]
         public async Task ConnectAsync_RemoteServer_CanPing()
         {
-            using (var client = new RedisClient(new ClientConfiguration(_localEndpoint.ToString())))
+            using (var client = RedisClient.Create(new ClientConfiguration(_localEndpoint.ToString())))
             {
                 var result = await client.PingAsync();
 
@@ -29,35 +30,44 @@ namespace RedisSlimClient.IntegrationTests
             }
         }
 
-        [Fact]
-        public async Task SetObjectAsync_WritesObjectDataToStream()
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async Task SetObjectAsync_WritesObjectDataToStream(bool useAsync)
         {
-            using (var client = new RedisClient(new ClientConfiguration(_localEndpoint.ToString())))
+            using (var client = RedisClient.Create(new ClientConfiguration(_localEndpoint.ToString())
             {
-                var data = new TestComplexDto()
-                {
-                    DataItem1 = "y",
-                    DataItem2 = DateTime.UtcNow,
-                    DataItem3 = new TestDtoWithString()
-                    {
-                        DataItem1 = "x"
-                    }
-                };
+                UseAsyncronousPipeline = useAsync
+            }))
+            {
+                var data = ObjectGeneration.CreateObjectGraph();
 
-                var ok = await client.SetObjectAsync("x", data);
+                var ok = await client.SetObjectAsync(data.Id, data);
 
                 Assert.True(ok);
 
-                var data2 = await client.GetObjectAsync<TestComplexDto>("x");
+                var data2 = await client.GetObjectAsync<TestDtoWithGenericCollection<TestComplexDto>>(data.Id);
 
-                Assert.Equal("y", data2.DataItem1);
+                Assert.Equal(data.Id, data2.Id);
+                Assert.Equal(data.Items.Count, data2.Items.Count);
+
+                foreach (var x in data.Items.Zip(data2.Items, (a, b) => (a, b)))
+                {
+                    Assert.Equal(x.a.DataItem1, x.b.DataItem1);
+                    Assert.Equal(x.a.DataItem2, x.b.DataItem2);
+                    Assert.Equal(x.a.DataItem3.DataItem1, x.b.DataItem3.DataItem1);
+                }
+
+                var deleted = await client.DeleteAsync(data.Id);
+
+                Assert.Equal(1, deleted);
             }
         }
 
         [Fact]
         public async Task ConnectAsync_RemoteServer_CanSetAndGet()
         {
-            using (var client = new RedisClient(new ClientConfiguration(_localEndpoint.ToString())))
+            using (var client = RedisClient.Create(new ClientConfiguration(_localEndpoint.ToString())))
             {
                 var data = Encoding.ASCII.GetBytes("abcdefg");
 
@@ -74,7 +84,7 @@ namespace RedisSlimClient.IntegrationTests
         [Fact]
         public async Task ConnectAsync_TwoGetCallsSameData_ReturnsTwoResults()
         {
-            using (var client = new RedisClient(new ClientConfiguration(_localEndpoint.ToString())))
+            using (var client = RedisClient.Create(new ClientConfiguration(_localEndpoint.ToString())))
             {
                 var data = Encoding.ASCII.GetBytes("abcdefg");
 
@@ -97,7 +107,7 @@ namespace RedisSlimClient.IntegrationTests
         [Fact]
         public async Task ConnectAsync_RemoteServerMultipleThreads_CanGet()
         {
-            using (var client = new RedisClient(new ClientConfiguration(_localEndpoint.ToString())))
+            using (var client = RedisClient.Create(new ClientConfiguration(_localEndpoint.ToString())))
             {
                 var data = Encoding.ASCII.GetBytes("abcdefg");
 

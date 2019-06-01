@@ -7,12 +7,12 @@ using System.Threading.Tasks;
 
 namespace RedisSlimClient
 {
-    public class RedisClient : IDisposable
+    public class RedisClient : IRedisClient
     {
         readonly ClientConfiguration _configuration;
         readonly IConnection _connection;
 
-        public RedisClient(ClientConfiguration configuration) : this(configuration, e => new ConnectionFactory().Create(e))
+        internal RedisClient(ClientConfiguration configuration) : this(configuration, e => new ConnectionFactory().Create(e))
         {
         }
 
@@ -22,9 +22,16 @@ namespace RedisSlimClient
             _connection = connectionFactory(_configuration);
         }
 
+        public static IRedisClient Create(ClientConfiguration configuration) => new RedisClient(configuration);
+
         public async Task<bool> PingAsync()
         {
             return await CompareStringResponse(new PingCommand(), "PONG");
+        }
+
+        public async Task<long> DeleteAsync(string key)
+        {
+            return (await GetIntResponse(new DeleteCommand(key))).GetValueOrDefault();
         }
 
         public async Task<bool> SetDataAsync(string key, byte[] data)
@@ -77,6 +84,17 @@ namespace RedisSlimClient
             var msg = result.ToString();
 
             return string.Equals(expectedResponse, msg, StringComparison.OrdinalIgnoreCase);
+        }
+
+        async Task<long?> GetIntResponse(IRedisResult<RedisObject> cmd)
+        {
+            var cmdPipe = await _connection.ConnectAsync();
+
+            var result = await cmdPipe.Execute(cmd, _configuration.DefaultTimeout);
+
+            var msg = result as RedisInteger;
+
+            return msg?.Value;
         }
     }
 }

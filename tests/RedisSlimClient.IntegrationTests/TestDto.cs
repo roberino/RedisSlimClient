@@ -14,6 +14,7 @@ namespace RedisSlimClient.IntegrationTests
 
     public class TestDtoWithGenericCollection<T>
     {
+        public string Id { get; set; } = Guid.NewGuid().ToString();
         public IList<T> Items { get; set; } = new List<T>();
     }
 
