@@ -7,11 +7,10 @@ init:
   - cmd: git config --global core.autocrlf true
 install:
 before_build:
-  - cmd: docker run -d -p 6379:6379 --name redis-local redis
   - cmd: dotnet --version
   - cmd: dotnet restore ./RedisSlimClient.sln --verbosity m
 build_script:
   - cmd: dotnet publish ./RedisSlimClient.sln
 after_build:
 test_script:
-  - cmd: dotnet test
+  - cmd: dotnet test ./tests/RedisSlimClient.Tests/RedisSlimClient.UnitTests.csproj --filter TestCategory!=BuildOmit
