@@ -1,4 +1,6 @@
 ﻿using RedisSlimClient.Configuration;
+using RedisSlimClient.Stubs;
+using RedisSlimClient.Telemetry;
 using System;
 using System.Linq;
 using System.Text;
@@ -20,13 +22,56 @@ namespace RedisSlimClient.IntegrationTests
         }
 
         [Fact]
-        public async Task ConnectAsync_RemoteServer_CanPing()
+        public async Task PingAsync_ReturnsTrue()
         {
             using (var client = RedisClient.Create(new ClientConfiguration(_localEndpoint.ToString())))
             {
                 var result = await client.PingAsync();
 
                 Assert.True(result);
+            }
+        }
+
+        [Theory]
+        [InlineData(1, 100)]
+        [InlineData(4, 100)]
+        public void PingAsync_MutlipleThreads_ReturnsTrue(int maxThreads, int iterations)
+        {
+            using (var client = RedisClient.Create(new ClientConfiguration(_localEndpoint.ToString())
+            {
+                DefaultTimeout = TimeSpan.FromMilliseconds(500),
+                ConnectTimeout = TimeSpan.FromMilliseconds(500),
+                TelemetryWriter = new TextTelemetryWriter(_output.WriteLine)
+            }))
+            {
+                var success = false;
+                var ev = new ManualResetEvent(false);
+
+                ThreadPool.QueueUserWorkItem(_ =>
+                {
+                    foreach (var i in Enumerable.Range(1, iterations))
+                    {
+                        var tasks = Enumerable.Range(1, maxThreads)
+                            .Select(async n =>
+                            {
+                                var result = await client.PingAsync();
+
+                                Assert.True(result);
+                            }).ToList();
+
+                        Task.WhenAll(tasks).Wait();
+
+                        success = true;
+
+                        ev.Set();
+                    }
+                });
+
+                ev.WaitOne(2500);
+
+                ev.Dispose();
+
+                Assert.True(success);
             }
         }
 
@@ -114,7 +159,7 @@ namespace RedisSlimClient.IntegrationTests
                 await client.SetDataAsync("key1", data);
 
                 await client.GetDataAsync("key1")
-                    
+
                     .ContinueWith(t =>
                     {
                         _output.WriteLine("Item1");

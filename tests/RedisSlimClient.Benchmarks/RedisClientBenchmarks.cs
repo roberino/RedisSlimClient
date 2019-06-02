@@ -1,7 +1,9 @@
 ﻿using BenchmarkDotNet.Attributes;
 using RedisSlimClient.Configuration;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
+using RedisSlimClient.Stubs;
 
 namespace RedisSlimClient.Benchmarks
 {
@@ -13,14 +15,17 @@ namespace RedisSlimClient.Benchmarks
 
         IRedisClient _client;
 
-        [Params(true, false)]
+        [Params(false, true)]
         public bool UseAsync { get; set; }
 
         [Params(1, 4)]
         public int ConnectionPoolSize { get; set; }
 
-        [Params(2, 10, 50)]
+        [Params(10, 100)]
         public int DataCollectionSize { get; set; }
+
+        [Params(1, 4)]
+        public int ParallelOps { get; set; }
 
         [GlobalSetup]
         public void Setup()
@@ -33,16 +38,25 @@ namespace RedisSlimClient.Benchmarks
             _client = RedisClient.Create(new ClientConfiguration(ServerUri)
             {
                 ConnectionPoolSize = ConnectionPoolSize,
-                UseAsyncronousPipeline = UseAsync
+                UseAsyncronousPipeline = UseAsync,
+                ConnectTimeout = TimeSpan.FromMilliseconds(500),
+                DefaultTimeout = TimeSpan.FromMilliseconds(500)
             });
         }
 
         [Benchmark]
         public void SetAndGetAsync()
         {
-            var data = ObjectGeneration.CreateObjectGraph(DataCollectionSize);
+            var ops = Enumerable.Range(1, ParallelOps)
+                .Select(async n =>
+                {
+                    var data = ObjectGeneration.CreateObjectGraph(DataCollectionSize);
 
-            SetGetDeleteAsync(data, data.Id).Wait();
+                    await SetGetDeleteAsync(data, data.Id);
+                })
+                .ToArray();
+
+            Task.WhenAll(ops).Wait();
         }
 
         [IterationCleanup]

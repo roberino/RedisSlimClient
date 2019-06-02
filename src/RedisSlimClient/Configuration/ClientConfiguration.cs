@@ -1,4 +1,5 @@
 ﻿using RedisSlimClient.Serialization;
+using RedisSlimClient.Telemetry;
 using System;
 using System.Text;
 
@@ -13,7 +14,9 @@ namespace RedisSlimClient.Configuration
 
         public Uri ServerUri { get; private set; }
 
-        public TimeSpan DefaultTimeout { get; set; } = TimeSpan.FromMinutes(1);
+        public TimeSpan DefaultTimeout { get; set; } = TimeSpan.FromSeconds(5);
+
+        public TimeSpan ConnectTimeout { get; set; } = TimeSpan.FromSeconds(5);
 
         public Encoding Encoding { get; set; } = Encoding.UTF8;
 
@@ -22,6 +25,8 @@ namespace RedisSlimClient.Configuration
         public int ConnectionPoolSize { get; set; } = 1;
 
         public IObjectSerializerFactory SerializerFactory { get; set; } = Serialization.SerializerFactory.Instance;
+
+        public ITelemetryWriter TelemetryWriter { get; set; }
 
         void Parse(string connectionOptions)
         {

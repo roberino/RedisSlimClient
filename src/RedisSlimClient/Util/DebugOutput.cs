@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Text;
 
-namespace RedisSlimClient.Io
+namespace RedisSlimClient.Util
 {
     internal static class DebugOutput
     {

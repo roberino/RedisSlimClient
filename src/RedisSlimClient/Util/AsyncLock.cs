@@ -6,6 +6,8 @@ namespace RedisSlimClient.Util
 {
     class AsyncLock<T> : IDisposable
     {
+        static readonly TimeSpan _defaultTimeout = TimeSpan.FromMilliseconds(30);
+
         readonly SemaphoreSlim _semaphore;
         readonly Func<Task<T>> _factory;
 
@@ -29,15 +31,18 @@ namespace RedisSlimClient.Util
             return default;
         }
 
-        public async Task Execute(Func<T, Task> work)
+        public async Task Execute(Func<T, Task> work, TimeSpan? timeout = null)
         {
-            await _semaphore.WaitAsync();
+            await _semaphore.WaitAsync(timeout.GetValueOrDefault(_defaultTimeout));
 
             try
             {
-                var instance = await GetValue();
+                if (_instance == null)
+                {
+                    _instance = await _factory();
+                }
 
-                await work(instance);
+                await work(_instance);
             }
             finally
             {
@@ -45,9 +50,9 @@ namespace RedisSlimClient.Util
             }
         }
 
-        public async Task<T> GetValue()
+        public async Task<T> GetValue(TimeSpan? timeout = null)
         {
-            await _semaphore.WaitAsync();
+            await _semaphore.WaitAsync(timeout.GetValueOrDefault(_defaultTimeout));
 
             try
             {

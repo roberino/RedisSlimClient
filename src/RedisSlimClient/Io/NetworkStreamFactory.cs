@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
@@ -16,11 +17,11 @@ namespace RedisSlimClient.Io
             _socket = new Socket(_endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
         }
 
-        public Task ConnectAsync() => _socket.ConnectAsync(_endPoint);
+        public Task ConnectAsync(TimeSpan timeout) => _socket.ConnectAsync(_endPoint);
 
-        public async Task<Stream> CreateStreamAsync()
+        public async Task<Stream> CreateStreamAsync(TimeSpan timeout)
         {
-            await ConnectAsync();
+            await ConnectAsync(timeout);
 
             return new NetworkStream(_socket, FileAccess.ReadWrite);
         }

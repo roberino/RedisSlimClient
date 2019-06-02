@@ -26,6 +26,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{7D3242BB
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RedisSlimClient.IntegrationTests", "tests\RedisSlimClient.IntegrationTests\RedisSlimClient.IntegrationTests.csproj", "{2045B2B9-300A-47ED-8BAA-FD01BC567B4F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RedisSlimClient.Stubs", "tests\RedisSlimClient.Stubs\RedisSlimClient.Stubs.csproj", "{1976F57D-1C0B-4294-B115-4D72E0611E99}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -48,6 +50,10 @@ Global
 		{2045B2B9-300A-47ED-8BAA-FD01BC567B4F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2045B2B9-300A-47ED-8BAA-FD01BC567B4F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2045B2B9-300A-47ED-8BAA-FD01BC567B4F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1976F57D-1C0B-4294-B115-4D72E0611E99}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1976F57D-1C0B-4294-B115-4D72E0611E99}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1976F57D-1C0B-4294-B115-4D72E0611E99}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1976F57D-1C0B-4294-B115-4D72E0611E99}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -57,6 +63,7 @@ Global
 		{99FD0B84-1FFE-4C8B-8769-F52778601C75} = {A0C42956-9A84-4769-8207-6BB16FD248D3}
 		{475EB56E-4585-4FB0-89B9-0FAA729EBBE2} = {7D3242BB-A1A6-4A11-BBFD-F5DDD1F140C8}
 		{2045B2B9-300A-47ED-8BAA-FD01BC567B4F} = {7D3242BB-A1A6-4A11-BBFD-F5DDD1F140C8}
+		{1976F57D-1C0B-4294-B115-4D72E0611E99} = {7D3242BB-A1A6-4A11-BBFD-F5DDD1F140C8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {13B5FD4B-6ADC-4F52-B91A-6F364DB1E8DC}

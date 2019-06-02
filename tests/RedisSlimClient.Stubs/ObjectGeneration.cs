@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Linq;
 
-namespace RedisSlimClient.Benchmarks
+namespace RedisSlimClient.Stubs
 {
-    static class ObjectGeneration
+    public static class ObjectGeneration
     {
         public static TestDtoWithGenericCollection<TestComplexDto> CreateObjectGraph(int numberOfItems = 10)
         {

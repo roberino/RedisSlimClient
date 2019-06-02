@@ -11,6 +11,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\RedisSlimClient\RedisSlimClient.csproj" />
+    <ProjectReference Include="..\RedisSlimClient.Stubs\RedisSlimClient.Stubs.csproj" />
   </ItemGroup>
 
 </Project>

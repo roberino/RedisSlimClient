@@ -40,7 +40,10 @@ namespace RedisSlimClient.Io.Scheduling
                     {
                         lock (_lockObj)
                         {
-                            Monitor.Wait(_lockObj);
+                            if (!work())
+                            {
+                                Monitor.Wait(_lockObj, 10);
+                            }
                         }
                     }
                 }

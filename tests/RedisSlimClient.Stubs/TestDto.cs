@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace RedisSlimClient.Benchmarks
+namespace RedisSlimClient.Stubs
 {
     public class TestComplexDto
     {
