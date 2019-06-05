@@ -16,6 +16,8 @@ namespace RedisSlimClient.Telemetry
 
         public string OperationId { get; set; } = Guid.NewGuid().ToString("N").Substring(8);
 
+        public string Data { get; set; }
+
         public TimeSpan Elapsed { get; set; }
 
         public Exception Exception { get; set; }

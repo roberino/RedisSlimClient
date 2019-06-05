@@ -13,7 +13,12 @@ namespace RedisSlimClient.Telemetry
 
         public void Write(TelemetryEvent telemetryEvent)
         {
-            writeMethod($"{telemetryEvent.Timestamp}: {telemetryEvent.OperationId} {telemetryEvent.Name} {telemetryEvent.Action} [{telemetryEvent.Elapsed}]");
+            writeMethod($"{telemetryEvent.Timestamp}: {telemetryEvent.OperationId} {telemetryEvent.Name} {telemetryEvent.Action} [{telemetryEvent.Elapsed}] data={telemetryEvent.Data}");
+
+            if (telemetryEvent.Exception != null)
+            {
+                writeMethod(telemetryEvent.Exception.Message);
+            }
         }
     }
 }

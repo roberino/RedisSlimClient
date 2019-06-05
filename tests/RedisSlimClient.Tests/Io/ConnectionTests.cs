@@ -22,7 +22,7 @@ namespace RedisSlimClient.UnitTests.Io
         [Fact]
         public async Task ConnectAsync_ReturnsPipelineFromFactory()
         {
-            using (var connection = new Connection(_streamFactory, s => Task.FromResult(_pipeline)))
+            using (var connection = new Connection(_streamFactory, null, s => Task.FromResult(_pipeline)))
             {
                 var pipeline = await connection.ConnectAsync();
 
@@ -33,7 +33,7 @@ namespace RedisSlimClient.UnitTests.Io
         [Fact]
         public async Task Dispose_CallsDisposeOnHeldResources()
         {
-            using (var connection = new Connection(_streamFactory, s => Task.FromResult(_pipeline)))
+            using (var connection = new Connection(_streamFactory, null, s => Task.FromResult(_pipeline)))
             {
                 await connection.ConnectAsync();
             }
@@ -47,7 +47,7 @@ namespace RedisSlimClient.UnitTests.Io
         {
             _pipeline.PendingWork.Returns((7, 13));
 
-            using (var connection = new Connection(_streamFactory, s => Task.FromResult(_pipeline)))
+            using (var connection = new Connection(_streamFactory, null, s => Task.FromResult(_pipeline)))
             {
                 var load = connection.WorkLoad;
 
@@ -60,7 +60,7 @@ namespace RedisSlimClient.UnitTests.Io
         {
             _pipeline.PendingWork.Returns((7, 13));
 
-            using (var connection = new Connection(_streamFactory, s => Task.FromResult(_pipeline)))
+            using (var connection = new Connection(_streamFactory, null, s => Task.FromResult(_pipeline)))
             {
                 await connection.ConnectAsync();
 

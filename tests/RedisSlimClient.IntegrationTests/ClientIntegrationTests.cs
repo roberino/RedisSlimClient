@@ -34,7 +34,7 @@ namespace RedisSlimClient.IntegrationTests
 
         [Theory]
         [InlineData(1, 100)]
-        [InlineData(4, 100)]
+        [InlineData(4, 50)]
         public void PingAsync_MutlipleThreads_ReturnsTrue(int maxThreads, int iterations)
         {
             using (var client = RedisClient.Create(new ClientConfiguration(_localEndpoint.ToString())
@@ -60,11 +60,11 @@ namespace RedisSlimClient.IntegrationTests
                             }).ToList();
 
                         Task.WhenAll(tasks).Wait();
-
-                        success = true;
-
-                        ev.Set();
                     }
+
+                    success = true;
+
+                    ev.Set();
                 });
 
                 ev.WaitOne(2500);

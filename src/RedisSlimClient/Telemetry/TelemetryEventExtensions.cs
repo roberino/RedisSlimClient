@@ -24,6 +24,8 @@ namespace RedisSlimClient.Telemetry
             try
             {
                 result = await act(ctx);
+
+                endEv.Data = result?.ToString();
             }
             catch (Exception ex)
             {

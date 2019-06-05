@@ -24,14 +24,14 @@ namespace RedisSlimClient.Io
                     configuration.ServerUri.AsEndpoint(),
                     configuration.ConnectTimeout,
                     configuration.TelemetryWriter,
-                    async s => new CommandPipeline(await s.CreateStreamAsync(configuration.ConnectTimeout), configuration.TelemetryWriter));
+                    async s => new CommandPipeline(await s.CreateStreamAsync(), configuration.TelemetryWriter));
             }
 
             return new Connection(
                 configuration.ServerUri.AsEndpoint(),
                 configuration.ConnectTimeout,
                     configuration.TelemetryWriter,
-                async s => new SyncCommandPipeline(await s.CreateStreamAsync(configuration.ConnectTimeout)));
+                async s => new SyncCommandPipeline(await s.CreateStreamAsync()));
         }
     }
 }

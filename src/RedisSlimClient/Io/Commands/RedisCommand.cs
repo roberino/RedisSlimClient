@@ -28,10 +28,10 @@ namespace RedisSlimClient.Io.Commands
 
         public virtual void Read(IEnumerable<RedisObjectPart> objectParts)
         {
-            var nextResult = objectParts.ToObjects().First();
-
             try
             {
+                var nextResult = objectParts.ToObjects().First();
+
                 CompletionSource.SetResult(nextResult);
             }
             catch (Exception ex)

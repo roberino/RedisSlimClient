@@ -16,7 +16,7 @@ namespace RedisSlimClient.UnitTests
         public async Task SetObjectAsync_WritesObjectDataToStream()
         {
             var fakeStream = new FakeNetworkStream();
-            var pipeline = new CommandPipeline(fakeStream);
+            var pipeline = new CommandPipeline(fakeStream, null);
             var client = new RedisClient(new ClientConfiguration("tcp://localhost:2344"), f => new FakeConnection(pipeline));
 
             var data = new TestComplexDto()

@@ -26,10 +26,10 @@ namespace RedisSlimClient.Io
         public CommandPipeline(Stream networkStream, ITelemetryWriter telemetryWriter, IWorkScheduler scheduler = null)
         {
             _writeStream = networkStream;
-            _telemetryWriter = telemetryWriter ?? new NullWriter();
+            _telemetryWriter = telemetryWriter ?? NullWriter.Instance;
             _reader = new RedisByteSequenceReader(new StreamIterator(networkStream));
             _commandQueue = new CommandQueue();
-            _scheduler = scheduler ?? new WorkScheduler();
+            _scheduler = scheduler ?? new WorkScheduler(_telemetryWriter);
 
             _scheduler.Schedule(ProcessQueue);
         }
@@ -53,7 +53,7 @@ namespace RedisSlimClient.Io
                     {
                         ctx.Write(nameof(command.Write));
 
-                        command.Write(_writeStream);;
+                        command.Write(_writeStream);
 
                         return command;
                     }
@@ -79,6 +79,16 @@ namespace RedisSlimClient.Io
 
         bool ProcessQueue()
         {
+            //return _telemetryWriter.ExecuteAsync(ctx =>
+            //{
+            //    _writeStream.Flush();
+
+            //    return Task.FromResult(_commandQueue.ProcessNextCommand(cmd =>
+            //    {
+            //        cmd.Read(_reader);
+            //    }));
+            //}, nameof(ProcessQueue)).Result;
+
             _writeStream.Flush();
 
             return _commandQueue.ProcessNextCommand(cmd =>

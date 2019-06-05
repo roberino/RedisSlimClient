@@ -1,4 +1,5 @@
-﻿using System;
+﻿using RedisSlimClient.Telemetry;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -7,7 +8,13 @@ namespace RedisSlimClient.Io.Scheduling
     class WorkScheduler : IWorkScheduler
     {
         readonly object _lockObj = new object();
+        readonly ITelemetryWriter _telemetryWriter;
         bool _disposed;
+
+        public WorkScheduler(ITelemetryWriter telemetryWriter)
+        {
+            _telemetryWriter = telemetryWriter;
+        }
 
         public void Awake()
         {
@@ -36,15 +43,27 @@ namespace RedisSlimClient.Io.Scheduling
             {
                 while (!_disposed)
                 {
-                    if (!work())
+                    try
                     {
-                        lock (_lockObj)
+                        _telemetryWriter.ExecuteAsync(ctx =>
                         {
                             if (!work())
                             {
-                                Monitor.Wait(_lockObj, 10);
+                                lock (_lockObj)
+                                {
+                                    if (!_disposed && !work())
+                                    {
+                                        Monitor.Wait(_lockObj, 100);
+                                    }
+                                }
                             }
-                        }
+                            return Task.FromResult(true);
+                        }, nameof(work))
+                        .ConfigureAwait(false)
+                        .GetAwaiter().GetResult();
+                    }
+                    catch
+                    {
                     }
                 }
             });

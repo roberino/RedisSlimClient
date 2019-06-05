@@ -15,7 +15,8 @@ namespace RedisSlimClient.Io
         readonly AsyncLock<ICommandPipeline> _pipeline;
         readonly TimeSpan _connectTimeout;
 
-        public Connection(EndPoint endPoint, TimeSpan connectTimeout, ITelemetryWriter telemetryWriter, Func<INetworkStreamFactory, Task<ICommandPipeline>> pipelineFactory) : this(new NetworkStreamFactory(endPoint), telemetryWriter, pipelineFactory)
+        public Connection(EndPoint endPoint, TimeSpan connectTimeout, ITelemetryWriter telemetryWriter, Func<INetworkStreamFactory, Task<ICommandPipeline>> pipelineFactory) 
+            : this(new NetworkStreamFactory(endPoint, connectTimeout), telemetryWriter, pipelineFactory)
         {
             _connectTimeout = connectTimeout;
         }
@@ -23,7 +24,7 @@ namespace RedisSlimClient.Io
         public Connection(INetworkStreamFactory streamFactory, ITelemetryWriter telemetryWriter, Func<INetworkStreamFactory, Task<ICommandPipeline>> pipelineFactory)
         {
             _streamFactory = streamFactory;
-            _telemetryWriter = telemetryWriter;
+            _telemetryWriter = telemetryWriter ?? NullWriter.Instance;
             _pipeline = new AsyncLock<ICommandPipeline>(() => pipelineFactory(_streamFactory));
 
             Id = IdGenerator.Increment().ToString();
@@ -45,8 +46,13 @@ namespace RedisSlimClient.Io
 
         public void Dispose()
         {
-            _streamFactory.Dispose();
-            _pipeline.Dispose();
+            _telemetryWriter.ExecuteAsync(ctx =>
+            {
+                _pipeline.Dispose();
+                _streamFactory.Dispose();
+                return Task.FromResult(1);
+            }, nameof(Dispose))
+            .GetAwaiter().GetResult();
         }
     }
 }

@@ -46,7 +46,7 @@ namespace RedisSlimClient.Io
                 return true;
             }
 
-            return false;
+            return !_commandQueue.IsEmpty;
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Text;
 using RedisSlimClient.Types;
+using RedisSlimClient.Types.Primatives;
 
 namespace RedisSlimClient.Serialization
 {
@@ -22,16 +23,16 @@ namespace RedisSlimClient.Serialization
             }
         }
 
-        public static (ResponseType type, long length, int offset) ToResponseType(this ArraySegment<byte> data)
+        public static (ResponseType type, long length, int offset) ToResponseType(this IByteSequence data)
         {
-            var type = (ResponseType)data.Array[data.Offset];
+            var type = (ResponseType)data.GetValue(0);
 
             if (type != ResponseType.StringType && type != ResponseType.ErrorType)
             {
                 return (type, data.ToInteger(1), 0);
             }
 
-            return (type, data.Count - 1, 1);
+            return (type, data.Length - 1, 1);
         }
 
         public static byte[] ToBytes(this ArraySegment<byte> data, int offset = 0)
@@ -43,14 +44,14 @@ namespace RedisSlimClient.Serialization
             return bytes;
         }
 
-        public static long ToInteger(this ArraySegment<byte> data, int offset = 0)
+        public static long ToInteger(this IByteSequence data, int offset = 0)
         {
             return long.Parse(ToAsciiString(data, offset));
         }
 
-        public static string ToAsciiString(this ArraySegment<byte> data, int offset = 0)
+        public static string ToAsciiString(this IByteSequence data, int offset = 0)
         {
-            return Encoding.ASCII.GetString(data.Array, data.Offset + offset, data.Count - offset);
+            return Encoding.ASCII.GetString(data.ToArray());
         }
     }
 }

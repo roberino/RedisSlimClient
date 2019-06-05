@@ -1,13 +1,15 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using RedisSlimClient.Types;
+using RedisSlimClient.Types.Primatives;
 
 namespace RedisSlimClient.Serialization
 {
     internal class RedisByteSequenceReader : IEnumerable<RedisObjectPart>, IDisposable
     {
-        readonly IEnumerable<ArraySegment<byte>> _byteStream;
+        readonly IEnumerable<IByteSequence> _byteStream;
         readonly Stack<ArrayState> _arrayState;
 
         ReadState _currentState;
@@ -15,12 +17,17 @@ namespace RedisSlimClient.Serialization
 
         ArrayState _currentArrayState;
 
-        public RedisByteSequenceReader(IEnumerable<ArraySegment<byte>> byteStream)
+        public RedisByteSequenceReader(IEnumerable<IByteSequence> byteStream)
         {
             _byteStream = byteStream;
             _currentState = ReadState.Type;
             _currentType = (ResponseType.Unknown, 0, 0);
             _arrayState = new Stack<ArrayState>();
+        }
+
+        public RedisByteSequenceReader(IEnumerable<ArraySegment<byte>> byteStream) 
+            : this(byteStream.Select(b => (IByteSequence)new ArraySegmentByteSequenceAdapter(b)))
+        {
         }
 
         public IEnumerator<RedisObjectPart> GetEnumerator()
@@ -143,16 +150,16 @@ namespace RedisSlimClient.Serialization
             }
         }
 
-        RedisObject GetCurrentValue(ArraySegment<byte> segment)
+        RedisObject GetCurrentValue(IByteSequence segment)
         {
             switch (_currentType.type)
             {
                 case ResponseType.ErrorType:
                     return new RedisError(segment.ToAsciiString(_currentType.offset));
                 case ResponseType.StringType:
-                    return new RedisString(segment.ToBytes(_currentType.offset));
+                    return new RedisString(segment.ToArray(_currentType.offset));
                 case ResponseType.BulkStringType:
-                    return new RedisString(segment.ToBytes(_currentType.offset));
+                    return new RedisString(segment.ToArray(_currentType.offset));
             }
 
             throw new NotSupportedException(_currentType.type.ToString());
