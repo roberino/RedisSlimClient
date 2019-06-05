@@ -1,26 +1,28 @@
 ﻿using System;
+using System.Buffers;
 
 namespace RedisSlimClient.Types.Primatives
 {
     struct MemoryByteSequenceAdapter : IByteSequence
     {
-        readonly Memory<byte> _memory;
+        readonly ReadOnlySequence<byte> _sequence;
 
-        public MemoryByteSequenceAdapter(Memory<byte> memory)
+        public MemoryByteSequenceAdapter(ReadOnlySequence<byte> sequence)
         {
-            _memory = memory;
+            _sequence = sequence;
         }
-        public int Length => _memory.Length;
+
+        public int Length => (int)_sequence.Length;
 
         public void CopyTo(byte[] array)
         {
-            _memory.CopyTo(new Memory<byte>(array));
+            _sequence.CopyTo(new Span<byte>(array));
         }
 
         public byte[] ToArray(int offset) => 
-            _memory.Slice(offset).ToArray();
+            _sequence.Slice(offset).ToArray();
 
         public byte GetValue(int index) =>
-            _memory.Slice(index, 1).ToArray()[0];
+            _sequence.Slice(index, 1).ToArray()[0];
     }
 }

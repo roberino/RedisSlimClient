@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 
@@ -14,7 +15,14 @@ namespace RedisSlimClient.Io.Pipelines
             Reset(buffer);
         }
 
-        public void Reset(Memory<byte> buffer)
+        public void Reset(ReadOnlyMemory<byte> buffer)
+        {
+            var seg = GetArray(buffer);
+            SetBuffer(seg.Array, seg.Offset, seg.Count);
+            _isCompleted = false;
+        }
+
+        public void Reset(ReadOnlySequence<byte> buffer)
         {
             var seg = GetArray(buffer);
             SetBuffer(seg.Array, seg.Offset, seg.Count);
@@ -66,6 +74,11 @@ namespace RedisSlimClient.Io.Pipelines
         }
 
         ArraySegment<byte> GetArray(Memory<byte> memory)
+        {
+            throw new NotImplementedException();
+        }
+
+        ArraySegment<byte> GetArray(ReadOnlyMemory<byte> memory)
         {
             throw new NotImplementedException();
         }
