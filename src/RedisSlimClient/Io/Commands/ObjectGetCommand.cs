@@ -38,7 +38,7 @@ namespace RedisSlimClient.Io.Commands
 
             if (result is RedisString strData)
             {
-                var byteSeq = new RedisByteSequenceReader(new StreamIterator(strData.ToStream()));
+                var byteSeq = new ArraySegmentToRedisObjectReader(new StreamIterator(strData.ToStream()));
                 var objReader = new ObjectReader(byteSeq, _configuration.Encoding, null, _configuration.SerializerFactory);
 
                 try

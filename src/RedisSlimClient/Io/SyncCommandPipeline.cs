@@ -20,7 +20,7 @@ namespace RedisSlimClient.Io
         public SyncCommandPipeline(Stream networkStream)
         {
             _writeStream = networkStream;
-            _reader = new RedisByteSequenceReader(new StreamIterator(networkStream));
+            _reader = new ArraySegmentToRedisObjectReader(new StreamIterator(networkStream));
         }
 
         public (int PendingWrites, int PendingReads) PendingWork => (_pendingWrites, _pendingReads);

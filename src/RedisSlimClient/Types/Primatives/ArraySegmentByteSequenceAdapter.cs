@@ -22,7 +22,7 @@ namespace RedisSlimClient.Types.Primatives
         {
             var buff = new byte[_segment.Count - offset];
 
-            Array.Copy(_segment.Array, _segment.Offset + 1, buff, 0, buff.Length);
+            Array.Copy(_segment.Array, _segment.Offset + offset, buff, 0, buff.Length);
                         
             return buff;
         }

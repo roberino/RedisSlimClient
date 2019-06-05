@@ -51,7 +51,7 @@ namespace RedisSlimClient.Serialization
 
         public static string ToAsciiString(this IByteSequence data, int offset = 0)
         {
-            return Encoding.ASCII.GetString(data.ToArray());
+            return Encoding.ASCII.GetString(data.ToArray(offset));
         }
     }
 }

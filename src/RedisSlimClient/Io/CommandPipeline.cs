@@ -27,7 +27,7 @@ namespace RedisSlimClient.Io
         {
             _writeStream = networkStream;
             _telemetryWriter = telemetryWriter ?? NullWriter.Instance;
-            _reader = new RedisByteSequenceReader(new StreamIterator(networkStream));
+            _reader = new ArraySegmentToRedisObjectReader(new StreamIterator(networkStream));
             _commandQueue = new CommandQueue();
             _scheduler = scheduler ?? new WorkScheduler(_telemetryWriter);
 
