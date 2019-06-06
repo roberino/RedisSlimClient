@@ -7,16 +7,15 @@ using System.Threading.Tasks;
 
 namespace RedisSlimClient.Io.Pipelines
 {
-    class SocketPipelineReceiver : IPipelineReceiver
+    class SocketPipelineReceiver : IPipelineReceiver, IRunnable
     {
         readonly byte _delimitter;
         readonly int _minBufferSize;
-        readonly Socket _socket;
+        readonly ISocket _socket;
         readonly Pipe _pipe;
-        readonly AwaitableSocketAsyncEventArgs _socketEventArgs;
         readonly CancellationToken _cancellationToken;
 
-        public SocketPipelineReceiver(Socket socket, CancellationToken cancellationToken, byte delimitter, int minBufferSize = 512)
+        public SocketPipelineReceiver(ISocket socket, CancellationToken cancellationToken, byte delimitter, int minBufferSize = 512)
         {
             _cancellationToken = cancellationToken;
             _delimitter = delimitter;
@@ -24,19 +23,17 @@ namespace RedisSlimClient.Io.Pipelines
             _socket = socket;
 
             _pipe = new Pipe();
-            _socketEventArgs = new AwaitableSocketAsyncEventArgs(new Memory<byte>());
-
-            _cancellationToken.Register(_socketEventArgs.Abandon);
         }
 
-        public event Action<Exception> OnException;
+        public event Action<Exception> Error;
 
-        public event Action<ReadOnlySequence<byte>> OnRead;
+        public event Action<ReadOnlySequence<byte>> Reading;
 
         public Task RunAsync()
         {
             return Task.WhenAll(PumpFromSocket(), ReadPipeAsync());
         }
+
         public void Dispose()
         {
         }
@@ -49,25 +46,15 @@ namespace RedisSlimClient.Io.Pipelines
             {
                 var memory = writer.GetMemory(_minBufferSize);
 
-                _socketEventArgs.Reset(memory);
-
                 try
                 {
-
-                    if (!_socket.ReceiveAsync(_socketEventArgs))
-                    {
-                        _socketEventArgs.Complete();
-                    }
-
-                    var bytesRead = await _socketEventArgs;
+                    var bytesRead = await _socket.ReceiveAsync(memory);
 
                     writer.Advance(bytesRead);
                 }
                 catch (Exception ex)
                 {
-                    _socketEventArgs.Abandon();
-
-                    OnException?.Invoke(ex);
+                    Error?.Invoke(ex);
 
                     break;
                 }
@@ -102,7 +89,7 @@ namespace RedisSlimClient.Io.Pipelines
 
                         buffer = buffer.Slice(buffer.GetPosition(1, position.Value));
 
-                        OnRead?.Invoke(buffer);
+                        Reading?.Invoke(buffer);
                     }
                 }
                 while (position != null);

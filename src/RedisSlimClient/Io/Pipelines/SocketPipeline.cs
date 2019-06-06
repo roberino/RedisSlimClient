@@ -1,48 +1,43 @@
 ﻿using System;
 using System.Net;
-using System.Net.Sockets;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace RedisSlimClient.Io.Pipelines
 {
     class SocketPipeline : IDuplexPipeline
     {
-        readonly Socket _socket;
+        readonly ISocket _socket;
         readonly CancellationTokenSource _cancellationTokenSource;
 
         public SocketPipeline(EndPoint endPoint, TimeSpan timeout, byte delimitter, int minBufferSize = 512)
         {
-            _socket = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp)
-            {
-                ReceiveTimeout = (int)timeout.TotalMilliseconds,
-                SendTimeout = (int)timeout.TotalMilliseconds,
-                NoDelay = true
-            };
-
-            _socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
+            _socket = new SocketFacade(endPoint, timeout);
 
             Receiver = new SocketPipelineReceiver(_socket, _cancellationTokenSource.Token, delimitter, minBufferSize);
+            Sender = new SocketPipelineSender(_socket, _cancellationTokenSource.Token);
         }
 
         public IPipelineReceiver Receiver { get; }
+
+        public IPipelineSender Sender { get; }
 
         public void Dispose()
         {
             if (!_cancellationTokenSource.IsCancellationRequested)
             {
-                Receiver.Dispose();
-
                 _cancellationTokenSource.Cancel();
 
-                try
-                {
-                    _socket.Shutdown(SocketShutdown.Both);
-                    _socket.Close();
-                }
-                catch { }
+                Receiver.Dispose();
+                Sender.Dispose();
 
                 _socket.Dispose();
             }
+        }
+
+        public Task RunAsync()
+        {
+            return Task.WhenAll(((IRunnable)Receiver).RunAsync(), ((IRunnable)Sender).RunAsync());
         }
 
         ~SocketPipeline() { Dispose(); }

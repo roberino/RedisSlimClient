@@ -2,8 +2,10 @@
 
 namespace RedisSlimClient.Io.Pipelines
 {
-    interface IDuplexPipeline : IDisposable
+    interface IDuplexPipeline : IRunnable, IDisposable
     {
         IPipelineReceiver Receiver { get; }
+
+        IPipelineSender Sender { get; }
     }
 }

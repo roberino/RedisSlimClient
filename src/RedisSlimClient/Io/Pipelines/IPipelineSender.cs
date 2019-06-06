@@ -1,8 +1,9 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 
 namespace RedisSlimClient.Io.Pipelines
 {
-    interface IPipelineSender
+    interface IPipelineSender : IDisposable
     {
         Task SendAsync(byte[] data);
     }
