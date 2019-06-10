@@ -1,6 +1,6 @@
 ﻿using RedisSlimClient.Configuration;
 using RedisSlimClient.Io;
-using RedisSlimClient.Serialization;
+using RedisSlimClient.Serialization.Protocol;
 using RedisSlimClient.UnitTests.Serialization;
 using System;
 using System.IO;

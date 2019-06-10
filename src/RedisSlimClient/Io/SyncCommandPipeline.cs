@@ -1,5 +1,6 @@
 ﻿using RedisSlimClient.Io.Commands;
 using RedisSlimClient.Serialization;
+using RedisSlimClient.Serialization.Protocol;
 using RedisSlimClient.Types;
 using System;
 using System.Collections.Generic;
@@ -38,7 +39,7 @@ namespace RedisSlimClient.Io
 
                 try
                 {
-                    command.Write(_writeStream);
+                    _writeStream.Write(command.GetArgs());
                 }
                 finally
                 {

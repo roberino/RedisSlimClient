@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 using System.Text;
-using RedisSlimClient.Serialization;
+using RedisSlimClient.Serialization.Protocol;
 using Xunit;
 
 namespace RedisSlimClient.UnitTests.Serialization

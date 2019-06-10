@@ -16,6 +16,8 @@ namespace RedisSlimClient.Io.Pipelines
 
         public SocketFacade(EndPoint endPoint, TimeSpan timeout)
         {
+            _cancellationTokenSource = new CancellationTokenSource();
+
             _socket = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp)
             {
                 ReceiveTimeout = (int)timeout.TotalMilliseconds,

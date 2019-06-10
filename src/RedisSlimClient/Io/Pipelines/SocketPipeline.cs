@@ -18,6 +18,7 @@ namespace RedisSlimClient.Io.Pipelines
 
         public SocketPipeline(ISocket socket, Func<ReadOnlySequence<byte>, SequencePosition?> delimitter, int minBufferSize = 512)
         {
+            _cancellationTokenSource = new CancellationTokenSource();
             _socket = socket;
 
             Receiver = new SocketPipelineReceiver(_socket, _cancellationTokenSource.Token, delimitter, minBufferSize);

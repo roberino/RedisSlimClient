@@ -13,32 +13,34 @@ namespace RedisSlimClient.UnitTests.Io.Pipelines
         [Fact]
         public async Task SendAsync_SomeAction_WritesDataToSocket()
         {
-            var socket = Substitute.For<ISocket>();
+            var socket = new StubSocket();
             var cancellationTokenSource = new CancellationTokenSource();
             var sender = new SocketPipelineSender(socket, cancellationTokenSource.Token);
 
-            socket.SendAsync(Arg.Any<ReadOnlySequence<byte>>()).Returns(call => (int)call.Arg<ReadOnlySequence<byte>>().Length);
-
             await sender.SendAsync(m =>
             {
-                foreach (var n in Enumerable.Range(0, 5))
+                foreach (var n in Enumerable.Range(0, 3))
                 {
                     m.Span[n] = (byte)(n + 1);
                 }
-                return 5;
+                return 3;
             });
-
-            var handle = new ManualResetEvent(false);
 
             ThreadPool.QueueUserWorkItem(_ =>
             {
                 sender.RunAsync().Wait();
-                handle.Set();
             });
 
-            handle.WaitOne();
+            socket.WaitForDataWrite();
 
-            await socket.Received().SendAsync(Arg.Is<ReadOnlySequence<byte>>(x => x.Length == 5));
+            cancellationTokenSource.Cancel();
+
+            var data = socket.Received.Single().ToArray();
+
+            Assert.Equal(3, data.Length);
+            Assert.Equal(1, data[0]);
+            Assert.Equal(2, data[1]);
+            Assert.Equal(3, data[2]);
         }
     }
 }

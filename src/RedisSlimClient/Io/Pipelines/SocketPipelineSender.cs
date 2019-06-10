@@ -7,7 +7,6 @@ namespace RedisSlimClient.Io.Pipelines
 {
     class SocketPipelineSender : IPipelineSender, IRunnable
     {
-        readonly int _minBufferSize;
         readonly ISocket _socket;
         readonly Pipe _pipe;
 

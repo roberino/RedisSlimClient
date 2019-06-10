@@ -73,7 +73,7 @@ namespace RedisSlimClient.Io.Pipelines
             _isCompleted = true;
         }
 
-        ArraySegment<byte> GetArray(Memory<byte> memory)
+        ArraySegment<byte> GetArray(ReadOnlySequence<byte> memory)
         {
             throw new NotImplementedException();
         }
