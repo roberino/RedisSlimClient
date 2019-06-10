@@ -1,5 +1,6 @@
 ﻿using RedisSlimClient.Configuration;
 using RedisSlimClient.Serialization;
+using RedisSlimClient.Serialization.Protocol;
 using RedisSlimClient.Types;
 using System;
 using System.Collections.Generic;
@@ -36,7 +37,7 @@ namespace RedisSlimClient.Io.Commands
 
                 _taskCompletionSource.SetResult(string.Equals(result.ToString(), "OK", StringComparison.OrdinalIgnoreCase));
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 _taskCompletionSource.SetException(ex);
             }
@@ -47,19 +48,25 @@ namespace RedisSlimClient.Io.Commands
             commandWriter.WriteStartArray(3);
             commandWriter.Write("SET", true);
             commandWriter.Write(_key, true);
-
-            using(var ms = new MemoryStream())
-            {
-                var objWriter = new ObjectWriter(ms, _configuration.Encoding, null, _configuration.SerializerFactory);
-
-                _serializer.WriteData(_objectData, objWriter);
-
-                commandWriter.Write(ms.ToArray());
-            }
+            commandWriter.Write(GetObjectData());
         }
 
         public TaskAwaiter<bool> GetAwaiter() => _taskCompletionSource.Task.GetAwaiter();
 
         TaskAwaiter IRedisCommand.GetAwaiter() => ((Task)_taskCompletionSource.Task).GetAwaiter();
+
+        public object[] GetArgs() => new object[] { "SET", _key, GetObjectData() };
+
+        byte[] GetObjectData()
+        {
+            using (var ms = new MemoryStream())
+            {
+                var objWriter = new ObjectWriter(ms, _configuration.Encoding, null, _configuration.SerializerFactory);
+
+                _serializer.WriteData(_objectData, objWriter);
+
+                return ms.ToArray();
+            }
+        }
     }
 }

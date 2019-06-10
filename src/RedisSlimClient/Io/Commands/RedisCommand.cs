@@ -1,11 +1,9 @@
 ﻿using RedisSlimClient.Types;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-using RedisSlimClient.Serialization;
 
 namespace RedisSlimClient.Io.Commands
 {
@@ -20,11 +18,6 @@ namespace RedisSlimClient.Io.Commands
         public string CommandText { get; }
 
         public virtual object[] GetArgs() => new[] { CommandText };
-
-        public void Write(Stream commandWriter)
-        {
-            commandWriter.Write(GetArgs());
-        }
 
         public virtual void Read(IEnumerable<RedisObjectPart> objectParts)
         {

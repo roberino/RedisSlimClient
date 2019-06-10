@@ -30,6 +30,17 @@ namespace RedisSlimClient.Io.Pipelines
             await _pipe.Writer.WriteAsync(new ReadOnlyMemory<byte>(data));
         }
 
+        public async Task SendAsync(Func<Memory<byte>, int> writeAction, int bufferSize = 512)
+        {
+            var mem = _pipe.Writer.GetMemory(bufferSize);
+            
+            var len = writeAction(mem);
+
+            _pipe.Writer.Advance(len);
+
+            await _pipe.Writer.FlushAsync(_cancellationToken);
+        }
+
         async Task PumpToSocket()
         {
             while (!_cancellationToken.IsCancellationRequested)

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Buffers;
 using System.IO.Pipelines;
-using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -9,13 +8,17 @@ namespace RedisSlimClient.Io.Pipelines
 {
     class SocketPipelineReceiver : IPipelineReceiver, IRunnable
     {
-        readonly byte _delimitter;
+        readonly Func<ReadOnlySequence<byte>, SequencePosition?> _delimitter;
         readonly int _minBufferSize;
         readonly ISocket _socket;
         readonly Pipe _pipe;
         readonly CancellationToken _cancellationToken;
 
         public SocketPipelineReceiver(ISocket socket, CancellationToken cancellationToken, byte delimitter, int minBufferSize = 512)
+            : this(socket, cancellationToken, s => s.PositionOf(delimitter), minBufferSize)
+        {
+        }
+        public SocketPipelineReceiver(ISocket socket, CancellationToken cancellationToken, Func<ReadOnlySequence<byte>, SequencePosition?> delimitter, int minBufferSize = 512)
         {
             _cancellationToken = cancellationToken;
             _delimitter = delimitter;
@@ -81,18 +84,18 @@ namespace RedisSlimClient.Io.Pipelines
 
                 do
                 {
-                    position = buffer.PositionOf(_delimitter);
-
-                    if (position != null)
+                    position = _delimitter(buffer);
+                    
+                    if (position.HasValue)
                     {
                         var next = buffer.Slice(0, position.Value);
 
                         buffer = buffer.Slice(buffer.GetPosition(1, position.Value));
 
-                        Reading?.Invoke(buffer);
+                        Reading?.Invoke(next);
                     }
                 }
-                while (position != null);
+                while (position.HasValue);
 
                 _pipe.Reader.AdvanceTo(buffer.Start, buffer.End);
 

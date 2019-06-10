@@ -1,121 +1,138 @@
 ﻿using System;
-using System.IO;
+using System.Linq;
 
-namespace RedisSlimClient.Serialization
+namespace RedisSlimClient.Serialization.Protocol
 {
-    internal static class RedisByteFormatter
+    class RedisByteFormatter
     {
-        public static void Write(this Stream output, object item)
+        private readonly Memory<byte> _memory;
+
+        int _position;
+
+        public RedisByteFormatter(Memory<byte> stream)
+        {
+            _memory = stream;
+        }
+
+        public int Write(object item)
         {
             var tc = Type.GetTypeCode(item.GetType());
 
             switch (tc)
             {
                 case TypeCode.String:
-                    output.Write((string)item, true);
-                    break;
+                    return Write((string)item, true);
                 case TypeCode.Int32:
-                    output.Write((int)item);
-                    break;
+                    return Write((int)item);
                 case TypeCode.Int64:
-                    output.Write((long)item);
-                    break;
+                    return Write((long)item);
                 case TypeCode.Object:
-                    output.Write((byte[])item);
-                    break;
+                    return Write((byte[])item);
                 default:
                     throw new NotSupportedException(tc.ToString());
             }
         }
 
-        public static void Write(this Stream output, object[] data)
+        public int Write(object[] data)
         {
-            output.WriteStartArray(data.Length);
+            WriteStartArray(data.Length);
 
             for (var i = 0; i < data.Length; i++)
             {
-                output.Write(data[i]);
+                Write(data[i]);
             }
+
+            return _position;
         }
 
-        public static void Write(this Stream output, string[] data)
+        public int Write(string[] data)
         {
-            output.WriteStartArray(data.Length);
+            WriteStartArray(data.Length);
 
             for (var i = 0; i < data.Length; i++)
             {
-                output.Write(data[i]);
+                Write(data[i]);
             }
+
+            return _position;
         }
 
-        public static void Write(this Stream output, byte[][] data)
+        public int Write(byte[][] data)
         {
-            output.WriteStartArray(data.Length);
+            WriteStartArray(data.Length);
 
             for (var i = 0; i < data.Length; i++)
             {
-                output.Write(data[i]);
+                Write(data[i]);
             }
+
+            return _position;
         }
 
-        public static void WriteStartArray(this Stream output, int arrayLength)
+        public int WriteStartArray(int arrayLength)
         {
-            output.Write(ResponseType.ArrayType);
-            output.WriteRaw(arrayLength.ToString());
-            output.WriteEnd();
+            Write(ResponseType.ArrayType);
+            WriteRaw(arrayLength.ToString());
+            return WriteEnd();
         }
 
-        public static void Write(this Stream output, byte[] data)
+        public int Write(byte[] data)
         {
-            output.Write(ResponseType.BulkStringType);
-            output.WriteRaw(data.Length.ToString());
-            output.WriteEnd();
-            output.Write(data, 0, data.Length);
-            output.WriteEnd();
+            Write(ResponseType.BulkStringType);
+            WriteRaw(data.Length.ToString());
+            WriteEnd();
+
+            for(var i = 0; i < data.Length; i++)
+            {
+                _memory.Span[_position++] = data[i];
+            }
+
+            return WriteEnd();
         }
 
-        public static void Write(this Stream output, long value)
+        public int Write(long value)
         {
-            output.Write(ResponseType.IntType);
-            output.WriteRaw(value.ToString());
-            output.WriteEnd();
+            Write(ResponseType.IntType);
+            WriteRaw(value.ToString());
+            return WriteEnd();
         }
 
-        public static void Write(this Stream output, string data, bool bulk = false)
+        public int Write(string data, bool bulk = false)
         {
             if (bulk)
             {
-                output.Write(ResponseType.BulkStringType);
-                output.WriteRaw(data.Length.ToString());
-                output.WriteEnd();
-                output.WriteRaw(data);
-                output.WriteEnd();
+                Write(ResponseType.BulkStringType);
+                Write(data.Length.ToString());
+                WriteEnd();
+                WriteRaw(data);
+                WriteEnd();
             }
             else
             {
-                output.Write(ResponseType.StringType);
-                output.WriteRaw(data);
-                output.WriteEnd();
+                Write(ResponseType.StringType);
+                WriteRaw(data);
+                WriteEnd();
             }
+
+            return _position;
         }
 
-        static void WriteRaw(this Stream output, string data)
+        int WriteRaw(string data)
         {
-            for (var i = 0; i < data.Length; i++)
-            {
-                output.WriteByte((byte)data[i]);
-            }
+            return Write(data.Select(b => (byte)b).ToArray());
         }
 
-        static void WriteEnd(this Stream output)
+        int WriteEnd()
         {
-            output.WriteByte((byte)'\r');
-            output.WriteByte((byte)'\n');
+            _memory.Span[_position++] = (byte)'\r';
+            _memory.Span[_position++] = (byte)'\n';
+            return _position;
         }
 
-        static void Write(this Stream output, ResponseType responseType)
+        int Write(ResponseType responseType)
         {
-            output.WriteByte((byte)responseType);
+            _memory.Span[_position++] = (byte)responseType;
+            return _position;
         }
     }
 }

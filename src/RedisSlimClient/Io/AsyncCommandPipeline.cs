@@ -1,12 +1,10 @@
 ﻿using RedisSlimClient.Io.Commands;
-using RedisSlimClient.Io.Scheduling;
-using RedisSlimClient.Serialization;
+using RedisSlimClient.Io.Pipelines;
+using RedisSlimClient.Serialization.Protocol;
 using RedisSlimClient.Telemetry;
-using RedisSlimClient.Types;
 using RedisSlimClient.Util;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Threading.Tasks;
 
 namespace RedisSlimClient.Io
@@ -15,38 +13,68 @@ namespace RedisSlimClient.Io
     {
         readonly SyncedCounter _pendingWrites = new SyncedCounter();
 
-        readonly Stream _writeStream;
+        readonly IDuplexPipeline _pipeline;
         readonly ITelemetryWriter _telemetryWriter;
-        readonly IEnumerable<RedisObjectPart> _reader;
         readonly CommandQueue _commandQueue;
-        readonly IWorkScheduler _scheduler;
 
         bool _disposed;
 
-        public AsyncCommandPipeline(Stream networkStream, ITelemetryWriter telemetryWriter)
+        public AsyncCommandPipeline(IDuplexPipeline pipeline, ITelemetryWriter telemetryWriter)
         {
-            _writeStream = networkStream;
+            _pipeline = pipeline;
             _telemetryWriter = telemetryWriter ?? NullWriter.Instance;
-            _reader = new ArraySegmentToRedisObjectReader(new StreamIterator(networkStream));
             _commandQueue = new CommandQueue();
         }
 
         public (int PendingWrites, int PendingReads) PendingWork => ((int)_pendingWrites.Value, _commandQueue.QueueSize);
 
-        public Task<T> Execute<T>(IRedisResult<T> command, TimeSpan timeout)
+        public async Task<T> Execute<T>(IRedisResult<T> command, TimeSpan timeout)
         {
             if (_disposed)
             {
                 throw new ObjectDisposedException(nameof(CommandPipeline));
             }
 
-            throw new NotImplementedException();
+            _pendingWrites.Increment();
+
+            try
+            {
+                await _commandQueue.Enqueue(async () =>
+                {
+                    await _pipeline.Sender.SendAsync(m =>
+                    {
+                        var formatter = new RedisByteFormatter(m);
+
+                        return formatter.Write(command.GetArgs());
+                    });
+
+                    return command;
+                }, timeout);
+            }
+            finally
+            {
+                _pendingWrites.Decrement();
+            }
+
+            return await command;
         }
 
         public void Dispose()
         {
             _disposed = true;
-            _scheduler.Dispose();
+        }
+
+        class PipeAdapter : IRedisObjectWriter
+        {
+            public PipeAdapter(IPipelineSender sender)
+            {
+
+            }
+
+            public Task WriteAsync(IEnumerable<object> objects)
+            {
+                throw new NotImplementedException();
+            }
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using RedisSlimClient.Configuration;
 using RedisSlimClient.Serialization;
+using RedisSlimClient.Serialization.Protocol;
 using RedisSlimClient.Types;
 using System;
 using System.Collections.Generic;
@@ -56,11 +57,13 @@ namespace RedisSlimClient.Io.Commands
 
         public void Write(Stream commandWriter)
         {
-            commandWriter.Write(new object[] { "GET", _key });
+            commandWriter.Write(GetArgs());
         }
 
         public TaskAwaiter<T> GetAwaiter() => _taskCompletionSource.Task.GetAwaiter();
 
         TaskAwaiter IRedisCommand.GetAwaiter() => ((Task)_taskCompletionSource.Task).GetAwaiter();
+
+        public object[] GetArgs() => new object[] { "GET", _key };
     }
 }

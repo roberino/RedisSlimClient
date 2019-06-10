@@ -1,6 +1,7 @@
 ﻿using RedisSlimClient.Io.Commands;
 using RedisSlimClient.Io.Scheduling;
 using RedisSlimClient.Serialization;
+using RedisSlimClient.Serialization.Protocol;
 using RedisSlimClient.Telemetry;
 using RedisSlimClient.Types;
 using RedisSlimClient.Util;
@@ -15,7 +16,7 @@ namespace RedisSlimClient.Io
     {
         readonly SyncedCounter _pendingWrites = new SyncedCounter();
 
-        readonly Stream _writeStream;
+        readonly IRedisObjectWriter _writeStream;
         readonly ITelemetryWriter _telemetryWriter;
         readonly IEnumerable<RedisObjectPart> _reader;
         readonly CommandQueue _commandQueue;
@@ -25,7 +26,7 @@ namespace RedisSlimClient.Io
 
         public CommandPipeline(Stream networkStream, ITelemetryWriter telemetryWriter, IWorkScheduler scheduler = null)
         {
-            _writeStream = networkStream;
+            _writeStream = new StreamAdapter(networkStream);
             _telemetryWriter = telemetryWriter ?? NullWriter.Instance;
             _reader = new ArraySegmentToRedisObjectReader(new StreamIterator(networkStream));
             _commandQueue = new CommandQueue();
@@ -47,13 +48,13 @@ namespace RedisSlimClient.Io
             {
                 _pendingWrites.Increment();
 
-                await _commandQueue.Enqueue(() =>
+                await _commandQueue.Enqueue(async () =>
                 {
                     try
                     {
-                        ctx.Write(nameof(command.Write));
+                        ctx.Write(nameof(_writeStream.WriteAsync));
 
-                        command.Write(_writeStream);
+                        await _writeStream.WriteAsync(command.GetArgs());
 
                         return command;
                     }
@@ -79,18 +80,6 @@ namespace RedisSlimClient.Io
 
         bool ProcessQueue()
         {
-            //return _telemetryWriter.ExecuteAsync(ctx =>
-            //{
-            //    _writeStream.Flush();
-
-            //    return Task.FromResult(_commandQueue.ProcessNextCommand(cmd =>
-            //    {
-            //        cmd.Read(_reader);
-            //    }));
-            //}, nameof(ProcessQueue)).Result;
-
-            _writeStream.Flush();
-
             return _commandQueue.ProcessNextCommand(cmd =>
             {
                 cmd.Read(_reader);

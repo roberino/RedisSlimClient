@@ -19,7 +19,7 @@ namespace RedisSlimClient.Io
 
         public int QueueSize => _commandQueue.Count;
 
-        public async Task Enqueue(Func<IRedisCommand> commandFactory, TimeSpan timeout)
+        public async Task Enqueue(Func<Task<IRedisCommand>> commandFactory, TimeSpan timeout)
         {
             IRedisCommand cmd;
 
@@ -27,7 +27,7 @@ namespace RedisSlimClient.Io
 
             try
             {
-                cmd = commandFactory();
+                cmd = await commandFactory();
 
                 _commandQueue.Enqueue(cmd);
             }

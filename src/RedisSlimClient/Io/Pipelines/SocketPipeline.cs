@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,9 +11,14 @@ namespace RedisSlimClient.Io.Pipelines
         readonly ISocket _socket;
         readonly CancellationTokenSource _cancellationTokenSource;
 
-        public SocketPipeline(EndPoint endPoint, TimeSpan timeout, byte delimitter, int minBufferSize = 512)
+        public SocketPipeline(EndPoint endPoint, TimeSpan timeout, Func<ReadOnlySequence<byte>, SequencePosition?> delimitter, int minBufferSize = 512)
+            : this(new SocketFacade(endPoint, timeout), delimitter, minBufferSize)
         {
-            _socket = new SocketFacade(endPoint, timeout);
+        }
+
+        public SocketPipeline(ISocket socket, Func<ReadOnlySequence<byte>, SequencePosition?> delimitter, int minBufferSize = 512)
+        {
+            _socket = socket;
 
             Receiver = new SocketPipelineReceiver(_socket, _cancellationTokenSource.Token, delimitter, minBufferSize);
             Sender = new SocketPipelineSender(_socket, _cancellationTokenSource.Token);
