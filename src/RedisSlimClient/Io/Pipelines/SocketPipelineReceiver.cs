@@ -30,11 +30,14 @@ namespace RedisSlimClient.Io.Pipelines
 
         public event Action<Exception> Error;
 
-        public event Action<ReadOnlySequence<byte>> Reading;
+        public event Action<ReadOnlySequence<byte>> Received;
 
         public Task RunAsync()
         {
-            return Task.WhenAll(PumpFromSocket(), ReadPipeAsync());
+            var readerTask = PumpFromSocket();
+            var pubTask = ReadPipeAsync();
+
+            return Task.WhenAll(readerTask, pubTask);
         }
 
         public void Dispose()
@@ -73,13 +76,13 @@ namespace RedisSlimClient.Io.Pipelines
             writer.Complete();
         }
 
-        async Task ReadPipeAsync()
+        public async Task ReadPipeAsync()
         {
             while (!_cancellationToken.IsCancellationRequested)
             {
-                ReadResult result = await _pipe.Reader.ReadAsync(_cancellationToken);
+                var result = await _pipe.Reader.ReadAsync(_cancellationToken);
 
-                ReadOnlySequence<byte> buffer = result.Buffer;
+                var buffer = result.Buffer;
                 SequencePosition? position = null;
 
                 do
@@ -92,7 +95,7 @@ namespace RedisSlimClient.Io.Pipelines
 
                         buffer = buffer.Slice(buffer.GetPosition(1, position.Value));
 
-                        Reading?.Invoke(next);
+                        Received?.Invoke(next);
                     }
                 }
                 while (position.HasValue);

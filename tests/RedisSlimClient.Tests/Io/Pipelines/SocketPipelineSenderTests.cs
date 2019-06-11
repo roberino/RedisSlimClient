@@ -26,10 +26,7 @@ namespace RedisSlimClient.UnitTests.Io.Pipelines
                 return 3;
             });
 
-            ThreadPool.QueueUserWorkItem(_ =>
-            {
-                sender.RunAsync().Wait();
-            });
+            TestExtensions.RunOnBackgroundThread(sender.RunAsync);
 
             socket.WaitForDataWrite();
 
