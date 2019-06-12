@@ -1,5 +1,4 @@
-﻿using NSubstitute;
-using RedisSlimClient.Io.Pipelines;
+﻿using RedisSlimClient.Io.Pipelines;
 using System.Buffers;
 using System.Linq;
 using System.Threading;

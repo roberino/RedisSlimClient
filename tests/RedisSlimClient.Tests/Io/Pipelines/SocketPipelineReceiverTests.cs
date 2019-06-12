@@ -1,6 +1,4 @@
 ﻿using RedisSlimClient.Io.Pipelines;
-using System.Buffers;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -10,7 +8,7 @@ namespace RedisSlimClient.UnitTests.Io.Pipelines
     public class SocketPipelineReceiverTests
     {
         [Fact]
-        public async Task SendAsync_SomeData()
+        public async Task SendAsync_SomeData_FiresReceievedEvent()
         {
             var eventFired = false;
             var socket = new StubSocket();
