@@ -11,17 +11,17 @@ namespace RedisSlimClient.Io.Pipelines
         readonly ISocket _socket;
         readonly CancellationTokenSource _cancellationTokenSource;
 
-        public SocketPipeline(EndPoint endPoint, TimeSpan timeout, Func<ReadOnlySequence<byte>, SequencePosition?> delimitter, int minBufferSize = 512)
-            : this(new SocketFacade(endPoint, timeout), delimitter, minBufferSize)
+        public SocketPipeline(EndPoint endPoint, TimeSpan timeout, int minBufferSize = 512)
+            : this(new SocketFacade(endPoint, timeout), minBufferSize)
         {
         }
 
-        public SocketPipeline(ISocket socket, Func<ReadOnlySequence<byte>, SequencePosition?> delimitter, int minBufferSize = 512)
+        public SocketPipeline(ISocket socket, int minBufferSize = 512)
         {
             _cancellationTokenSource = new CancellationTokenSource();
             _socket = socket;
 
-            Receiver = new SocketPipelineReceiver(_socket, _cancellationTokenSource.Token, delimitter, minBufferSize);
+            Receiver = new SocketPipelineReceiver(_socket, _cancellationTokenSource.Token, minBufferSize);
             Sender = new SocketPipelineSender(_socket, _cancellationTokenSource.Token);
         }
 

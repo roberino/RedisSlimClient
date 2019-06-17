@@ -1,4 +1,5 @@
 ﻿using RedisSlimClient.Io.Pipelines;
+using System.Buffers;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -14,11 +15,11 @@ namespace RedisSlimClient.UnitTests.Io.Pipelines
             var socket = new StubSocket();
             var waitHandle = new ManualResetEvent(false);
             var cancellationTokenSource = new CancellationTokenSource();
-            var receiver = new SocketPipelineReceiver(socket, cancellationTokenSource.Token, (byte)'x');
+            var receiver = new SocketPipelineReceiver(socket, cancellationTokenSource.Token);
 
             await socket.SendStringAsync("abcxefg");
 
-            receiver.Received += x =>
+            receiver.RegisterHandler(s => s.PositionOf((byte)'x'), x =>
             {
                 eventFired = true;
                 waitHandle.Set();
@@ -27,7 +28,7 @@ namespace RedisSlimClient.UnitTests.Io.Pipelines
                 Assert.Equal((byte)'a', x.First.Span[0]);
                 Assert.Equal((byte)'b', x.First.Span[1]);
                 Assert.Equal((byte)'c', x.First.Span[2]);
-            };
+            });
 
             TestExtensions.RunOnBackgroundThread(receiver.RunAsync);
             

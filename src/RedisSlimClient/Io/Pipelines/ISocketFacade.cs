@@ -6,6 +6,8 @@ namespace RedisSlimClient.Io.Pipelines
 {
     interface ISocket : IDisposable
     {
+        SocketState State { get; }
+        Task ConnectAsync();
         Task<int> ReceiveAsync(Memory<byte> memory);
         Task<int> SendAsync(ReadOnlySequence<byte> buffer);
     }

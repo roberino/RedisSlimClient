@@ -27,10 +27,8 @@ namespace RedisSlimClient.Io.Commands
             _taskCompletionSource = new TaskCompletionSource<T>();
         }
 
-        public void Read(IEnumerable<RedisObjectPart> objectParts)
+        public void Complete(RedisObject result)
         {
-            var result = objectParts.ToObjects().First();
-
             if (result is RedisError err)
             {
                 _taskCompletionSource.SetException(new RedisServerException(err.Message));
@@ -53,6 +51,11 @@ namespace RedisSlimClient.Io.Commands
                     _taskCompletionSource.SetException(ex);
                 }
             }
+        }
+
+        public void Abandon(Exception ex)
+        {
+            _taskCompletionSource.SetException(ex);
         }
 
         public void Write(Stream commandWriter)

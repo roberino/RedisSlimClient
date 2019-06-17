@@ -18,10 +18,18 @@ namespace RedisSlimClient.UnitTests.Io.Pipelines
             _sendWaitHandle = new ManualResetEvent(false);
             _receiveWaitHandle = new ManualResetEvent(false);
             Received = new ConcurrentQueue<ReadOnlySequence<byte>>();
+            State = new SocketState(() => true);
+        }
+
+        public Task ConnectAsync()
+        {
+            return State.DoConnect(() => Task.CompletedTask);
         }
 
         public void Dispose()
         {
+            State.Terminated();
+
             _sendWaitHandle.Dispose();
             _receiveWaitHandle.Dispose();
         }
@@ -66,6 +74,8 @@ namespace RedisSlimClient.UnitTests.Io.Pipelines
         }
 
         public ConcurrentQueue<ReadOnlySequence<byte>> Received { get; }
+
+        public SocketState State { get; }
 
         int ReadReceivedQueue(Memory<byte> memory)
         {

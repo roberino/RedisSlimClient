@@ -5,6 +5,7 @@ using RedisSlimClient.Types;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace RedisSlimClient.Io
@@ -50,7 +51,7 @@ namespace RedisSlimClient.Io
 
                 try
                 {
-                    command.Read(_reader);
+                    command.Complete(_reader.ToObjects().First());
                 }
                 finally
                 {

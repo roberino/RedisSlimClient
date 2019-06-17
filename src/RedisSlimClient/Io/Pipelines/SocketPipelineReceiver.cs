@@ -8,20 +8,17 @@ namespace RedisSlimClient.Io.Pipelines
 {
     class SocketPipelineReceiver : IPipelineReceiver, IRunnable
     {
-        readonly Func<ReadOnlySequence<byte>, SequencePosition?> _delimitter;
         readonly int _minBufferSize;
         readonly ISocket _socket;
         readonly Pipe _pipe;
         readonly CancellationToken _cancellationToken;
 
-        public SocketPipelineReceiver(ISocket socket, CancellationToken cancellationToken, byte delimitter, int minBufferSize = 512)
-            : this(socket, cancellationToken, s => s.PositionOf(delimitter), minBufferSize)
-        {
-        }
-        public SocketPipelineReceiver(ISocket socket, CancellationToken cancellationToken, Func<ReadOnlySequence<byte>, SequencePosition?> delimitter, int minBufferSize = 512)
+        Func<ReadOnlySequence<byte>, SequencePosition?> _delimitter;
+        Action<ReadOnlySequence<byte>> _handler;
+
+        public SocketPipelineReceiver(ISocket socket, CancellationToken cancellationToken, int minBufferSize = 512)
         {
             _cancellationToken = cancellationToken;
-            _delimitter = delimitter;
             _minBufferSize = minBufferSize;
             _socket = socket;
 
@@ -30,7 +27,11 @@ namespace RedisSlimClient.Io.Pipelines
 
         public event Action<Exception> Error;
 
-        public event Action<ReadOnlySequence<byte>> Received;
+        public void RegisterHandler(Func<ReadOnlySequence<byte>, SequencePosition?> delimitter, Action<ReadOnlySequence<byte>> handler)
+        {
+            _delimitter = delimitter;
+            _handler = handler;
+        }
 
         public Task RunAsync()
         {
@@ -42,6 +43,7 @@ namespace RedisSlimClient.Io.Pipelines
 
         public void Dispose()
         {
+            Error = null;
         }
 
         async Task PumpFromSocket()
@@ -76,35 +78,64 @@ namespace RedisSlimClient.Io.Pipelines
             writer.Complete();
         }
 
-        public async Task ReadPipeAsync()
+        async Task ReadPipeAsync()
         {
+            if (_handler == null)
+            {
+                throw new InvalidOperationException("No registered handler");
+            }
+
             while (!_cancellationToken.IsCancellationRequested)
             {
-                var result = await _pipe.Reader.ReadAsync(_cancellationToken);
-
-                var buffer = result.Buffer;
-                SequencePosition? position = null;
-
-                do
+                try
                 {
-                    position = _delimitter(buffer);
-                    
-                    if (position.HasValue)
+                    var result = await _pipe.Reader.ReadAsync(_cancellationToken);
+
+                    var buffer = result.Buffer;
+                    var moved = false;
+                    SequencePosition? position = null;
+
+                    do
                     {
-                        var next = buffer.Slice(0, position.Value);
+                        position = _delimitter(buffer);
 
-                        buffer = buffer.Slice(buffer.GetPosition(1, position.Value));
+                        if (position.HasValue)
+                        {
+                            var next = buffer.Slice(0, position.Value);
 
-                        Received?.Invoke(next);
+                            if (buffer.Length > next.Length)
+                            {
+                                var nextPosition = buffer.GetPosition(1, position.Value);
+
+                                buffer = buffer.Slice(nextPosition);
+
+                                _handler.Invoke(next);
+                            }
+                            else
+                            {
+                                _handler.Invoke(next);
+                                break;
+                            }
+
+                            moved = true;
+                        }
+                    }
+                    while (position.HasValue);
+
+                    if (moved)
+                    {
+                        _pipe.Reader.AdvanceTo(buffer.Start, buffer.End);
+                    }
+
+                    if (result.IsCompleted)
+                    {
+                        break;
                     }
                 }
-                while (position.HasValue);
-
-                _pipe.Reader.AdvanceTo(buffer.Start, buffer.End);
-
-                if (result.IsCompleted)
+                catch (Exception ex)
                 {
-                    break;
+                    Error?.Invoke(ex);
+                    throw;
                 }
             }
 

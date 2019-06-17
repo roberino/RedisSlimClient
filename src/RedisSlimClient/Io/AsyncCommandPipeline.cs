@@ -2,9 +2,9 @@
 using RedisSlimClient.Io.Pipelines;
 using RedisSlimClient.Serialization.Protocol;
 using RedisSlimClient.Telemetry;
+using RedisSlimClient.Types;
 using RedisSlimClient.Util;
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace RedisSlimClient.Io
@@ -16,6 +16,7 @@ namespace RedisSlimClient.Io
         readonly IDuplexPipeline _pipeline;
         readonly ITelemetryWriter _telemetryWriter;
         readonly CommandQueue _commandQueue;
+        readonly CompletionHandler _completionHandler;
 
         bool _disposed;
 
@@ -24,6 +25,9 @@ namespace RedisSlimClient.Io
             _pipeline = pipeline;
             _telemetryWriter = telemetryWriter ?? NullWriter.Instance;
             _commandQueue = new CommandQueue();
+            _completionHandler = new CompletionHandler(_pipeline.Receiver, _commandQueue);
+
+            _pipeline.ScheduleOnThreadpool();
         }
 
         public (int PendingWrites, int PendingReads) PendingWork => ((int)_pendingWrites.Value, _commandQueue.QueueSize);
@@ -56,25 +60,19 @@ namespace RedisSlimClient.Io
                 _pendingWrites.Decrement();
             }
 
+            command.Complete(new RedisString(new byte[0]));
+
             return await command;
         }
 
         public void Dispose()
         {
+            if (_disposed)
+            {
+                _pipeline.Dispose();
+            }
+
             _disposed = true;
-        }
-
-        class PipeAdapter : IRedisObjectWriter
-        {
-            public PipeAdapter(IPipelineSender sender)
-            {
-
-            }
-
-            public Task WriteAsync(IEnumerable<object> objects)
-            {
-                throw new NotImplementedException();
-            }
         }
     }
 }

@@ -3,9 +3,7 @@ using RedisSlimClient.Serialization;
 using RedisSlimClient.Serialization.Protocol;
 using RedisSlimClient.Types;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
@@ -29,18 +27,21 @@ namespace RedisSlimClient.Io.Commands
             _taskCompletionSource = new TaskCompletionSource<bool>();
         }
 
-        public void Read(IEnumerable<RedisObjectPart> objectParts)
+        public void Complete(RedisObject result)
         {
             try
             {
-                var result = objectParts.ToObjects().First();
-
                 _taskCompletionSource.SetResult(string.Equals(result.ToString(), "OK", StringComparison.OrdinalIgnoreCase));
             }
             catch (Exception ex)
             {
                 _taskCompletionSource.SetException(ex);
             }
+        }
+
+        public void Abandon(Exception ex)
+        {
+            _taskCompletionSource.SetException(ex);
         }
 
         public void Write(Stream commandWriter)

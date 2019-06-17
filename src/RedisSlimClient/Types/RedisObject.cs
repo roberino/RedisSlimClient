@@ -10,5 +10,7 @@
         public RedisType Type { get; }
 
         public bool IsNull => Type == RedisType.Null;
+
+        public virtual bool IsComplete => true;
     }
 }

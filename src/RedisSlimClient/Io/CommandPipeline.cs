@@ -8,6 +8,7 @@ using RedisSlimClient.Util;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace RedisSlimClient.Io
@@ -82,7 +83,7 @@ namespace RedisSlimClient.Io
         {
             return _commandQueue.ProcessNextCommand(cmd =>
             {
-                cmd.Read(_reader);
+                cmd.Complete(_reader.ToObjects().First());
             });
         }
     }

@@ -6,6 +6,7 @@ namespace RedisSlimClient.Io.Pipelines
     interface IPipelineReceiver : IDisposable
     {
         event Action<Exception> Error;
-        event Action<ReadOnlySequence<byte>> Received;
+
+        void RegisterHandler(Func<ReadOnlySequence<byte>, SequencePosition?> delimitter, Action<ReadOnlySequence<byte>> handler);
     }
 }

@@ -20,7 +20,7 @@ namespace RedisSlimClient.Configuration
 
         public Encoding Encoding { get; set; } = Encoding.UTF8;
 
-        public bool UseAsyncronousPipeline { get; set; } = true;
+        public PipelineMode PipelineMode { get; set; } = PipelineMode.Default;
 
         public int ConnectionPoolSize { get; set; } = 1;
 

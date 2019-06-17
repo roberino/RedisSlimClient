@@ -1,28 +1,23 @@
 ﻿using System;
-using System.Buffers;
 using System.Net.Sockets;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace RedisSlimClient.Io.Pipelines
 {
     class AwaitableSocketAsyncEventArgs : SocketAsyncEventArgs, ICriticalNotifyCompletion
     {
+        static readonly Memory<byte> NullMemory = new Memory<byte>();
+
         Action _onCompleted;
         volatile bool _isCompleted;
 
-        public AwaitableSocketAsyncEventArgs(Memory<byte> buffer)
+        public AwaitableSocketAsyncEventArgs()
         {
-            Reset(buffer);
+            Reset(NullMemory);
         }
 
         public void Reset(ReadOnlyMemory<byte> buffer)
-        {
-            var seg = GetArray(buffer);
-            SetBuffer(seg.Array, seg.Offset, seg.Count);
-            _isCompleted = false;
-        }
-
-        public void Reset(ReadOnlySequence<byte> buffer)
         {
             var seg = GetArray(buffer);
             SetBuffer(seg.Array, seg.Offset, seg.Count);
@@ -73,14 +68,14 @@ namespace RedisSlimClient.Io.Pipelines
             _isCompleted = true;
         }
 
-        ArraySegment<byte> GetArray(ReadOnlySequence<byte> memory)
-        {
-            throw new NotImplementedException();
-        }
-
         ArraySegment<byte> GetArray(ReadOnlyMemory<byte> memory)
         {
-            throw new NotImplementedException();
+            if (MemoryMarshal.TryGetArray(memory, out var seg))
+            {
+                return seg;
+            }
+
+            return new ArraySegment<byte>(memory.ToArray());
         }
     }
 }

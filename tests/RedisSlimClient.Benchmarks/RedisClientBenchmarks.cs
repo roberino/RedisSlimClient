@@ -15,8 +15,8 @@ namespace RedisSlimClient.Benchmarks
 
         IRedisClient _client;
 
-        [Params(false, true)]
-        public bool UseAsync { get; set; }
+        [Params(PipelineMode.Async, PipelineMode.Sync)]
+        public PipelineMode PipelineMode { get; set; }
 
         [Params(1, 4)]
         public int ConnectionPoolSize { get; set; }
@@ -38,7 +38,7 @@ namespace RedisSlimClient.Benchmarks
             _client = RedisClient.Create(new ClientConfiguration(ServerUri)
             {
                 ConnectionPoolSize = ConnectionPoolSize,
-                UseAsyncronousPipeline = UseAsync,
+                PipelineMode = PipelineMode,
                 ConnectTimeout = TimeSpan.FromMilliseconds(500),
                 DefaultTimeout = TimeSpan.FromMilliseconds(500)
             });

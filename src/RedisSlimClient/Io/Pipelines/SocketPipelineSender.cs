@@ -20,7 +20,7 @@ namespace RedisSlimClient.Io.Pipelines
             _pipe = new Pipe();
         }
 
-        public event Action<Exception> OnException;
+        public event Action<Exception> Error;
 
         public Task RunAsync() => PumpToSocket();
 
@@ -50,11 +50,11 @@ namespace RedisSlimClient.Io.Pipelines
 
                     var bytes = await _socket.SendAsync(result.Buffer);
 
-                    _pipe.Reader.AdvanceTo(result.Buffer.End);
+                    _pipe.Reader.AdvanceTo(result.Buffer.GetPosition(bytes));
                 }
                 catch(Exception ex)
                 {
-                    OnException?.Invoke(ex);
+                    Error?.Invoke(ex);
                     _pipe.Reader.Complete();
                     break;
                 }
@@ -63,6 +63,7 @@ namespace RedisSlimClient.Io.Pipelines
 
         public void Dispose()
         {
+            Error = null;
         }
     }
 }

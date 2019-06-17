@@ -1,6 +1,8 @@
 ﻿using RedisSlimClient.Io.Pipelines;
 using RedisSlimClient.Serialization.Protocol;
+using System;
 using System.Buffers;
+using System.Threading;
 
 namespace RedisSlimClient.Io
 {
@@ -19,17 +21,26 @@ namespace RedisSlimClient.Io
             _delimitter = new RedisByteSequenceDelimitter();
 
             _receiver.RegisterHandler(_delimitter.Delimit, OnReceive);
+            _receiver.Error += OnError;
+        }
+
+        private void OnError(Exception ex)
+        {
+            _commandQueue.ProcessNextCommand(cmd =>
+            {
+                ThreadPool.QueueUserWorkItem(_ => cmd.Abandon(ex));
+            });
         }
 
         private void OnReceive(ReadOnlySequence<byte> obj)
         {
             var createdItems = _redisObjectBuilder.AppendObjectData(obj);
 
-            foreach(var item in createdItems)
+            foreach (var item in createdItems)
             {
                 _commandQueue.ProcessNextCommand(cmd =>
                 {
-                    cmd.Complete(item);
+                    ThreadPool.QueueUserWorkItem(_ => cmd.Complete(item));
                 });
             }
         }

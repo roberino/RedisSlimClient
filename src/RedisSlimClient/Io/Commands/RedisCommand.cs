@@ -19,18 +19,21 @@ namespace RedisSlimClient.Io.Commands
 
         public virtual object[] GetArgs() => new[] { CommandText };
 
-        public virtual void Read(IEnumerable<RedisObjectPart> objectParts)
+        public virtual void Complete(RedisObject redisObject)
         {
             try
             {
-                var nextResult = objectParts.ToObjects().First();
-
-                CompletionSource.SetResult(nextResult);
+                CompletionSource.SetResult(redisObject);
             }
             catch (Exception ex)
             {
                 CompletionSource.SetException(ex);
             }
+        }
+
+        public void Abandon(Exception ex)
+        {
+            CompletionSource.SetException(ex);
         }
 
         public TaskCompletionSource<RedisObject> CompletionSource { get; }

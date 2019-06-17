@@ -1,7 +1,6 @@
 ﻿using RedisSlimClient.Telemetry;
 using RedisSlimClient.Util;
 using System;
-using System.Net;
 using System.Threading.Tasks;
 
 namespace RedisSlimClient.Io
@@ -10,22 +9,13 @@ namespace RedisSlimClient.Io
     {
         static readonly SyncedCounter IdGenerator = new SyncedCounter();
 
-        readonly INetworkStreamFactory _streamFactory;
         readonly ITelemetryWriter _telemetryWriter;
         readonly AsyncLock<ICommandPipeline> _pipeline;
-        readonly TimeSpan _connectTimeout;
-
-        public Connection(EndPoint endPoint, TimeSpan connectTimeout, ITelemetryWriter telemetryWriter, Func<INetworkStreamFactory, Task<ICommandPipeline>> pipelineFactory) 
-            : this(new NetworkStreamFactory(endPoint, connectTimeout), telemetryWriter, pipelineFactory)
+        
+        public Connection(Func<Task<ICommandPipeline>> pipelineFactory, ITelemetryWriter telemetryWriter = null)
         {
-            _connectTimeout = connectTimeout;
-        }
-
-        public Connection(INetworkStreamFactory streamFactory, ITelemetryWriter telemetryWriter, Func<INetworkStreamFactory, Task<ICommandPipeline>> pipelineFactory)
-        {
-            _streamFactory = streamFactory;
             _telemetryWriter = telemetryWriter ?? NullWriter.Instance;
-            _pipeline = new AsyncLock<ICommandPipeline>(() => pipelineFactory(_streamFactory));
+            _pipeline = new AsyncLock<ICommandPipeline>(() => pipelineFactory());
 
             Id = IdGenerator.Increment().ToString();
         }
@@ -41,7 +31,7 @@ namespace RedisSlimClient.Io
 
         public Task<ICommandPipeline> ConnectAsync()
         {
-            return _telemetryWriter.ExecuteAsync(_ => _pipeline.GetValue(_connectTimeout), nameof(ConnectAsync));
+            return _telemetryWriter.ExecuteAsync(_ => _pipeline.GetValue(TimeSpan.FromMilliseconds(500)), nameof(ConnectAsync));
         }
 
         public void Dispose()
@@ -49,7 +39,6 @@ namespace RedisSlimClient.Io
             _telemetryWriter.ExecuteAsync(ctx =>
             {
                 _pipeline.Dispose();
-                _streamFactory.Dispose();
                 return Task.FromResult(1);
             }, nameof(Dispose))
             .GetAwaiter().GetResult();

@@ -13,6 +13,7 @@ namespace RedisSlimClient.Io.Pipelines
         readonly CancellationTokenSource _cancellationTokenSource;
         readonly AwaitableSocketAsyncEventArgs _readEventArgs;
         readonly AwaitableSocketAsyncEventArgs _writeEventArgs;
+        readonly EndPoint _endPoint;
 
         public SocketFacade(EndPoint endPoint, TimeSpan timeout)
         {
@@ -27,8 +28,18 @@ namespace RedisSlimClient.Io.Pipelines
 
             _socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
 
-            _readEventArgs = new AwaitableSocketAsyncEventArgs(new Memory<byte>());
-            _writeEventArgs = new AwaitableSocketAsyncEventArgs(new Memory<byte>());
+            _readEventArgs = new AwaitableSocketAsyncEventArgs();
+            _writeEventArgs = new AwaitableSocketAsyncEventArgs();
+            _endPoint = endPoint;
+
+            State = new SocketState(() => _socket.Connected);
+        }
+
+        public SocketState State { get; }
+
+        public Task ConnectAsync()
+        {
+            return State.DoConnect(() => _socket.ConnectAsync(_endPoint));
         }
 
         public async Task<int> SendAsync(ReadOnlySequence<byte> buffer)
@@ -66,9 +77,12 @@ namespace RedisSlimClient.Io.Pipelines
                     return 0;
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                State.ReadError(ex);
+
                 _readEventArgs.Abandon();
+
                 throw;
             }
 
@@ -79,18 +93,16 @@ namespace RedisSlimClient.Io.Pipelines
         {
             if (!_cancellationTokenSource.IsCancellationRequested)
             {
+                State.Terminated();
+
                 _cancellationTokenSource.Cancel();
                 _readEventArgs.Abandon();
                 _writeEventArgs.Abandon();
 
-                try
-                {
-                    _socket.Shutdown(SocketShutdown.Both);
-                    _socket.Close();
-                }
-                catch { }
-
-                _socket.Dispose();
+                Try(() => _socket.Shutdown(SocketShutdown.Receive));
+                Try(() => _socket.Shutdown(SocketShutdown.Send));
+                Try(_socket.Close);
+                Try(_socket.Dispose);
             }
         }
 
@@ -106,13 +118,22 @@ namespace RedisSlimClient.Io.Pipelines
                     return 0;
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                State.WriteError(ex);
+
                 _writeEventArgs.Abandon();
+
                 throw;
             }
 
             return await _writeEventArgs;
+        }
+
+        void Try(Action act)
+        {
+            try { act(); }
+            catch { }
         }
 
         ~SocketFacade() { Dispose(); }
