@@ -4,7 +4,7 @@ using System.IO.Pipelines;
 
 namespace RedisSlimClient.Io.Pipelines
 {
-    static class SchedulingExtentions
+    static class SchedulingExtensions
     {
         public static void ScheduleOnThreadpool(this IRunnable runnable)
         {

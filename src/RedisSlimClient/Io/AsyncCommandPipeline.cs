@@ -60,9 +60,9 @@ namespace RedisSlimClient.Io
                 _pendingWrites.Decrement();
             }
 
-            command.Complete(new RedisString(new byte[0]));
+            return default;
 
-            return await command;
+            //return await command;
         }
 
         public void Dispose()

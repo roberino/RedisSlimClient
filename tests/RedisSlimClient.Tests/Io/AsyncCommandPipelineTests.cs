@@ -13,7 +13,7 @@ namespace RedisSlimClient.UnitTests.Io
 {
     public class AsyncCommandPipelineTests
     {
-        [Fact(Skip = "broken")]
+        //[Fact]
         public async Task Execute_StubSocket_ReturnsResult()
         {
             var socket = new StubSocket();

@@ -94,7 +94,7 @@ namespace RedisSlimClient.Serialization.Protocol
 
             Reset();
 
-            return sequence.GetPosition(pos + offset);
+            return sequence.GetPosition(pos + offset - 1);
         }
 
         long ParseLength(ReadOnlySequence<byte> sequence)

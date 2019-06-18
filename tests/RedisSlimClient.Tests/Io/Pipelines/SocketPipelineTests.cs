@@ -1,4 +1,6 @@
 ﻿using RedisSlimClient.Io.Pipelines;
+using System;
+using System.Buffers;
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,66 +17,68 @@ namespace RedisSlimClient.UnitTests.Io.Pipelines
         }
 
         public ITestOutputHelper TestOutput { get; }
-
-        [Fact]
-        public async Task Sender_SendAsyncThenReceieve()
+        
+        [Theory]
+        [InlineData(10, 5)]
+        [InlineData(7, 7)]
+        [InlineData(119, 11)]
+        public async Task Sender_SendAsyncThenReceieve(int frameSize, int factor)
         {
+            var total = frameSize * factor;
+            
             var received = new ConcurrentQueue<byte>();
-            var socket = new StubSocket();
-            var pipe = new SocketPipeline(socket);
-            var waitHandle = new ManualResetEvent(false);
-            var dataReceived = false;
-            var hasError = false;
 
-            pipe.Receiver.RegisterHandler(x =>
+            using (var socket = new StubSocket())
+            using (var waitHandle = new ManualResetEvent(false))
+            using (var pipe = new SocketPipeline(socket))
             {
-                if (x.Length > 0)
+                pipe.Receiver.RegisterHandler(x => x.PositionOf((byte)'x'), s =>
                 {
-                    return x.GetPosition(x.Length);
-                }
+                    var last = '-';
 
-                return null;
-            }, s =>
-            {
-                foreach(var m in s)
-                {
-                    foreach(var b in m.Span)
+                    foreach (var m in s)
                     {
-                        received.Enqueue(b);
+                        foreach (var b in m.ToArray())
+                        {
+                            received.Enqueue(b);
+
+                            last = (char)b;
+                        }
                     }
-                }
-                dataReceived = true;
-                waitHandle.Set();
-            });
 
-            pipe.Receiver.Error += e =>
-            {
-                TestOutput.WriteLine(e.ToString());
-                hasError = true;
-            };
+                    Assert.Equal('x', last);
 
-            await pipe.Sender.SendAsync(x =>
-            {
-                x.Span[0] = 7;
-                x.Span[1] = 3;
-                x.Span[2] = 11;
-                return 3;
-            });
+                    if (received.Count == total)
+                    {
+                        waitHandle.Set();
+                    }
+                });
 
-            TestExtensions.RunOnBackgroundThread(pipe.RunAsync);
+                pipe.Receiver.Error += e =>
+                {
+                    TestOutput.WriteLine(e.ToString());
+                };
 
-            waitHandle.WaitOne(1000000);
-            waitHandle.Dispose();
+                await pipe.Sender.SendAsync(x =>
+                {
+                    for (var v = 0; v < factor; v++)
+                    {
+                        for (var i = 0; i < frameSize; i++)
+                        {
+                            var n = (v * frameSize) + i;
+                            x.Span[n] = (byte)(i == frameSize - 1 ? 'x' : n);
+                            TestOutput.WriteLine(n.ToString());
+                        }
+                    }
+                    return total;
+                });
 
-            var data = received.ToArray();
+                pipe.ScheduleOnThreadpool();
 
-            Assert.True(dataReceived);
-            Assert.False(hasError);
+                waitHandle.WaitOne(1000);
+            }
 
-            Assert.Equal(3, data.Length);
-            Assert.Equal(7, data[0]);
-            Assert.Equal(3, data[1]);
-            Assert.Equal(11, data[2]);
+            Assert.Equal(total, received.Count);
         }
     }
 }

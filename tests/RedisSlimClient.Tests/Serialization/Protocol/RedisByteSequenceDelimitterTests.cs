@@ -18,7 +18,9 @@ namespace RedisSlimClient.UnitTests.Serialization.Protocol
             var bytes = BytesFromString(data);
             var pos = delimitter.Delimit(bytes);
 
-            var span = bytes.Slice(0, pos.Value);
+            var adjusted = bytes.GetPosition(1, pos.Value);
+
+            var span = bytes.Slice(0, adjusted);
 
             Assert.Equal(expected.Length, span.Length);
 
@@ -42,7 +44,7 @@ namespace RedisSlimClient.UnitTests.Serialization.Protocol
             var bytes = BytesFromString(data);
             var pos = delimitter.Delimit(bytes);
 
-            var span = bytes.Slice(0, pos.Value);
+            var span = bytes.Slice(0, bytes.GetPosition(1, pos.Value));
 
             Assert.Equal(expected.Length, span.Length);
 

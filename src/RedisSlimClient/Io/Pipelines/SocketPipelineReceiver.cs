@@ -101,13 +101,14 @@ namespace RedisSlimClient.Io.Pipelines
 
                         if (position.HasValue)
                         {
-                            var next = buffer.Slice(0, position.Value);
+                            // Odd behaviour - the Slice() function takes the end to be exclusive
+                            var posIncDelimitter = buffer.GetPosition(1, position.Value);
+
+                            var next = buffer.Slice(0, posIncDelimitter);
 
                             if (buffer.Length > next.Length)
                             {
-                                var nextPosition = buffer.GetPosition(1, position.Value);
-
-                                buffer = buffer.Slice(nextPosition);
+                                buffer = buffer.Slice(posIncDelimitter);
 
                                 _handler.Invoke(next);
                             }

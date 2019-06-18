@@ -32,7 +32,7 @@ namespace RedisSlimClient.Io.Pipelines
         public async Task SendAsync(Func<Memory<byte>, int> writeAction, int bufferSize = 512)
         {
             var mem = _pipe.Writer.GetMemory(bufferSize);
-            
+
             var len = writeAction(mem);
 
             _pipe.Writer.Advance(len);
@@ -52,7 +52,7 @@ namespace RedisSlimClient.Io.Pipelines
 
                     _pipe.Reader.AdvanceTo(result.Buffer.GetPosition(bytes));
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     Error?.Invoke(ex);
                     _pipe.Reader.Complete();
