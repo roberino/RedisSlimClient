@@ -41,6 +41,12 @@ namespace RedisSlimClient.Io.Commands
 
         public void Abandon(Exception ex)
         {
+            if (ex is TaskCanceledException)
+            {
+                _taskCompletionSource.SetCanceled();
+                return;
+            }
+
             _taskCompletionSource.SetException(ex);
         }
 

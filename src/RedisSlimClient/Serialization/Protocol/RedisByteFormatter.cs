@@ -119,7 +119,11 @@ namespace RedisSlimClient.Serialization.Protocol
 
         int WriteRaw(string data)
         {
-            return Write(data.Select(b => (byte)b).ToArray());
+            foreach(var x in data)
+            {
+                _memory.Span[_position++] = (byte)x;
+            }
+            return _position;
         }
 
         int WriteEnd()

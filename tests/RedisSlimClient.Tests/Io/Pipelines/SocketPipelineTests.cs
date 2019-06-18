@@ -1,4 +1,6 @@
-﻿using RedisSlimClient.Io.Pipelines;
+﻿using RedisSlimClient.Io.Commands;
+using RedisSlimClient.Io.Pipelines;
+using RedisSlimClient.Serialization.Protocol;
 using System;
 using System.Buffers;
 using System.Collections.Concurrent;
@@ -17,6 +19,42 @@ namespace RedisSlimClient.UnitTests.Io.Pipelines
         }
 
         public ITestOutputHelper TestOutput { get; }
+
+        [Fact]
+        public async Task SendAsync_CommandExample()
+        {
+            var received = false;
+
+            using (var socket = new StubSocket())
+            using (var waitHandle = new ManualResetEvent(false))
+            using (var pipe = new SocketPipeline(socket))
+            {
+                pipe.Receiver.RegisterHandler(x => x.PositionOf((byte)'\n'), s =>
+                {
+                    received = true;
+                    waitHandle.Set();
+                });
+
+                pipe.Receiver.Error += e =>
+                {
+                    TestOutput.WriteLine(e.ToString());
+                };
+
+                await pipe.Sender.SendAsync(m =>
+                {
+                    var command = new PingCommand();
+                    var formatter = new RedisByteFormatter(m);
+
+                    return formatter.Write(command.GetArgs());
+                });
+
+                pipe.ScheduleOnThreadpool();
+
+                waitHandle.WaitOne(1000);
+            }
+
+            Assert.True(received);
+        }
         
         [Theory]
         [InlineData(10, 5)]

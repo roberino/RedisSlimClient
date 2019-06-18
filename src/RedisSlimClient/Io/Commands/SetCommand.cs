@@ -2,6 +2,8 @@
 {
     internal class SetCommand : RedisCommand
     {
+        public const string SuccessResponse = "OK";
+
         readonly string _key;
         readonly byte[] _data;
 

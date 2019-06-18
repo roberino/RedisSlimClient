@@ -1,5 +1,6 @@
 ﻿using RedisSlimClient.Io.Commands;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace RedisSlimClient.Io
@@ -8,6 +9,6 @@ namespace RedisSlimClient.Io
     {
         (int PendingWrites, int PendingReads) PendingWork { get; }
 
-        Task<T> Execute<T>(IRedisResult<T> command, TimeSpan timeout);
+        Task<T> Execute<T>(IRedisResult<T> command, CancellationToken cancellation = default);
     }
 }

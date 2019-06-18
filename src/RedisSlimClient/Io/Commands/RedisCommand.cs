@@ -1,7 +1,5 @@
 ﻿using RedisSlimClient.Types;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
@@ -33,6 +31,12 @@ namespace RedisSlimClient.Io.Commands
 
         public void Abandon(Exception ex)
         {
+            if (ex is TaskCanceledException)
+            {
+                CompletionSource.SetCanceled();
+                return;
+            }
+
             CompletionSource.SetException(ex);
         }
 

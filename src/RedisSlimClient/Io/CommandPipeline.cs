@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace RedisSlimClient.Io
@@ -38,7 +39,7 @@ namespace RedisSlimClient.Io
 
         public (int PendingWrites, int PendingReads) PendingWork => ((int)_pendingWrites.Value, _commandQueue.QueueSize);
 
-        public Task<T> Execute<T>(IRedisResult<T> command, TimeSpan timeout)
+        public Task<T> Execute<T>(IRedisResult<T> command, CancellationToken cancellation = default)
         {
             if (_disposed)
             {
@@ -63,7 +64,7 @@ namespace RedisSlimClient.Io
                     {
                         _pendingWrites.Decrement();
                     }
-                }, timeout);
+                }, cancellation);
 
                 ctx.Write(nameof(_scheduler.Awake));
 

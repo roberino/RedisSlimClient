@@ -19,11 +19,11 @@ namespace RedisSlimClient.Io
 
         public int QueueSize => _commandQueue.Count;
 
-        public async Task Enqueue(Func<Task<IRedisCommand>> commandFactory, TimeSpan timeout)
+        public async Task Enqueue(Func<Task<IRedisCommand>> commandFactory, CancellationToken cancellation = default)
         {
             IRedisCommand cmd;
 
-            await _semaphore.WaitAsync(timeout);
+            await _semaphore.WaitAsync(cancellation);
 
             try
             {

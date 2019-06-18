@@ -13,7 +13,7 @@ namespace RedisSlimClient.UnitTests.Io
 {
     public class AsyncCommandPipelineTests
     {
-        //[Fact]
+        [Fact]
         public async Task Execute_StubSocket_ReturnsResult()
         {
             var socket = new StubSocket();
@@ -37,7 +37,7 @@ namespace RedisSlimClient.UnitTests.Io
                     taskCompletion.SetResult(obj);
                 });
 
-                var result = await pipeline.Execute(command, TimeSpan.FromSeconds(1));
+                var result = await pipeline.Execute(command);
             }
         }
     }

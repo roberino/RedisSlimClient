@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace RedisSlimClient.Io
@@ -27,7 +28,7 @@ namespace RedisSlimClient.Io
 
         public (int PendingWrites, int PendingReads) PendingWork => (_pendingWrites, _pendingReads);
 
-        public async Task<T> Execute<T>(IRedisResult<T> command, TimeSpan timeout)
+        public async Task<T> Execute<T>(IRedisResult<T> command, CancellationToken cancellation = default)
         {
             if (_disposed)
             {

@@ -24,6 +24,22 @@ namespace RedisSlimClient.UnitTests.Serialization
         }
 
         [Fact]
+        public void Write_Integer_WritesExpectedBytes()
+        {
+            _output.Write(6382334);
+
+            AssertExpectedString(":6382334\r\n");
+        }
+
+        [Fact]
+        public void Write_Objects_WritesExpectedBytes()
+        {
+            _output.Write(new object[] { 6382334, "abc" });
+
+            AssertExpectedString("*2\r\n:6382334\r\n$3\r\nabc\r\n");
+        }
+
+        [Fact]
         public void Write_SomeStringDataSimple_WritesExpectedBytes()
         {
             _output.Write("some-data");

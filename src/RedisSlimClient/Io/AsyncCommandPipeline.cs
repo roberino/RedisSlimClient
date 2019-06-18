@@ -5,6 +5,7 @@ using RedisSlimClient.Telemetry;
 using RedisSlimClient.Types;
 using RedisSlimClient.Util;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace RedisSlimClient.Io
@@ -32,7 +33,7 @@ namespace RedisSlimClient.Io
 
         public (int PendingWrites, int PendingReads) PendingWork => ((int)_pendingWrites.Value, _commandQueue.QueueSize);
 
-        public async Task<T> Execute<T>(IRedisResult<T> command, TimeSpan timeout)
+        public async Task<T> Execute<T>(IRedisResult<T> command, CancellationToken cancellation = default)
         {
             if (_disposed)
             {
@@ -53,16 +54,18 @@ namespace RedisSlimClient.Io
                     });
 
                     return command;
-                }, timeout);
+                }, cancellation);
+            }
+            catch (Exception ex)
+            {
+                command.Abandon(ex);
             }
             finally
             {
                 _pendingWrites.Decrement();
             }
 
-            return default;
-
-            //return await command;
+            return await command;
         }
 
         public void Dispose()

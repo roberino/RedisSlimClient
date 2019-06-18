@@ -4,6 +4,7 @@ using RedisSlimClient.Io.Commands;
 using RedisSlimClient.Types;
 using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -18,7 +19,7 @@ namespace RedisSlimClient.UnitTests.Io
 
             var pipe = await pool.ConnectAsync();
 
-            var result = await pipe.Execute(new GetCommand("x"), TimeSpan.FromMilliseconds(10));
+            var result = await pipe.Execute(new GetCommand("x"));
 
             Assert.Equal(10, BitConverter.ToInt32(((RedisString)result).Value));
         }
@@ -35,8 +36,8 @@ namespace RedisSlimClient.UnitTests.Io
 
             var pipe2 = await pool.ConnectAsync();
 
-            var result = await pipe.Execute(new GetCommand("x"), TimeSpan.FromMilliseconds(10));
-            var result2 = await pipe2.Execute(new GetCommand("x"), TimeSpan.FromMilliseconds(10));
+            var result = await pipe.Execute(new GetCommand("x"));
+            var result2 = await pipe2.Execute(new GetCommand("x"));
 
             Assert.Equal(10, BitConverter.ToInt32(((RedisString)result).Value));
             Assert.Equal(5, BitConverter.ToInt32(((RedisString)result2).Value));
@@ -49,8 +50,9 @@ namespace RedisSlimClient.UnitTests.Io
                 var con = Substitute.For<IConnection>();
                 var pipelne = Substitute.For<ICommandPipeline>();
 
-                pipelne.Execute(Arg.Any<IRedisResult<RedisObject>>(), Arg.Any<TimeSpan>())
-                .Returns(new RedisString(BitConverter.GetBytes(n)));
+                pipelne
+                    .Execute(Arg.Any<IRedisResult<RedisObject>>(), Arg.Any<CancellationToken>())
+                    .Returns(new RedisString(BitConverter.GetBytes(n)));
 
                 con.ConnectAsync().Returns(pipelne);
                 con.Id.Returns(n.ToString());
