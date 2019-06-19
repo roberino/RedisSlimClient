@@ -33,10 +33,7 @@ namespace RedisSlimClient.Serialization.Protocol
 
                         if (_readMode == ReadMode.BulkStringLength)
                         {
-                            _currentReadLength = ParseLength(sequence);
-                            _readMode = ReadMode.BulkStringContent;
-                            _startBulkString = _currentPosition + 1;
-                            continue;
+                            return GetCurrentPosition(sequence, 1);
                         }
                     }
                     else
@@ -88,11 +85,21 @@ namespace RedisSlimClient.Serialization.Protocol
             _readMode = ReadMode.None;
         }
 
-        SequencePosition GetCurrentPosition(ReadOnlySequence<byte> sequence, int offset = 0)
+        SequencePosition GetCurrentPosition(ReadOnlySequence<byte> sequence, int offset = 0, bool reset = true)
         {
             var pos = _currentPosition;
 
-            Reset();
+            if (_readMode == ReadMode.BulkStringLength)
+            {
+                _currentReadLength = ParseLength(sequence);
+                _readMode = ReadMode.BulkStringContent;
+                _startBulkString = 0;
+                _currentPosition = 0;
+            }
+            else
+            {
+                Reset();
+            }
 
             return sequence.GetPosition(pos + offset - 1);
         }

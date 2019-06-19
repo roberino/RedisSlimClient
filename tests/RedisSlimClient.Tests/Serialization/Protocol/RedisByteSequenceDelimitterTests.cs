@@ -16,43 +16,46 @@ namespace RedisSlimClient.UnitTests.Serialization.Protocol
             var delimitter = new RedisByteSequenceDelimitter();
 
             var bytes = BytesFromString(data);
-            var pos = delimitter.Delimit(bytes);
 
-            var adjusted = bytes.GetPosition(1, pos.Value);
+            var next = GetNext(delimitter, bytes);
 
-            var span = bytes.Slice(0, adjusted);
-
-            Assert.Equal(expected.Length, span.Length);
-
-            var arr = span.First.ToArray();
-
-            var result = Encoding.ASCII.GetString(arr);
-
-            Assert.Equal(expected, result);
+            Assert.Equal(expected, next.result);
         }
 
         [Theory]
-        [InlineData("$4\r\nabcd\r\n", "$4\r\nabcd\r\n")]
-        [InlineData("$4\r\nabcd\r\n+xyz", "$4\r\nabcd\r\n")]
-        [InlineData("$4\r\na$cd\r\n", "$4\r\na$cd\r\n")]
-        [InlineData("$5\r\na\r\ncd\r\n", "$5\r\na\r\ncd\r\n")]
-        [InlineData("$7\r\na$1\r\ncd\r\n", "$7\r\na$1\r\ncd\r\n")]
-        public void Delimit_BulkString_ReturnsCorrectPosition(string data, string expected)
+        [InlineData("$4\r\nabcd\r\n", "$4\r\n", "abcd\r\n")]
+        [InlineData("$4\r\nabcd\r\n+xyz", "$4\r\n", "abcd\r\n")]
+        [InlineData("$4\r\na$cd\r\n", "$4\r\n", "a$cd\r\n")]
+        [InlineData("$5\r\na\r\ncd\r\n", "$5\r\n", "a\r\ncd\r\n")]
+        [InlineData("$7\r\na$1\r\ncd\r\n", "$7\r\n", "a$1\r\ncd\r\n")]
+        public void Delimit_BulkString_ReturnsCorrectPosition(string data, string expected1, string expected2)
         {
             var delimitter = new RedisByteSequenceDelimitter();
 
             var bytes = BytesFromString(data);
+
+            var next0 = GetNext(delimitter, bytes);
+            var next1 = GetNext(delimitter, next0.remaining);
+
+            Assert.Equal(expected1, next0.result);
+            Assert.Equal(expected2, next1.result);
+        }
+
+        (string result, ReadOnlySequence<byte> remaining) GetNext(RedisByteSequenceDelimitter delimitter, ReadOnlySequence<byte> bytes)
+        {
             var pos = delimitter.Delimit(bytes);
 
-            var span = bytes.Slice(0, bytes.GetPosition(1, pos.Value));
+            if (!pos.HasValue)
+            {
+                return (null, default);
+            }
 
-            Assert.Equal(expected.Length, span.Length);
-
+            var posIncDelimitter = bytes.GetPosition(1, pos.Value);
+            var span = bytes.Slice(0, posIncDelimitter);
             var arr = span.First.ToArray();
+            var rem = bytes.Slice(posIncDelimitter);
 
-            var result = Encoding.ASCII.GetString(arr);
-
-            Assert.Equal(expected, result);
+            return (Encoding.ASCII.GetString(arr), rem);
         }
 
         ReadOnlySequence<byte> BytesFromString(string data) => new ReadOnlySequence<byte>(Encoding.ASCII.GetBytes(data));

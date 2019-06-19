@@ -46,7 +46,8 @@ namespace RedisSlimClient.Serialization
 
         public static long ToInteger(this IByteSequence data, int offset = 0)
         {
-            return long.Parse(ToAsciiString(data, offset));
+            var strItem = ToAsciiString(data, offset);
+            return long.Parse(strItem);
         }
 
         public static string ToAsciiString(this IByteSequence data, int offset = 0)

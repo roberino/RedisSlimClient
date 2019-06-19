@@ -24,11 +24,14 @@ namespace RedisSlimClient.Serialization.Protocol
 
             _items.AddRange(_parser.ReadItem(byteSequence));
 
-            var objs = _items.ToObjects().ToArray();
-
-            if (objs.Last().IsComplete)
+            if (_items.Count > 0)
             {
-                return objs;
+                var objs = _items.ToObjects().ToArray();
+
+                if (objs.Last().IsComplete)
+                {
+                    return objs;
+                }
             }
 
             return _empty;

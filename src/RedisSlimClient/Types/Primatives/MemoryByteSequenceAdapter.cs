@@ -19,10 +19,10 @@ namespace RedisSlimClient.Types.Primatives
             _sequence.CopyTo(new Span<byte>(array));
         }
 
-        public byte[] ToArray(int offset) => 
+        public byte[] ToArray(int offset) =>
             _sequence.Slice(offset).ToArray();
 
         public byte GetValue(int index) =>
-            _sequence.Slice(index, 1).ToArray()[0];
+            _sequence.IsSingleSegment ? _sequence.First.Span[index] : _sequence.Slice(index, 1).ToArray()[0];
     }
 }
