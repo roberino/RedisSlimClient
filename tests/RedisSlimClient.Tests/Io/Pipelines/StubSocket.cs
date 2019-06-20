@@ -3,6 +3,7 @@ using System;
 using System.Buffers;
 using System.Collections.Concurrent;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -96,6 +97,11 @@ namespace RedisSlimClient.UnitTests.Io.Pipelines
             }
 
             return i;
+        }
+
+        public override string ToString()
+        {
+            return Received.Aggregate(new StringBuilder(), (s, x) => s.Append(Encoding.ASCII.GetString(x.ToArray()))).ToString();
         }
     }
 }

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 
 namespace RedisSlimClient.Serialization.Protocol
 {
@@ -13,6 +12,8 @@ namespace RedisSlimClient.Serialization.Protocol
         {
             _memory = stream;
         }
+
+        public int CurrentPosition => _position;
 
         public int Write(object item)
         {
@@ -82,7 +83,7 @@ namespace RedisSlimClient.Serialization.Protocol
             WriteRaw(data.Length.ToString());
             WriteEnd();
 
-            for(var i = 0; i < data.Length; i++)
+            for (var i = 0; i < data.Length; i++)
             {
                 _memory.Span[_position++] = data[i];
             }
@@ -102,7 +103,7 @@ namespace RedisSlimClient.Serialization.Protocol
             if (bulk)
             {
                 Write(ResponseType.BulkStringType);
-                Write(data.Length.ToString());
+                WriteRaw(data.Length.ToString());
                 WriteEnd();
                 WriteRaw(data);
                 WriteEnd();
@@ -119,7 +120,7 @@ namespace RedisSlimClient.Serialization.Protocol
 
         int WriteRaw(string data)
         {
-            foreach(var x in data)
+            foreach (var x in data)
             {
                 _memory.Span[_position++] = (byte)x;
             }

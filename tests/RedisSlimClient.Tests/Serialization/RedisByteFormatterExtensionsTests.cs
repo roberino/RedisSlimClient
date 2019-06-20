@@ -1,25 +1,24 @@
-using RedisSlimClient.Serialization.Protocol;
 using System;
+using System.IO;
 using System.Text;
+using RedisSlimClient.Serialization.Protocol;
 using Xunit;
 
 namespace RedisSlimClient.UnitTests.Serialization
 {
-    public class RedisByteFormatterTests
+    public class RedisByteFormatterExtensionsTests : IDisposable
     {
-        readonly Memory<byte> _output;
-        readonly RedisByteFormatter _formatter;
-        
-        public RedisByteFormatterTests()
+        readonly MemoryStream _output;
+
+        public RedisByteFormatterExtensionsTests()
         {
-            _output = new Memory<byte>(new byte[128]);
-            _formatter = new RedisByteFormatter(_output);
+            _output = new MemoryStream();
         }
 
         [Fact]
         public void Write_SomeStringDataBulk_WritesExpectedBytes()
         {
-            _formatter.Write("some-data", true);
+            _output.Write("some-data", true);
 
             AssertExpectedString("$9\r\nsome-data\r\n");
         }
@@ -27,7 +26,7 @@ namespace RedisSlimClient.UnitTests.Serialization
         [Fact]
         public void Write_Integer_WritesExpectedBytes()
         {
-            _formatter.Write(6382334);
+            _output.Write(6382334);
 
             AssertExpectedString(":6382334\r\n");
         }
@@ -35,7 +34,7 @@ namespace RedisSlimClient.UnitTests.Serialization
         [Fact]
         public void Write_Objects_WritesExpectedBytes()
         {
-            _formatter.Write(new object[] { 6382334, "abc" });
+            _output.Write(new object[] { 6382334, "abc" });
 
             AssertExpectedString("*2\r\n:6382334\r\n$3\r\nabc\r\n");
         }
@@ -43,17 +42,21 @@ namespace RedisSlimClient.UnitTests.Serialization
         [Fact]
         public void Write_SomeStringDataSimple_WritesExpectedBytes()
         {
-            _formatter.Write("some-data");
+            _output.Write("some-data");
 
             AssertExpectedString("+some-data\r\n");
         }
 
         void AssertExpectedString(string expected)
         {
-            var bytes = _output.Slice(0, _formatter.CurrentPosition).ToArray();
-            var actual = Encoding.ASCII.GetString(bytes);
+            var actual = Encoding.ASCII.GetString(_output.ToArray());
 
             Assert.Equal(expected, actual);
+        }
+
+        public void Dispose()
+        {
+            _output?.Dispose();
         }
     }
 }

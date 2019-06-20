@@ -11,6 +11,7 @@ namespace RedisSlimClient.UnitTests.Serialization.Protocol
         [InlineData("abc\r\n", "abc\r\n")]
         [InlineData("abc\r\nefg", "abc\r\n")]
         [InlineData("a\r\nefg", "a\r\n")]
+        [InlineData("*5\r\n+efg", "*5\r\n")]
         public void Delimit_SomeString_ReturnsCorrectPosition(string data, string expected)
         {
             var delimitter = new RedisByteSequenceDelimitter();
@@ -28,6 +29,7 @@ namespace RedisSlimClient.UnitTests.Serialization.Protocol
         [InlineData("$4\r\na$cd\r\n", "$4\r\n", "a$cd\r\n")]
         [InlineData("$5\r\na\r\ncd\r\n", "$5\r\n", "a\r\ncd\r\n")]
         [InlineData("$7\r\na$1\r\ncd\r\n", "$7\r\n", "a$1\r\ncd\r\n")]
+        [InlineData("*2\r\n$3\r\nabc\r\n+xx\r\n", "*2\r\n", "$3\r\n")]
         public void Delimit_BulkString_ReturnsCorrectPosition(string data, string expected1, string expected2)
         {
             var delimitter = new RedisByteSequenceDelimitter();
