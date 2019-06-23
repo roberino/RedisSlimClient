@@ -105,7 +105,6 @@ namespace RedisSlimClient.UnitTests.Io.Pipelines
                         {
                             var n = (v * frameSize) + i;
                             x.Span[n] = (byte)(i == frameSize - 1 ? 'x' : n);
-                            TestOutput.WriteLine(n.ToString());
                         }
                     }
                     return total;
@@ -113,7 +112,7 @@ namespace RedisSlimClient.UnitTests.Io.Pipelines
 
                 pipe.ScheduleOnThreadpool();
 
-                waitHandle.WaitOne(1000);
+                waitHandle.WaitOne(3000);
             }
 
             Assert.Equal(total, received.Count);
