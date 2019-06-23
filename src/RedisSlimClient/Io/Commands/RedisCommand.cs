@@ -33,7 +33,7 @@ namespace RedisSlimClient.Io.Commands
         {
             if (ex is TaskCanceledException)
             {
-                CompletionSource.SetCanceled();
+                Cancel();
                 return;
             }
 
@@ -45,5 +45,10 @@ namespace RedisSlimClient.Io.Commands
         public TaskAwaiter<RedisObject> GetAwaiter() => CompletionSource.Task.GetAwaiter();
 
         TaskAwaiter IRedisCommand.GetAwaiter() => ((Task)CompletionSource.Task).GetAwaiter();
+
+        public void Cancel()
+        {
+            CompletionSource.TrySetCanceled();
+        }
     }
 }

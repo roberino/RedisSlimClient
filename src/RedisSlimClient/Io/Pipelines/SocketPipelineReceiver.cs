@@ -92,7 +92,6 @@ namespace RedisSlimClient.Io.Pipelines
                     var result = await _pipe.Reader.ReadAsync(_cancellationToken);
 
                     var buffer = result.Buffer;
-                    var moved = false;
                     SequencePosition? position = null;
 
                     do
@@ -106,27 +105,14 @@ namespace RedisSlimClient.Io.Pipelines
 
                             var next = buffer.Slice(0, posIncDelimitter);
 
-                            if (buffer.Length > next.Length)
-                            {
-                                buffer = buffer.Slice(posIncDelimitter);
+                            buffer = buffer.Slice(posIncDelimitter);
 
-                                _handler.Invoke(next);
-                            }
-                            else
-                            {
-                                _handler.Invoke(next);
-                                break;
-                            }
-
-                            moved = true;
+                            _handler.Invoke(next);
                         }
                     }
                     while (position.HasValue);
 
-                    if (moved)
-                    {
-                        _pipe.Reader.AdvanceTo(buffer.Start, buffer.End);
-                    }
+                    _pipe.Reader.AdvanceTo(buffer.Start, buffer.End);
 
                     if (result.IsCompleted)
                     {

@@ -24,7 +24,7 @@ namespace RedisSlimClient.IntegrationTests
         [Theory]
         [InlineData(PipelineMode.Sync)]
         [InlineData(PipelineMode.Async)]
-        //[InlineData(PipelineMode.AsyncPipeline)]
+        [InlineData(PipelineMode.AsyncPipeline)]
         public async Task PingAsync_SpecificPipelineMode_ReturnsTrue(PipelineMode pipelineMode)
         {
             using (var client = RedisClient.Create(new ClientConfiguration(_localEndpoint.ToString())
@@ -32,7 +32,8 @@ namespace RedisSlimClient.IntegrationTests
                 PipelineMode = pipelineMode
             }))
             {
-                var result = await client.PingAsync();
+                var cancel = new CancellationTokenSource(10000);
+                var result = await client.PingAsync(cancel.Token);
 
                 Assert.True(result);
             }

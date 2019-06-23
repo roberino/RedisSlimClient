@@ -34,7 +34,7 @@ namespace RedisSlimClient.Io
 
         private void OnReceive(ReadOnlySequence<byte> obj)
         {
-            var createdItems = _redisObjectBuilder.AppendObjectData(obj);
+            var createdItems = _redisObjectBuilder.AppendObjectData(obj.Slice(0, obj.Length - 2));
 
             foreach (var item in createdItems)
             {

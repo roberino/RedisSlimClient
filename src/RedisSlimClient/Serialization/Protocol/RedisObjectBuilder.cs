@@ -30,6 +30,7 @@ namespace RedisSlimClient.Serialization.Protocol
 
                 if (objs.Last().IsComplete)
                 {
+                    _items.Clear();
                     return objs;
                 }
             }

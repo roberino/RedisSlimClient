@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO.Pipelines;
+using System.Threading;
 
 namespace RedisSlimClient.Io.Pipelines
 {

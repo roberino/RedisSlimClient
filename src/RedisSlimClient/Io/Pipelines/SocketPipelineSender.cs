@@ -35,9 +35,12 @@ namespace RedisSlimClient.Io.Pipelines
 
             var len = writeAction(mem);
 
-            _pipe.Writer.Advance(len);
+            if (len > 0)
+            {
+                _pipe.Writer.Advance(len);
 
-            await _pipe.Writer.FlushAsync(_cancellationToken);
+                await _pipe.Writer.FlushAsync(_cancellationToken);
+            }
         }
 
         async Task PumpToSocket()

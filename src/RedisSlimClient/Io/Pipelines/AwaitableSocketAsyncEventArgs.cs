@@ -2,6 +2,7 @@
 using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Threading;
 
 namespace RedisSlimClient.Io.Pipelines
 {
@@ -15,6 +16,7 @@ namespace RedisSlimClient.Io.Pipelines
         public AwaitableSocketAsyncEventArgs()
         {
             Reset(NullMemory);
+            CompletionHandler = x => x();
         }
 
         public void Reset(ReadOnlyMemory<byte> buffer)
@@ -43,7 +45,7 @@ namespace RedisSlimClient.Io.Pipelines
                 return;
             }
 
-            _onCompleted = continuation;
+            Interlocked.Exchange(ref _onCompleted, continuation);
         }
 
         public void UnsafeOnCompleted(Action continuation)
@@ -54,6 +56,8 @@ namespace RedisSlimClient.Io.Pipelines
         public void Complete()
         {
             _isCompleted = true;
+
+            Continue();
         }
 
         public void Abandon()
@@ -65,7 +69,7 @@ namespace RedisSlimClient.Io.Pipelines
         {
             base.OnCompleted(e);
 
-            _isCompleted = true;
+            Complete();
         }
 
         ArraySegment<byte> GetArray(ReadOnlyMemory<byte> memory)
@@ -76,6 +80,16 @@ namespace RedisSlimClient.Io.Pipelines
             }
 
             return new ArraySegment<byte>(memory.ToArray());
+        }
+
+        void Continue()
+        {
+            var completion = Interlocked.Exchange(ref _onCompleted, null);
+
+            if (completion != null)
+            {
+                CompletionHandler?.Invoke(completion);
+            }
         }
     }
 }

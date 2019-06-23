@@ -57,11 +57,16 @@ namespace RedisSlimClient.Io.Commands
         {
             if (ex is TaskCanceledException)
             {
-                _taskCompletionSource.SetCanceled();
+                Cancel();
                 return;
             }
 
             _taskCompletionSource.SetException(ex);
+        }
+
+        public void Cancel()
+        {
+            _taskCompletionSource.SetCanceled();
         }
 
         public void Write(Stream commandWriter)

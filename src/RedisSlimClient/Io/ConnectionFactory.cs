@@ -19,7 +19,7 @@ namespace RedisSlimClient.Io
 
         static IConnection CreateImpl(ClientConfiguration configuration)
         {
-            if (configuration.PipelineMode == PipelineMode.AsyncPipeline)
+            if (configuration.PipelineMode == PipelineMode.AsyncPipeline || configuration.PipelineMode == PipelineMode.Default)
             {
                 return CreatePipelineImpl(configuration);
             }
@@ -41,14 +41,11 @@ namespace RedisSlimClient.Io
         static IConnection CreatePipelineImpl(ClientConfiguration configuration)
         {
             var socket = new SocketFacade(configuration.ServerUri.AsEndpoint(), configuration.ConnectTimeout);
-
-            var socketPipeline = new SocketPipeline(socket);
-
-            var pipeline = new AsyncCommandPipeline(socketPipeline, configuration.TelemetryWriter);
-
+            
             return new Connection(async () =>
             {
                 await socket.ConnectAsync();
+                var socketPipeline = new SocketPipeline(socket);
                 return new AsyncCommandPipeline(socketPipeline, configuration.TelemetryWriter);
             }, configuration.TelemetryWriter);
         }

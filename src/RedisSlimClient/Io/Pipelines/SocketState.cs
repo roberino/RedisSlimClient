@@ -45,7 +45,11 @@ namespace RedisSlimClient.Io.Pipelines
             ChangeStatus(SocketStatus.WriteFault);
         }
 
-        public void Terminated() => ChangeStatus(SocketStatus.Terminated);
+        public void Terminated()
+        {
+            ChangeStatus(SocketStatus.Terminated);
+            Changed = null;
+        }
 
         public bool IsAvailable => Status == SocketStatus.Connected || Status == SocketStatus.Disconnected;
 

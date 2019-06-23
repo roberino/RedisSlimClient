@@ -14,6 +14,7 @@ namespace RedisSlimClient.Io.Commands
     {
         string CommandText { get; }
         void Complete(RedisObject obj);
+        void Cancel();
         void Abandon(Exception ex);
         object[] GetArgs();
         TaskAwaiter GetAwaiter();

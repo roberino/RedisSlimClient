@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Buffers;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -28,6 +27,20 @@ namespace RedisSlimClient.Io.Pipelines
         public IPipelineReceiver Receiver { get; }
 
         public IPipelineSender Sender { get; }
+
+        public Action Faulted
+        {
+            set
+            {
+                _socket.State.Changed += e =>
+                {
+                    if (e == SocketStatus.ConnectFault)
+                    {
+                        value.Invoke();
+                    }
+                };
+            }
+        }
 
         public void Dispose()
         {

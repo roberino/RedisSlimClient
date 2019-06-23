@@ -15,7 +15,7 @@ namespace RedisSlimClient.Benchmarks
 
         IRedisClient _client;
 
-        [Params(PipelineMode.Async, PipelineMode.Sync)]
+        [Params(PipelineMode.AsyncPipeline, PipelineMode.Sync)]
         public PipelineMode PipelineMode { get; set; }
 
         [Params(1, 4)]

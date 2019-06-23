@@ -2,7 +2,6 @@
 using RedisSlimClient.Io.Pipelines;
 using RedisSlimClient.Serialization.Protocol;
 using RedisSlimClient.Telemetry;
-using RedisSlimClient.Types;
 using RedisSlimClient.Util;
 using System;
 using System.Threading;
@@ -44,13 +43,20 @@ namespace RedisSlimClient.Io
 
             try
             {
+                cancellation.Register(command.Cancel);
+
                 await _commandQueue.Enqueue(async () =>
                 {
                     await _pipeline.Sender.SendAsync(m =>
                     {
                         var formatter = new RedisByteFormatter(m);
 
-                        return formatter.Write(command.GetArgs());
+                        if (!cancellation.IsCancellationRequested)
+                        {
+                            return formatter.Write(command.GetArgs());
+                        }
+
+                        return 0;
                     });
 
                     return command;

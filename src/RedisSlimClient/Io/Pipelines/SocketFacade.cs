@@ -23,13 +23,22 @@ namespace RedisSlimClient.Io.Pipelines
             {
                 ReceiveTimeout = (int)timeout.TotalMilliseconds,
                 SendTimeout = (int)timeout.TotalMilliseconds,
-                NoDelay = true
+                NoDelay = true,
+                Blocking = false
             };
 
             _socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
 
-            _readEventArgs = new AwaitableSocketAsyncEventArgs();
-            _writeEventArgs = new AwaitableSocketAsyncEventArgs();
+            _readEventArgs = new AwaitableSocketAsyncEventArgs()
+            {
+                RemoteEndPoint = endPoint
+            };
+
+            _writeEventArgs = new AwaitableSocketAsyncEventArgs()
+            {
+                RemoteEndPoint = endPoint
+            };
+
             _endPoint = endPoint;
 
             State = new SocketState(() => _socket.Connected);
@@ -53,7 +62,7 @@ namespace RedisSlimClient.Io.Pipelines
 
             if (buffer.IsSingleSegment)
             {
-                await SendToSocket(buffer.First);
+                sent = await SendToSocket(buffer.First);
                 return sent;
             }
 
@@ -67,14 +76,18 @@ namespace RedisSlimClient.Io.Pipelines
 
         public async Task<int> ReceiveAsync(Memory<byte> memory)
         {
+            if (_socket.Available == 0 && !memory.IsEmpty)
+            {
+                await ReceiveAsync(default);
+            }
+
             _readEventArgs.Reset(memory);
 
             try
-            {
+            {  
                 if (!_socket.ReceiveAsync(_readEventArgs))
                 {
                     _readEventArgs.Complete();
-                    return 0;
                 }
             }
             catch (Exception ex)
@@ -115,7 +128,6 @@ namespace RedisSlimClient.Io.Pipelines
                 if (!_socket.SendAsync(_writeEventArgs))
                 {
                     _writeEventArgs.Complete();
-                    return 0;
                 }
             }
             catch (Exception ex)
