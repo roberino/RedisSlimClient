@@ -17,27 +17,29 @@ namespace RedisSlimClient.UnitTests.Io.Pipelines
             var cancellationTokenSource = new CancellationTokenSource();
             var receiver = new SocketPipelineReceiver(socket, cancellationTokenSource.Token);
 
+            ReadOnlySequence<byte> capturedData = default;
+
             await socket.SendStringAsync("abcxefg");
 
             receiver.RegisterHandler(s => s.PositionOf((byte)'x'), x =>
             {
                 eventFired = true;
+                capturedData = x;
                 waitHandle.Set();
-
-                Assert.Equal(3, x.Length);
-                Assert.Equal((byte)'a', x.First.Span[0]);
-                Assert.Equal((byte)'b', x.First.Span[1]);
-                Assert.Equal((byte)'c', x.First.Span[2]);
             });
 
-            TestExtensions.RunOnBackgroundThread(receiver.RunAsync);
+            receiver.ScheduleOnThreadpool();
             
             socket.WaitForDataRead();
-            waitHandle.WaitOne(1000);
+            waitHandle.WaitOne(3000);
 
             cancellationTokenSource.Cancel();
 
             Assert.True(eventFired);
+            Assert.Equal(4, capturedData.Length);
+            Assert.Equal((byte)'a', capturedData.First.Span[0]);
+            Assert.Equal((byte)'b', capturedData.First.Span[1]);
+            Assert.Equal((byte)'c', capturedData.First.Span[2]);
         }
     }
 }
