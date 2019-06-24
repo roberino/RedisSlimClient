@@ -18,6 +18,8 @@ namespace RedisSlimClient.Io.Commands
         private readonly TaskCompletionSource<bool> _taskCompletionSource;
         public string CommandText => throw new NotImplementedException();
 
+        public Func<Task> Execute { get; set; }
+
         public ObjectSetCommand(string key, ClientConfiguration config, T objectData)
         {
             _key = key;

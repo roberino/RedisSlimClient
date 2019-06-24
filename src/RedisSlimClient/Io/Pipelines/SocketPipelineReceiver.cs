@@ -13,6 +13,7 @@ namespace RedisSlimClient.Io.Pipelines
         readonly Pipe _pipe;
         readonly CancellationToken _cancellationToken;
 
+        volatile bool _reset;
         Func<ReadOnlySequence<byte>, SequencePosition?> _delimitter;
         Action<ReadOnlySequence<byte>> _handler;
 
@@ -41,16 +42,27 @@ namespace RedisSlimClient.Io.Pipelines
             return Task.WhenAll(readerTask, pubTask);
         }
 
+        public void Reset()
+        {
+            _reset = true;
+            _pipe.Reset();
+        }
+
         public void Dispose()
         {
             Error = null;
+
+            _pipe.Reader.Complete();
+            _pipe.Writer.Complete();
         }
+
+        bool IsRunning => (!_cancellationToken.IsCancellationRequested && !_reset);
 
         async Task PumpFromSocket()
         {
             var writer = _pipe.Writer;
 
-            while (!_cancellationToken.IsCancellationRequested)
+            while (IsRunning)
             {
                 var memory = writer.GetMemory(_minBufferSize);
 
@@ -58,7 +70,10 @@ namespace RedisSlimClient.Io.Pipelines
                 {
                     var bytesRead = await _socket.ReceiveAsync(memory);
 
-                    writer.Advance(bytesRead);
+                    if (IsRunning)
+                    {
+                        writer.Advance(bytesRead);
+                    }
                 }
                 catch (Exception ex)
                 {

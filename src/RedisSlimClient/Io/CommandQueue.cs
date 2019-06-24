@@ -37,6 +37,22 @@ namespace RedisSlimClient.Io
             }
         }
 
+        public async Task Enqueue(IRedisCommand command, CancellationToken cancellation = default)
+        {
+            await _semaphore.WaitAsync(cancellation);
+
+            try
+            {
+                await command.Execute();
+
+                _commandQueue.Enqueue(command);
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
+        }
+
         public bool ProcessNextCommand(Action<IRedisCommand> action)
         {
             if (_commandQueue.TryDequeue(out var next))

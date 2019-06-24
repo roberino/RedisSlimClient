@@ -55,5 +55,10 @@ namespace RedisSlimClient.UnitTests.Io.Scheduling
                 _handle.Set();
             });
         }
+
+        public void Reset()
+        {
+            _handle.Set();
+        }
     }
 }

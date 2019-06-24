@@ -17,7 +17,8 @@ namespace RedisSlimClient.Io.Commands
         private readonly ClientConfiguration _configuration;
         private readonly IObjectSerializer<T> _serializer;
         private readonly TaskCompletionSource<T> _taskCompletionSource;
-        public string CommandText => throw new NotImplementedException();
+        public string CommandText => "GET";
+        public Func<Task> Execute { get; set; }
 
         public ObjectGetCommand(string key, ClientConfiguration config)
         {
@@ -78,6 +79,6 @@ namespace RedisSlimClient.Io.Commands
 
         TaskAwaiter IRedisCommand.GetAwaiter() => ((Task)_taskCompletionSource.Task).GetAwaiter();
 
-        public object[] GetArgs() => new object[] { "GET", _key };
+        public object[] GetArgs() => new object[] { CommandText, _key };
     }
 }

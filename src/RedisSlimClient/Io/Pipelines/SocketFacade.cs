@@ -9,26 +9,17 @@ namespace RedisSlimClient.Io.Pipelines
 {
     class SocketFacade : ISocket
     {
-        readonly Socket _socket;
+        Socket _socket;
         readonly CancellationTokenSource _cancellationTokenSource;
         readonly AwaitableSocketAsyncEventArgs _readEventArgs;
         readonly AwaitableSocketAsyncEventArgs _writeEventArgs;
         readonly EndPoint _endPoint;
+        readonly TimeSpan _timeout;
 
         public SocketFacade(EndPoint endPoint, TimeSpan timeout)
         {
             _cancellationTokenSource = new CancellationTokenSource();
-
-            _socket = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp)
-            {
-                ReceiveTimeout = (int)timeout.TotalMilliseconds,
-                SendTimeout = (int)timeout.TotalMilliseconds,
-                NoDelay = true,
-                Blocking = false
-            };
-
-            _socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
-
+            
             _readEventArgs = new AwaitableSocketAsyncEventArgs()
             {
                 RemoteEndPoint = endPoint
@@ -40,14 +31,25 @@ namespace RedisSlimClient.Io.Pipelines
             };
 
             _endPoint = endPoint;
+            _timeout = timeout;
 
-            State = new SocketState(() => _socket.Connected);
+            State = new SocketState(CheckConnected);
         }
 
         public SocketState State { get; }
 
         public Task ConnectAsync()
         {
+            if (_cancellationTokenSource.IsCancellationRequested)
+            {
+                throw new ObjectDisposedException(nameof(SocketFacade));
+            }
+
+            if (_socket == null)
+            {
+                InitialiseSocket();
+            }
+
             return State.DoConnect(() => _socket.ConnectAsync(_endPoint));
         }
 
@@ -76,6 +78,11 @@ namespace RedisSlimClient.Io.Pipelines
 
         public async Task<int> ReceiveAsync(Memory<byte> memory)
         {
+            if (_cancellationTokenSource.IsCancellationRequested)
+            {
+                return 0;
+            }
+
             if (_socket.Available == 0 && !memory.IsEmpty)
             {
                 await ReceiveAsync(default);
@@ -109,18 +116,18 @@ namespace RedisSlimClient.Io.Pipelines
                 State.Terminated();
 
                 _cancellationTokenSource.Cancel();
-                _readEventArgs.Abandon();
-                _writeEventArgs.Abandon();
 
-                Try(() => _socket.Shutdown(SocketShutdown.Receive));
-                Try(() => _socket.Shutdown(SocketShutdown.Send));
-                Try(_socket.Close);
-                Try(_socket.Dispose);
+                ShutdownSocket();
             }
         }
 
         async Task<int> SendToSocket(ReadOnlyMemory<byte> buffer)
         {
+            if (_cancellationTokenSource.IsCancellationRequested)
+            {
+                return 0;
+            }
+
             _writeEventArgs.Reset(buffer);
 
             try
@@ -140,6 +147,31 @@ namespace RedisSlimClient.Io.Pipelines
             }
 
             return await _writeEventArgs;
+        }
+
+        bool CheckConnected() => (_socket?.Connected).GetValueOrDefault();
+
+        void ShutdownSocket()
+        {
+            _readEventArgs.Abandon();
+            _writeEventArgs.Abandon();
+
+            Try(() => _socket.Shutdown(SocketShutdown.Send));
+            Try(() => _socket.Shutdown(SocketShutdown.Receive));
+            Try(_socket.Close);
+            Try(_socket.Dispose);
+        }
+
+        void InitialiseSocket()
+        {
+            _socket = new Socket(_endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp)
+            {
+                ReceiveTimeout = (int)_timeout.TotalMilliseconds,
+                SendTimeout = (int)_timeout.TotalMilliseconds,
+                NoDelay = true
+            };
+
+            _socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
         }
 
         void Try(Action act)

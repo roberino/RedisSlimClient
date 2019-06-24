@@ -26,11 +26,13 @@ namespace RedisSlimClient.Io.Pipelines
             _isCompleted = false;
         }
 
+        public CancellationToken Cancellation { get; set; }
+
         public AwaitableSocketAsyncEventArgs GetAwaiter() => this;
 
         public Action<Action> CompletionHandler { get; set; }
 
-        public bool IsCompleted => _isCompleted;
+        public bool IsCompleted => _isCompleted || Cancellation.IsCancellationRequested;
 
         public int GetResult()
         {
@@ -62,7 +64,7 @@ namespace RedisSlimClient.Io.Pipelines
 
         public void Abandon()
         {
-            _isCompleted = true;
+            Complete();
         }
 
         protected override void OnCompleted(SocketAsyncEventArgs e)

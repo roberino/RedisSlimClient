@@ -4,6 +4,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using RedisSlimClient.Stubs;
+using System.Collections.Concurrent;
 
 namespace RedisSlimClient.Benchmarks
 {
@@ -13,7 +14,8 @@ namespace RedisSlimClient.Benchmarks
     {
         const string ServerUri = "tcp://localhost:6379/";
 
-        IRedisClient _client;
+        ConcurrentDictionary<string, IRedisClient> _clients;
+        IRedisClient _currentClient;
 
         [Params(PipelineMode.AsyncPipeline, PipelineMode.Sync)]
         public PipelineMode PipelineMode { get; set; }
@@ -30,18 +32,23 @@ namespace RedisSlimClient.Benchmarks
         [GlobalSetup]
         public void Setup()
         {
+            _clients = new ConcurrentDictionary<string, IRedisClient>();
         }
 
         [IterationSetup]
         public void TestSetup()
         {
-            _client = RedisClient.Create(new ClientConfiguration(ServerUri)
-            {
-                ConnectionPoolSize = ConnectionPoolSize,
-                PipelineMode = PipelineMode,
-                ConnectTimeout = TimeSpan.FromMilliseconds(500),
-                DefaultTimeout = TimeSpan.FromMilliseconds(500)
-            });
+            var key = $"{PipelineMode}/{ConnectionPoolSize}";
+
+            _currentClient = _clients.GetOrAdd(key, k =>
+                RedisClient.Create(new ClientConfiguration(ServerUri)
+                {
+                    ConnectionPoolSize = ConnectionPoolSize,
+                    PipelineMode = PipelineMode,
+                    ConnectTimeout = TimeSpan.FromMilliseconds(500),
+                    DefaultTimeout = TimeSpan.FromMilliseconds(500)
+                })
+            );
         }
 
         [Benchmark]
@@ -62,12 +69,15 @@ namespace RedisSlimClient.Benchmarks
         [IterationCleanup]
         public void TestCleanup()
         {
-            _client.Dispose();
         }
 
         [GlobalCleanup]
         public void Cleanup()
         {
+            foreach(var x in _clients)
+            {
+                x.Value.Dispose();
+            }
         }
 
         public void Dispose()
@@ -77,11 +87,11 @@ namespace RedisSlimClient.Benchmarks
 
         async Task SetGetDeleteAsync<T>(T data, string key)
         {
-            await _client.SetObjectAsync(key, data);
+            await _currentClient.SetObjectAsync(key, data);
 
-            await _client.GetObjectAsync<T>(key);
+            await _currentClient.GetObjectAsync<T>(key);
 
-            await _client.DeleteAsync(key);
+            await _currentClient.DeleteAsync(key);
         }
     }
 }

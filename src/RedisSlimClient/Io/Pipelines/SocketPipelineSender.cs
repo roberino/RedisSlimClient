@@ -9,8 +9,9 @@ namespace RedisSlimClient.Io.Pipelines
     {
         readonly ISocket _socket;
         readonly Pipe _pipe;
+        readonly CancellationToken _cancellationToken;
 
-        CancellationToken _cancellationToken;
+        volatile bool _reset;
 
         public SocketPipelineSender(ISocket socket, CancellationToken cancellationToken)
         {
@@ -23,6 +24,12 @@ namespace RedisSlimClient.Io.Pipelines
         public event Action<Exception> Error;
 
         public Task RunAsync() => PumpToSocket();
+
+        public void Reset()
+        {
+            _reset = true;
+            _pipe.Reset();
+        }
 
         public async Task SendAsync(byte[] data)
         {
@@ -45,15 +52,20 @@ namespace RedisSlimClient.Io.Pipelines
 
         async Task PumpToSocket()
         {
-            while (!_cancellationToken.IsCancellationRequested)
+            _reset = false;
+
+            while (IsRunning)
             {
                 try
                 {
                     var result = await _pipe.Reader.ReadAsync(_cancellationToken);
 
-                    var bytes = await _socket.SendAsync(result.Buffer);
+                    if (IsRunning)
+                    {
+                        var bytes = await _socket.SendAsync(result.Buffer);
 
-                    _pipe.Reader.AdvanceTo(result.Buffer.GetPosition(bytes));
+                        _pipe.Reader.AdvanceTo(result.Buffer.GetPosition(bytes));
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -64,9 +76,14 @@ namespace RedisSlimClient.Io.Pipelines
             }
         }
 
+        bool IsRunning => (!_cancellationToken.IsCancellationRequested && !_reset);
+
         public void Dispose()
         {
             Error = null;
+
+            _pipe.Reader.Complete();
+            _pipe.Writer.Complete();
         }
     }
 }

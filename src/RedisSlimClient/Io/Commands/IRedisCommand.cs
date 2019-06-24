@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 
 namespace RedisSlimClient.Io.Commands
 {
@@ -12,6 +13,7 @@ namespace RedisSlimClient.Io.Commands
 
     interface IRedisCommand
     {
+        Func<Task> Execute { get; set; }
         string CommandText { get; }
         void Complete(RedisObject obj);
         void Cancel();

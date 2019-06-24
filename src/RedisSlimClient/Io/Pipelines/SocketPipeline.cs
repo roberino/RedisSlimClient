@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -42,6 +43,19 @@ namespace RedisSlimClient.Io.Pipelines
             }
         }
 
+        public Task RunAsync()
+        {
+            return Task.WhenAll(Runnables.Select(x => x.RunAsync()));
+        }
+
+        public void Reset()
+        {
+            foreach(var runnable in Runnables)
+            {
+                runnable.Reset();
+            }
+        }
+
         public void Dispose()
         {
             if (!_cancellationTokenSource.IsCancellationRequested)
@@ -52,14 +66,13 @@ namespace RedisSlimClient.Io.Pipelines
                 Sender.Dispose();
 
                 _socket.Dispose();
+
+                _cancellationTokenSource.Dispose();
             }
         }
 
-        public Task RunAsync()
-        {
-            return Task.WhenAll(((IRunnable)Receiver).RunAsync(), ((IRunnable)Sender).RunAsync());
-        }
-
         ~SocketPipeline() { Dispose(); }
+
+        IRunnable[] Runnables => new[] { (IRunnable)Receiver, (IRunnable)Sender };
     }
 }

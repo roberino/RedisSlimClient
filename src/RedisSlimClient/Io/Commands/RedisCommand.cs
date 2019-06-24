@@ -39,6 +39,7 @@ namespace RedisSlimClient.Io.Commands
 
             CompletionSource.SetException(ex);
         }
+        public Func<Task> Execute { get; set; }
 
         public TaskCompletionSource<RedisObject> CompletionSource { get; }
 

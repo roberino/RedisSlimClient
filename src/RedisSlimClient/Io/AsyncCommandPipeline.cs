@@ -39,28 +39,28 @@ namespace RedisSlimClient.Io
                 throw new ObjectDisposedException(nameof(CommandPipeline));
             }
 
+            command.Execute = async () =>
+            {
+                await _pipeline.Sender.SendAsync(m =>
+                {
+                    var formatter = new RedisByteFormatter(m);
+
+                    if (!cancellation.IsCancellationRequested)
+                    {
+                        return formatter.Write(command.GetArgs());
+                    }
+
+                    return 0;
+                });
+            };
+
             _pendingWrites.Increment();
 
             try
             {
                 cancellation.Register(command.Cancel);
 
-                await _commandQueue.Enqueue(async () =>
-                {
-                    await _pipeline.Sender.SendAsync(m =>
-                    {
-                        var formatter = new RedisByteFormatter(m);
-
-                        if (!cancellation.IsCancellationRequested)
-                        {
-                            return formatter.Write(command.GetArgs());
-                        }
-
-                        return 0;
-                    });
-
-                    return command;
-                }, cancellation);
+                await _commandQueue.Enqueue(command, cancellation);
             }
             catch (Exception ex)
             {

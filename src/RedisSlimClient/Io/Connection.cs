@@ -10,12 +10,12 @@ namespace RedisSlimClient.Io
         static readonly SyncedCounter IdGenerator = new SyncedCounter();
 
         readonly ITelemetryWriter _telemetryWriter;
-        readonly AsyncLock<ICommandPipeline> _pipeline;
+        readonly SyncronizedInstance<ICommandPipeline> _pipeline;
         
         public Connection(Func<Task<ICommandPipeline>> pipelineFactory, ITelemetryWriter telemetryWriter = null)
         {
             _telemetryWriter = telemetryWriter ?? NullWriter.Instance;
-            _pipeline = new AsyncLock<ICommandPipeline>(() => pipelineFactory());
+            _pipeline = new SyncronizedInstance<ICommandPipeline>(() => pipelineFactory());
 
             Id = IdGenerator.Increment().ToString();
         }
@@ -31,7 +31,7 @@ namespace RedisSlimClient.Io
 
         public Task<ICommandPipeline> ConnectAsync()
         {
-            return _telemetryWriter.ExecuteAsync(_ => _pipeline.GetValue(TimeSpan.FromMilliseconds(500)), nameof(ConnectAsync));
+            return _telemetryWriter.ExecuteAsync(_ => _pipeline.GetValue(), nameof(ConnectAsync));
         }
 
         public void Dispose()
