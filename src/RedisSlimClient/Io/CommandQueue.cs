@@ -19,6 +19,16 @@ namespace RedisSlimClient.Io
 
         public int QueueSize => _commandQueue.Count;
 
+        public void AbortAll(Exception ex)
+        {
+            while (ProcessNextCommand(cmd =>
+             {
+                 cmd.Abandon(ex);
+             }))
+            {
+            }
+        }
+
         public async Task Enqueue(Func<Task<IRedisCommand>> commandFactory, CancellationToken cancellation = default)
         {
             IRedisCommand cmd;

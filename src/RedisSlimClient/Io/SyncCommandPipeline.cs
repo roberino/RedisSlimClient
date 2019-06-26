@@ -32,7 +32,7 @@ namespace RedisSlimClient.Io
         {
             if (_disposed)
             {
-                throw new ObjectDisposedException(nameof(CommandPipeline));
+                throw new ObjectDisposedException(nameof(SyncCommandPipeline));
             }
 
             lock (_writeStream)

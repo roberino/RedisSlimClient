@@ -23,25 +23,15 @@ namespace RedisSlimClient.Io.Pipelines
 
             Receiver = new SocketPipelineReceiver(_socket, _cancellationTokenSource.Token, minBufferSize);
             Sender = new SocketPipelineSender(_socket, _cancellationTokenSource.Token);
+
+            _socket.State.Changed += OnSocketChange;
         }
 
         public IPipelineReceiver Receiver { get; }
 
         public IPipelineSender Sender { get; }
 
-        public Action Faulted
-        {
-            set
-            {
-                _socket.State.Changed += e =>
-                {
-                    if (e == SocketStatus.ConnectFault)
-                    {
-                        value.Invoke();
-                    }
-                };
-            }
-        }
+        public event Action Faulted;
 
         public Task RunAsync()
         {
@@ -68,6 +58,14 @@ namespace RedisSlimClient.Io.Pipelines
                 _socket.Dispose();
 
                 _cancellationTokenSource.Dispose();
+            }
+        }
+
+        void OnSocketChange(SocketStatus e)
+        {
+            if (e == SocketStatus.ReadFault || e == SocketStatus.WriteFault)
+            {
+                Faulted?.Invoke();
             }
         }
 

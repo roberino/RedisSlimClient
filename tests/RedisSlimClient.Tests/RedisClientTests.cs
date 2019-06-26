@@ -1,10 +1,10 @@
-﻿using RedisSlimClient.Configuration;
+﻿using NSubstitute;
+using RedisSlimClient.Configuration;
 using RedisSlimClient.Io;
-using RedisSlimClient.Serialization.Protocol;
-using RedisSlimClient.UnitTests.Serialization;
-using System;
-using System.IO;
-using System.Text;
+using RedisSlimClient.Io.Commands;
+using RedisSlimClient.Serialization;
+using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -12,113 +12,67 @@ namespace RedisSlimClient.UnitTests
 {
     public class RedisClientTests
     {
-        [Fact]
-        public async Task SetObjectAsync_WritesObjectDataToStream()
-        {
-            var fakeStream = new FakeNetworkStream();
-            var pipeline = new CommandPipeline(fakeStream, null);
-            var client = new RedisClient(new ClientConfiguration("tcp://localhost:2344"), f => new FakeConnection(pipeline));
+        IList<object> _store;
 
-            var data = new TestComplexDto()
-            {
-                DataItem1 = "y",
-                DataItem2 = DateTime.UtcNow,
-                DataItem3 = new TestDtoWithString()
+        public RedisClientTests()
+        {
+            _store = new List<object>();
+        }
+
+        [Fact]
+        public async Task SetObjectAsync_WritesObjectDataToStore()
+        {
+            var connection = Substitute.For<IConnection>();
+            var pipeline = Substitute.For<ICommandPipeline>();
+            
+            connection.ConnectAsync().Returns(pipeline);
+            pipeline.Execute(Arg.Any<ObjectSetCommand<MyData>>(), Arg.Any<CancellationToken>())
+                .Returns(call =>
                 {
-                    DataItem1 = "x"
-                }
+                    var cmd = call.Arg<ObjectSetCommand<MyData>>();
+
+                    _store.Add(cmd.GetArgs()[1]);
+
+                    return true;
+                });
+
+            var arg = new MyData { X = 1 };
+
+            var config = new ClientConfiguration("host1")
+            {
+                SerializerFactory = SetupSerializer(arg)
             };
 
-            fakeStream.Return("OK");
+            var client = new RedisClient(config, _ => connection);
 
-            var ok = await client.SetObjectAsync("x", data);
+            var result = await client.SetObjectAsync("x", arg);
 
-            var writtenData = fakeStream.GetDataWritten();
+            var stored = Cast(_store[0], arg);
 
-            Assert.True(ok);
-            Assert.StartsWith("*3\r\n$3\r\nSET\r\n$1\r\nx\r\n", writtenData);
+            Assert.Same(stored, arg);
         }
-    }
 
-    class FakeConnection : IConnection
-    {
-        static int _idCount = 1;
-
-        private readonly CommandPipeline _commandPipeline;
-        readonly int _id;
-
-        public FakeConnection(CommandPipeline commandPipeline)
+        T Cast<T>(object value, T sample)
         {
-            _commandPipeline = commandPipeline;
-            _id = _idCount++;
+            return (T)value;
         }
 
-        public string Id => _id.ToString();
-
-        public float WorkLoad => 1f;
-
-        public Task<ICommandPipeline> ConnectAsync() => Task.FromResult<ICommandPipeline>(_commandPipeline);
-
-        public void Dispose()
+        IObjectSerializerFactory SetupSerializer<T>(T defaultValue)
         {
-        }
-    }
+            var factory = Substitute.For<IObjectSerializerFactory>();
+            var serializer = Substitute.For<IObjectSerializer<T>>();
+            
+            factory.Create<T>().Returns(serializer);
 
-    public class FakeNetworkStream : Stream
-    {
-        public FakeNetworkStream()
+            serializer.When(s => s.WriteData(Arg.Any<T>(), Arg.Any<IObjectWriter>()))
+                .Do(call => _store.Add(call.Arg<T>()));            
+
+            return factory;
+        }
+
+        public class MyData
         {
-            RequestData = new MemoryStream();
-            ResponseData = new MemoryStream();
+            public int X { get; set; }
         }
-
-        public MemoryStream RequestData { get; }
-        public MemoryStream ResponseData { get; }
-
-        public void Return(string response)
-        {
-            ResponseData.Write(response);
-            ResponseData.Position = 0;
-        }
-
-        public string GetDataWritten()
-        {
-            return Encoding.UTF8.GetString(RequestData.ToArray());
-        }
-        
-        public override int Read(byte[] buffer, int offset, int count)
-        {
-            return ResponseData.Read(buffer, offset, count);
-        }
-
-        public override void Flush()
-        {
-            RequestData.Flush();
-        }
-
-        public override long Seek(long offset, SeekOrigin origin)
-        {
-            throw new NotSupportedException();
-        }
-
-        public override void SetLength(long value)
-        {
-            throw new NotSupportedException();
-        }
-
-        public override void Write(byte[] buffer, int offset, int count)
-        {
-            RequestData.Write(buffer, offset, count);
-        }
-
-        public override bool CanRead => true;
-
-        public override bool CanSeek => false;
-
-        public override bool CanWrite => true;
-
-        public override long Length => throw new NotSupportedException();
-
-        public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
     }
 }

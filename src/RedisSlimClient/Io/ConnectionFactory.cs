@@ -26,13 +26,6 @@ namespace RedisSlimClient.Io
 
             var streamFactory = new NetworkStreamFactory(configuration.ServerUri.AsEndpoint(), configuration.ConnectTimeout);
 
-            if (configuration.PipelineMode == PipelineMode.Async)
-            {
-                return new Connection(
-                    async () => new CommandPipeline(await streamFactory.CreateStreamAsync(), configuration.TelemetryWriter),
-                    configuration.TelemetryWriter);
-            }
-
             return new Connection(
                 async () => new SyncCommandPipeline(await streamFactory.CreateStreamAsync()),
                     configuration.TelemetryWriter);

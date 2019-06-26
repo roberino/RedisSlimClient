@@ -23,7 +23,6 @@ namespace RedisSlimClient.IntegrationTests
 
         [Theory]
         [InlineData(PipelineMode.Sync)]
-        [InlineData(PipelineMode.Async)]
         [InlineData(PipelineMode.AsyncPipeline)]
         public async Task PingAsync_SpecificPipelineMode_ReturnsTrue(PipelineMode pipelineMode)
         {
@@ -89,7 +88,7 @@ namespace RedisSlimClient.IntegrationTests
         {
             using (var client = RedisClient.Create(new ClientConfiguration(_localEndpoint.ToString())
             {
-                PipelineMode = useAsync ? PipelineMode.Async : PipelineMode.Sync
+                PipelineMode = useAsync ? PipelineMode.AsyncPipeline : PipelineMode.Sync
             }))
             {
                 var data = ObjectGeneration.CreateObjectGraph();

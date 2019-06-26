@@ -26,6 +26,17 @@ namespace RedisSlimClient.Io
             _telemetryWriter = telemetryWriter ?? NullWriter.Instance;
             _commandQueue = new CommandQueue();
             _completionHandler = new CompletionHandler(_pipeline.Receiver, _commandQueue);
+            
+            _pipeline.Faulted += () =>
+            {
+                telemetryWriter.Write(new TelemetryEvent()
+                {
+                     Name = $"{nameof(IDuplexPipeline)}.{nameof(IDuplexPipeline.Faulted)}"
+                });
+
+                _commandQueue.AbortAll(new Exception());
+                _pipeline.Reset();
+            };
 
             _pipeline.ScheduleOnThreadpool();
         }
@@ -36,7 +47,7 @@ namespace RedisSlimClient.Io
         {
             if (_disposed)
             {
-                throw new ObjectDisposedException(nameof(CommandPipeline));
+                throw new ObjectDisposedException(nameof(AsyncCommandPipeline));
             }
 
             command.Execute = async () =>
