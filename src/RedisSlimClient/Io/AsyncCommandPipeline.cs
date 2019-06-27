@@ -87,7 +87,7 @@ namespace RedisSlimClient.Io
 
         public void Dispose()
         {
-            if (_disposed)
+            if (!_disposed)
             {
                 _pipeline.Dispose();
             }

@@ -28,7 +28,7 @@ namespace RedisSlimClient.UnitTests.Io.Pipelines
                 waitHandle.Set();
             });
 
-            receiver.ScheduleOnThreadpool();
+            var _ = receiver.ScheduleOnThreadpool();
             
             socket.WaitForDataRead();
             waitHandle.WaitOne(3000);
@@ -43,33 +43,22 @@ namespace RedisSlimClient.UnitTests.Io.Pipelines
         }
 
         [Fact]
-        public async Task Reset()
+        public async Task Reset_EndSchedulerThread()
         {
             var socket = new StubSocket();
 
             using (var waitHandle = new ManualResetEvent(false))
             {
-                var cancellationTokenSource = new CancellationTokenSource();
-                var receiver = new SocketPipelineReceiver(socket, cancellationTokenSource.Token);
+                var receiver = new SocketPipelineReceiver(socket, default);
                 
                 await socket.SendStringAsync("abcxefg");
 
                 receiver.RegisterHandler(s => s.PositionOf((byte)'x'), x =>
                 {
-                    waitHandle.Set();
+                    receiver.Reset();
                 });
 
-                var result = receiver.ScheduleOnThreadpool();
-
-                receiver.Reset();
-
-                waitHandle.WaitOne(3000);
-                
-                cancellationTokenSource.Cancel();
-
-                await result;
-
-                Assert.Null(result.Exception);
+                await receiver.ScheduleOnThreadpool();
             }
         }
     }
