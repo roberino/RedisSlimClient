@@ -84,34 +84,37 @@ namespace RedisSlimClient.IntegrationTests
         [Theory]
         [InlineData(true)]
         [InlineData(false)]
-        public async Task SetObjectAsync_WritesObjectDataToStream(bool useAsync)
+        public async Task MultipleOperations_MultipleIterations_ExecutesSuccessfully(bool useAsync)
         {
             using (var client = RedisClient.Create(new ClientConfiguration(_localEndpoint.ToString())
             {
                 PipelineMode = useAsync ? PipelineMode.AsyncPipeline : PipelineMode.Sync
             }))
             {
-                var data = ObjectGeneration.CreateObjectGraph();
-
-                var ok = await client.SetObjectAsync(data.Id, data);
-
-                Assert.True(ok);
-
-                var data2 = await client.GetObjectAsync<TestDtoWithGenericCollection<TestComplexDto>>(data.Id);
-
-                Assert.Equal(data.Id, data2.Id);
-                Assert.Equal(data.Items.Count, data2.Items.Count);
-
-                foreach (var x in data.Items.Zip(data2.Items, (a, b) => (a, b)))
+                foreach (var n in Enumerable.Range(1, 100))
                 {
-                    Assert.Equal(x.a.DataItem1, x.b.DataItem1);
-                    Assert.Equal(x.a.DataItem2, x.b.DataItem2);
-                    Assert.Equal(x.a.DataItem3.DataItem1, x.b.DataItem3.DataItem1);
+                    var data = ObjectGeneration.CreateObjectGraph();
+
+                    var ok = await client.SetObjectAsync(data.Id, data);
+
+                    Assert.True(ok);
+
+                    var data2 = await client.GetObjectAsync<TestDtoWithGenericCollection<TestComplexDto>>(data.Id);
+
+                    Assert.Equal(data.Id, data2.Id);
+                    Assert.Equal(data.Items.Count, data2.Items.Count);
+
+                    foreach (var x in data.Items.Zip(data2.Items, (a, b) => (a, b)))
+                    {
+                        Assert.Equal(x.a.DataItem1, x.b.DataItem1);
+                        Assert.Equal(x.a.DataItem2, x.b.DataItem2);
+                        Assert.Equal(x.a.DataItem3.DataItem1, x.b.DataItem3.DataItem1);
+                    }
+
+                    var deleted = await client.DeleteAsync(data.Id);
+
+                    Assert.Equal(1, deleted);
                 }
-
-                var deleted = await client.DeleteAsync(data.Id);
-
-                Assert.Equal(1, deleted);
             }
         }
 

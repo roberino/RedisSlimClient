@@ -1,10 +1,11 @@
 ﻿using BenchmarkDotNet.Attributes;
 using RedisSlimClient.Configuration;
-using System;
-using System.Linq;
-using System.Threading.Tasks;
 using RedisSlimClient.Stubs;
+using System;
 using System.Collections.Concurrent;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace RedisSlimClient.Benchmarks
 {
@@ -74,7 +75,7 @@ namespace RedisSlimClient.Benchmarks
         [GlobalCleanup]
         public void Cleanup()
         {
-            foreach(var x in _clients)
+            foreach (var x in _clients)
             {
                 x.Value.Dispose();
             }
@@ -87,11 +88,24 @@ namespace RedisSlimClient.Benchmarks
 
         async Task SetGetDeleteAsync<T>(T data, string key)
         {
-            await _currentClient.SetObjectAsync(key, data);
+            var cancel = new CancellationTokenSource(500);
 
-            await _currentClient.GetObjectAsync<T>(key);
+            try
+            {
+                await _currentClient.SetObjectAsync(key, data, cancel.Token);
 
-            await _currentClient.DeleteAsync(key);
+                await _currentClient.GetObjectAsync<T>(key, cancel.Token);
+
+                await _currentClient.DeleteAsync(key, cancel.Token);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
+            finally
+            {
+                cancel.Dispose();
+            }
         }
     }
 }

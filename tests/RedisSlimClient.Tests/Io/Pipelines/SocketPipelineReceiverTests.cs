@@ -41,5 +41,36 @@ namespace RedisSlimClient.UnitTests.Io.Pipelines
             Assert.Equal((byte)'b', capturedData.First.Span[1]);
             Assert.Equal((byte)'c', capturedData.First.Span[2]);
         }
+
+        [Fact]
+        public async Task Reset()
+        {
+            var socket = new StubSocket();
+
+            using (var waitHandle = new ManualResetEvent(false))
+            {
+                var cancellationTokenSource = new CancellationTokenSource();
+                var receiver = new SocketPipelineReceiver(socket, cancellationTokenSource.Token);
+                
+                await socket.SendStringAsync("abcxefg");
+
+                receiver.RegisterHandler(s => s.PositionOf((byte)'x'), x =>
+                {
+                    waitHandle.Set();
+                });
+
+                var result = receiver.ScheduleOnThreadpool();
+
+                receiver.Reset();
+
+                waitHandle.WaitOne(3000);
+                
+                cancellationTokenSource.Cancel();
+
+                await result;
+
+                Assert.Null(result.Exception);
+            }
+        }
     }
 }

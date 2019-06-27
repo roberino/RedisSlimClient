@@ -40,10 +40,8 @@ namespace RedisSlimClient.Io.Pipelines
 
         public void Reset()
         {
-            foreach(var runnable in Runnables)
-            {
+            foreach (var runnable in Runnables)
                 runnable.Reset();
-            }
         }
 
         public void Dispose()

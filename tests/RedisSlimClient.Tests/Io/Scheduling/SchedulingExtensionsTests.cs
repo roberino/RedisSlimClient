@@ -29,7 +29,6 @@ namespace RedisSlimClient.UnitTests.Io.Scheduling
 
         int _counter;
 
-
         public Task RunAsync()
         {
             return Task.WhenAll(RunImpl(), Task.Delay(5));

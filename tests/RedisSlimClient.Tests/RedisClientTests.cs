@@ -31,7 +31,7 @@ namespace RedisSlimClient.UnitTests
                 {
                     var cmd = call.Arg<ObjectSetCommand<MyData>>();
 
-                    _store.Add(cmd.GetArgs()[1]);
+                    cmd.GetArgs();
 
                     return true;
                 });
@@ -46,15 +46,8 @@ namespace RedisSlimClient.UnitTests
             var client = new RedisClient(config, _ => connection);
 
             var result = await client.SetObjectAsync("x", arg);
-
-            var stored = Cast(_store[0], arg);
-
-            Assert.Same(stored, arg);
-        }
-
-        T Cast<T>(object value, T sample)
-        {
-            return (T)value;
+            
+            Assert.Same(_store[0], arg);
         }
 
         IObjectSerializerFactory SetupSerializer<T>(T defaultValue)

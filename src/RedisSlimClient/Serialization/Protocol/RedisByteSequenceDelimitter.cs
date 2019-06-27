@@ -80,7 +80,7 @@ namespace RedisSlimClient.Serialization.Protocol
             _readMode = ReadMode.None;
         }
 
-        SequencePosition GetCurrentPosition(ReadOnlySequence<byte> sequence, int offset = 0)
+        SequencePosition? GetCurrentPosition(ReadOnlySequence<byte> sequence, int offset = 0)
         {
             var pos = _currentPosition;
 
@@ -96,7 +96,11 @@ namespace RedisSlimClient.Serialization.Protocol
                 Reset();
             }
 
-            return sequence.GetPosition(pos + offset - 1);
+            var index = pos + offset - 1;
+
+            return (index < sequence.Length) ?
+                sequence.GetPosition(index) :
+                default;
         }
 
         long ParseLength(ReadOnlySequence<byte> sequence)

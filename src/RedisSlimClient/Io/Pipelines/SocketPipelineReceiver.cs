@@ -34,18 +34,24 @@ namespace RedisSlimClient.Io.Pipelines
             _handler = handler;
         }
 
-        public Task RunAsync()
+        public async Task RunAsync()
         {
+            _reset = false;
+
             var readerTask = PumpFromSocket();
             var pubTask = ReadPipeAsync();
 
-            return Task.WhenAll(readerTask, pubTask);
+            await Task.WhenAll(readerTask, pubTask);
+
+            if (_reset)
+            {
+                _pipe.Reset();
+            }
         }
 
         public void Reset()
         {
             _reset = true;
-            _pipe.Reset();
         }
 
         public void Dispose()
@@ -62,6 +68,8 @@ namespace RedisSlimClient.Io.Pipelines
         {
             var writer = _pipe.Writer;
 
+            Exception error = null;
+
             while (IsRunning)
             {
                 var memory = writer.GetMemory(_minBufferSize);
@@ -77,7 +85,7 @@ namespace RedisSlimClient.Io.Pipelines
                 }
                 catch (Exception ex)
                 {
-                    Error?.Invoke(ex);
+                    error = ex;
 
                     break;
                 }
@@ -91,6 +99,9 @@ namespace RedisSlimClient.Io.Pipelines
             }
 
             writer.Complete();
+
+            if (error != null)
+                Error?.Invoke(error);
         }
 
         async Task ReadPipeAsync()
@@ -100,7 +111,9 @@ namespace RedisSlimClient.Io.Pipelines
                 throw new InvalidOperationException("No registered handler");
             }
 
-            while (!_cancellationToken.IsCancellationRequested)
+            Exception error = null;
+
+            while (IsRunning)
             {
                 try
                 {
@@ -136,12 +149,15 @@ namespace RedisSlimClient.Io.Pipelines
                 }
                 catch (Exception ex)
                 {
-                    Error?.Invoke(ex);
-                    throw;
+                    error = ex;
+                    break;
                 }
             }
 
             _pipe.Reader.Complete();
+
+            if (error != null)
+                Error?.Invoke(error);
         }
     }
 }
