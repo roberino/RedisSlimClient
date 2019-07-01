@@ -97,17 +97,16 @@ namespace RedisSlimClient.UnitTests.Io.Pipelines
                     TestOutput.WriteLine(e.ToString());
                 };
 
-                await pipe.Sender.SendAsync(x =>
+                await pipe.Sender.SendAsync(async x =>
                 {
                     for (var v = 0; v < factor; v++)
                     {
                         for (var i = 0; i < frameSize; i++)
                         {
                             var n = (v * frameSize) + i;
-                            x.Span[n] = (byte)(i == frameSize - 1 ? 'x' : n);
+                            await x.Write((byte)(i == frameSize - 1 ? 'x' : n));
                         }
                     }
-                    return total;
                 });
 
                 var _ = pipe.ScheduleOnThreadpool();

@@ -45,11 +45,11 @@ namespace RedisSlimClient.Io.Commands
                 {
                     var obj = _serializer.ReadData(objReader, default);
 
-                    _taskCompletionSource.SetResult(obj);
+                    _taskCompletionSource.TrySetResult(obj);
                 }
                 catch (Exception ex)
                 {
-                    _taskCompletionSource.SetException(ex);
+                    _taskCompletionSource.TrySetException(ex);
                 }
             }
         }
@@ -62,12 +62,12 @@ namespace RedisSlimClient.Io.Commands
                 return;
             }
 
-            _taskCompletionSource.SetException(ex);
+            _taskCompletionSource.TrySetException(ex);
         }
 
         public void Cancel()
         {
-            _taskCompletionSource.SetCanceled();
+            _taskCompletionSource.TrySetCanceled();
         }
 
         public void Write(Stream commandWriter)

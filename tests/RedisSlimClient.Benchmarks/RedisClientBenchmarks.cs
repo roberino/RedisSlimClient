@@ -1,6 +1,7 @@
 ﻿using BenchmarkDotNet.Attributes;
 using RedisSlimClient.Configuration;
 using RedisSlimClient.Stubs;
+using RedisSlimClient.Telemetry;
 using System;
 using System.Collections.Concurrent;
 using System.Linq;
@@ -24,7 +25,7 @@ namespace RedisSlimClient.Benchmarks
         [Params(1, 4)]
         public int ConnectionPoolSize { get; set; }
 
-        [Params(10, 100)]
+        [Params(5, 10)]
         public int DataCollectionSize { get; set; }
 
         [Params(1, 4)]
@@ -47,7 +48,8 @@ namespace RedisSlimClient.Benchmarks
                     ConnectionPoolSize = ConnectionPoolSize,
                     PipelineMode = PipelineMode,
                     ConnectTimeout = TimeSpan.FromMilliseconds(500),
-                    DefaultTimeout = TimeSpan.FromMilliseconds(500)
+                    DefaultTimeout = TimeSpan.FromMilliseconds(500),
+                    TelemetryWriter= new TextTelemetryWriter(Console.WriteLine, Severity.Error)
                 })
             );
         }

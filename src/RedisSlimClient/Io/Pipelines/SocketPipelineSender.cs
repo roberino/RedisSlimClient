@@ -1,4 +1,5 @@
-﻿using System;
+﻿using RedisSlimClient.Types.Primatives;
+using System;
 using System.IO.Pipelines;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,8 +11,8 @@ namespace RedisSlimClient.Io.Pipelines
         readonly ISocket _socket;
         readonly Pipe _pipe;
         readonly CancellationToken _cancellationToken;
+        readonly MemoryCursor _memoryCursor;
 
-        Task _runningTask;
         volatile bool _reset;
 
         public SocketPipelineSender(ISocket socket, CancellationToken cancellationToken)
@@ -20,6 +21,8 @@ namespace RedisSlimClient.Io.Pipelines
             _socket = socket;
 
             _pipe = new Pipe();
+
+            _memoryCursor = new MemoryCursor(_pipe.Writer);
         }
 
         public event Action<Exception> Error;
@@ -52,23 +55,16 @@ namespace RedisSlimClient.Io.Pipelines
             await _pipe.Writer.WriteAsync(new ReadOnlyMemory<byte>(data));
         }
 
-        public async Task SendAsync(Func<Memory<byte>, int> writeAction, int bufferSize = 512)
+        public async Task SendAsync(Func<IMemoryCursor, Task> writeAction)
         {
             if (_reset)
             {
                 throw new InvalidOperationException("Resetting");
             }
 
-            var mem = _pipe.Writer.GetMemory(bufferSize);
+            await writeAction(_memoryCursor);
 
-            var len = writeAction(mem);
-
-            if (len > 0)
-            {
-                _pipe.Writer.Advance(len);
-
-                await _pipe.Writer.FlushAsync(_cancellationToken);
-            }
+            await _memoryCursor.FlushAsync();
         }
 
         async Task PumpToSocket()

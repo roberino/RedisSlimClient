@@ -1,21 +1,22 @@
-﻿using System;
+﻿using RedisSlimClient.Types.Primatives;
+using System;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace RedisSlimClient.Serialization.Protocol
 {
     class RedisByteFormatter
     {
-        private readonly Memory<byte> _memory;
+        static readonly byte[] _endBytes = new byte[] { (byte)'\r', (byte)'\n' };
 
-        int _position;
+        readonly IMemoryCursor _memory;
 
-        public RedisByteFormatter(Memory<byte> stream)
+        public RedisByteFormatter(IMemoryCursor memory)
         {
-            _memory = stream;
+            _memory = memory;
         }
 
-        public int CurrentPosition => _position;
-
-        public int Write(object item)
+        public Task Write(object item)
         {
             var tc = Type.GetTypeCode(item.GetType());
 
@@ -34,110 +35,92 @@ namespace RedisSlimClient.Serialization.Protocol
             }
         }
 
-        public int Write(object[] data)
+        public async Task Write(object[] data)
         {
-            WriteStartArray(data.Length);
+            await WriteStartArray(data.Length);
 
             for (var i = 0; i < data.Length; i++)
             {
-                Write(data[i]);
+                await Write(data[i]);
             }
-
-            return _position;
         }
 
-        public int Write(string[] data)
+        public async Task Write(string[] data)
         {
-            WriteStartArray(data.Length);
+            await WriteStartArray(data.Length);
 
             for (var i = 0; i < data.Length; i++)
             {
-                Write(data[i]);
+                await Write(data[i]);
             }
-
-            return _position;
         }
 
-        public int Write(byte[][] data)
+        public async Task Write(byte[][] data)
         {
-            WriteStartArray(data.Length);
+            await WriteStartArray(data.Length);
 
             for (var i = 0; i < data.Length; i++)
             {
-                Write(data[i]);
+                await Write(data[i]);
             }
-
-            return _position;
         }
 
-        public int WriteStartArray(int arrayLength)
+        public async Task WriteStartArray(int arrayLength)
         {
-            Write(ResponseType.ArrayType);
-            WriteRaw(arrayLength.ToString());
-            return WriteEnd();
+            await Write(ResponseType.ArrayType);
+            await WriteRaw(arrayLength.ToString());
+            await WriteEnd();
         }
 
-        public int Write(byte[] data)
+        public async Task Write(byte[] data)
         {
-            Write(ResponseType.BulkStringType);
-            WriteRaw(data.Length.ToString());
-            WriteEnd();
+            await Write(ResponseType.BulkStringType);
+            await WriteRaw(data.Length.ToString());
+            await WriteEnd();
 
-            for (var i = 0; i < data.Length; i++)
-            {
-                _memory.Span[_position++] = data[i];
-            }
+            await _memory.Write(data);
 
-            return WriteEnd();
+            await WriteEnd();
         }
 
-        public int Write(long value)
+        public async Task Write(long value)
         {
-            Write(ResponseType.IntType);
-            WriteRaw(value.ToString());
-            return WriteEnd();
+            await Write(ResponseType.IntType);
+            await WriteRaw(value.ToString());
+            await WriteEnd();
         }
 
-        public int Write(string data, bool bulk = false)
+        public async Task Write(string data, bool bulk = false)
         {
             if (bulk)
             {
-                Write(ResponseType.BulkStringType);
-                WriteRaw(data.Length.ToString());
-                WriteEnd();
-                WriteRaw(data);
-                WriteEnd();
+                await Write(ResponseType.BulkStringType);
+                await WriteRaw(data.Length.ToString());
+                await WriteEnd();
+                await WriteRaw(data);
+                await WriteEnd();
             }
             else
             {
-                Write(ResponseType.StringType);
-                WriteRaw(data);
-                WriteEnd();
+                await Write(ResponseType.StringType);
+                await WriteRaw(data);
+                await WriteEnd();
             }
-
-            return _position;
         }
 
-        int WriteRaw(string data)
+        Task WriteRaw(string data)
         {
-            foreach (var x in data)
-            {
-                _memory.Span[_position++] = (byte)x;
-            }
-            return _position;
+            return _memory.Write(Encoding.ASCII.GetBytes(data));
         }
 
-        int WriteEnd()
+        Task WriteEnd()
         {
-            _memory.Span[_position++] = (byte)'\r';
-            _memory.Span[_position++] = (byte)'\n';
-            return _position;
+            return _memory.Write(_endBytes);
         }
 
-        int Write(ResponseType responseType)
+        Task Write(ResponseType responseType)
         {
-            _memory.Span[_position++] = (byte)responseType;
-            return _position;
+            return _memory.Write(new byte[] { (byte)responseType });
         }
     }
 }

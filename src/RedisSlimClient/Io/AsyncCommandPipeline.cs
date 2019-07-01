@@ -61,7 +61,7 @@ namespace RedisSlimClient.Io
                         return formatter.Write(command.GetArgs());
                     }
 
-                    return 0;
+                    return Task.CompletedTask;
                 });
             };
 

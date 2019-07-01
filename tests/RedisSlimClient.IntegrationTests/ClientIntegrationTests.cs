@@ -93,7 +93,7 @@ namespace RedisSlimClient.IntegrationTests
             {
                 foreach (var n in Enumerable.Range(1, 100))
                 {
-                    var data = ObjectGeneration.CreateObjectGraph();
+                    var data = ObjectGeneration.CreateObjectGraph(5);
 
                     var ok = await client.SetObjectAsync(data.Id, data);
 

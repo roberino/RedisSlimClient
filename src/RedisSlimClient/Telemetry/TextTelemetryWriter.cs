@@ -4,20 +4,25 @@ namespace RedisSlimClient.Telemetry
 {
     public class TextTelemetryWriter : ITelemetryWriter
     {
-        private readonly Action<string> writeMethod;
+        readonly Action<string> _writeMethod;
+        readonly Severity _severity;
 
-        public TextTelemetryWriter(Action<string> writeMethod)
+        public TextTelemetryWriter(Action<string> writeMethod, Severity severity = Severity.Info)
         {
-            this.writeMethod = writeMethod;
+            _writeMethod = writeMethod;
+            _severity = severity;
         }
 
         public void Write(TelemetryEvent telemetryEvent)
         {
-            writeMethod($"{telemetryEvent.Timestamp}: {telemetryEvent.OperationId} {telemetryEvent.Name} {telemetryEvent.Action} [{telemetryEvent.Elapsed}] data={telemetryEvent.Data}");
-
-            if (telemetryEvent.Exception != null)
+            if (_severity.HasFlag(telemetryEvent.Severity))
             {
-                writeMethod(telemetryEvent.Exception.Message);
+                _writeMethod($"{telemetryEvent.Timestamp}: {telemetryEvent.OperationId} {telemetryEvent.Name} {telemetryEvent.Action} [{telemetryEvent.Elapsed}] data={telemetryEvent.Data}");
+
+                if (telemetryEvent.Exception != null)
+                {
+                    _writeMethod(telemetryEvent.Exception.Message);
+                }
             }
         }
     }

@@ -1,5 +1,7 @@
 ﻿using RedisSlimClient.Serialization.Protocol;
+using System;
 using System.Buffers;
+using System.Linq;
 using System.Text;
 using Xunit;
 
@@ -41,6 +43,37 @@ namespace RedisSlimClient.UnitTests.Serialization.Protocol
 
             Assert.Equal(expected1, next0.result);
             Assert.Equal(expected2, next1.result);
+        }
+
+        [Fact]
+        public void Delimit_RandomLargeStrings_DelimitsForEachBreak()
+        {
+            var sb = new StringBuilder();
+
+            for (var i = 0; i < 100; i++)
+            {
+                for (var j = 0; j < 7; j++)
+                {
+                    sb.Append(Guid.NewGuid());
+
+                    if (j * i % 3 == 0)
+                    {
+                        sb.Append("x\r\n");
+                    }
+                }
+            }
+
+            var delimitter = new RedisByteSequenceDelimitter();
+
+            var bytes = BytesFromString(sb.ToString());
+
+            var next = GetNext(delimitter, bytes);
+
+            while (next.result != null)
+            {
+                Assert.Equal('\n', next.result.Last());
+                next = GetNext(delimitter, next.remaining);
+            }
         }
 
         (string result, ReadOnlySequence<byte> remaining) GetNext(RedisByteSequenceDelimitter delimitter, ReadOnlySequence<byte> bytes)

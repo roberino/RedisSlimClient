@@ -16,13 +16,12 @@ namespace RedisSlimClient.UnitTests.Io.Pipelines
             var cancellationTokenSource = new CancellationTokenSource();
             var sender = new SocketPipelineSender(socket, cancellationTokenSource.Token);
 
-            await sender.SendAsync(m =>
+            await sender.SendAsync(async m =>
             {
                 foreach (var n in Enumerable.Range(0, 3))
                 {
-                    m.Span[n] = (byte)(n + 1);
+                    await m.Write((byte)(n + 1));
                 }
-                return 3;
             });
 
             TestExtensions.RunOnBackgroundThread(sender.RunAsync);

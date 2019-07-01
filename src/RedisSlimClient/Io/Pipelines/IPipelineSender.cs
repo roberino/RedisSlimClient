@@ -1,4 +1,5 @@
-﻿using System;
+﻿using RedisSlimClient.Types.Primatives;
+using System;
 using System.Threading.Tasks;
 
 namespace RedisSlimClient.Io.Pipelines
@@ -7,6 +8,6 @@ namespace RedisSlimClient.Io.Pipelines
     {
         Task SendAsync(byte[] data);
 
-        Task SendAsync(Func<Memory<byte>, int> writeAction, int bufferSize = 512);
+        Task SendAsync(Func<IMemoryCursor, Task> writeAction);
     }
 }

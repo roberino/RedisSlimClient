@@ -17,7 +17,7 @@ namespace RedisSlimClient.Io.Pipelines
         Func<ReadOnlySequence<byte>, SequencePosition?> _delimitter;
         Action<ReadOnlySequence<byte>> _handler;
 
-        public SocketPipelineReceiver(ISocket socket, CancellationToken cancellationToken, int minBufferSize = 512)
+        public SocketPipelineReceiver(ISocket socket, CancellationToken cancellationToken, int minBufferSize = 1024)
         {
             _cancellationToken = cancellationToken;
             _minBufferSize = minBufferSize;
@@ -72,7 +72,7 @@ namespace RedisSlimClient.Io.Pipelines
 
             while (IsRunning)
             {
-                var memory = writer.GetMemory(_minBufferSize);
+                var memory = writer.GetMemory(1);
 
                 try
                 {
@@ -90,7 +90,7 @@ namespace RedisSlimClient.Io.Pipelines
                     break;
                 }
 
-                var result = await writer.FlushAsync();
+                var result = await writer.FlushAsync(_cancellationToken);
 
                 if (result.IsCompleted)
                 {
@@ -139,6 +139,11 @@ namespace RedisSlimClient.Io.Pipelines
                         }
                     }
                     while (position.HasValue);
+
+                    if (_reset)
+                    {
+                        break;
+                    }
 
                     _pipe.Reader.AdvanceTo(buffer.Start, buffer.End);
 

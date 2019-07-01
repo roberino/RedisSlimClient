@@ -33,11 +33,11 @@ namespace RedisSlimClient.Io.Commands
         {
             try
             {
-                _taskCompletionSource.SetResult(string.Equals(result.ToString(), "OK", StringComparison.OrdinalIgnoreCase));
+                _taskCompletionSource.TrySetResult(string.Equals(result.ToString(), "OK", StringComparison.OrdinalIgnoreCase));
             }
             catch (Exception ex)
             {
-                _taskCompletionSource.SetException(ex);
+                _taskCompletionSource.TrySetException(ex);
             }
         }
 
@@ -49,11 +49,11 @@ namespace RedisSlimClient.Io.Commands
                 return;
             }
 
-            _taskCompletionSource.SetException(ex);
+            _taskCompletionSource.TrySetException(ex);
         }
         public void Cancel()
         {
-            _taskCompletionSource.SetCanceled();
+            _taskCompletionSource.TrySetCanceled();
         }
 
         public void Write(Stream commandWriter)
