@@ -36,9 +36,11 @@ namespace RedisSlimClient.Io.Pipelines
             State = new SocketState(CheckConnected);
         }
 
+        protected Socket Socket => _socket;
+
         public SocketState State { get; }
 
-        public Task ConnectAsync()
+        public virtual Task ConnectAsync()
         {
             if (_cancellationTokenSource.IsCancellationRequested)
             {
@@ -53,7 +55,7 @@ namespace RedisSlimClient.Io.Pipelines
             return State.DoConnect(() => _socket.ConnectAsync(_endPoint));
         }
 
-        public async Task<int> SendAsync(ReadOnlySequence<byte> buffer)
+        public virtual async Task<int> SendAsync(ReadOnlySequence<byte> buffer)
         {
             var sent = 0;
 
@@ -76,7 +78,7 @@ namespace RedisSlimClient.Io.Pipelines
             return sent;
         }
 
-        public async Task<int> ReceiveAsync(Memory<byte> memory)
+        public virtual async Task<int> ReceiveAsync(Memory<byte> memory)
         {
             if (_cancellationTokenSource.IsCancellationRequested)
             {
@@ -118,7 +120,13 @@ namespace RedisSlimClient.Io.Pipelines
                 _cancellationTokenSource.Cancel();
 
                 ShutdownSocket();
+
+                OnDisposing();
             }
+        }
+
+        protected virtual void OnDisposing()
+        {
         }
 
         async Task<int> SendToSocket(ReadOnlyMemory<byte> buffer)

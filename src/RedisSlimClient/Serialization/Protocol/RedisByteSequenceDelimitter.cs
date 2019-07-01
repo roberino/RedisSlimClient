@@ -100,9 +100,10 @@ namespace RedisSlimClient.Serialization.Protocol
 
         long ParseLength(ReadOnlySequence<byte> sequence)
         {
-            var seq = sequence.Slice(_startBulkString, _currentPosition - _startBulkString);
+            var seq = sequence.Slice(_startBulkString, _currentPosition - _startBulkString - 1);
+            var txt = Encoding.ASCII.GetString(seq.ToArray());
 
-            return long.Parse(Encoding.ASCII.GetString(seq.ToArray()));
+            return long.Parse(txt);
         }
 
         enum ReadMode : byte

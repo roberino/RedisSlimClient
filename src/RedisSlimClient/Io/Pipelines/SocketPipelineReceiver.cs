@@ -124,7 +124,7 @@ namespace RedisSlimClient.Io.Pipelines
 
                     do
                     {
-                        position = _delimitter(buffer);
+                        position = Delimit(buffer);
 
                         if (position.HasValue)
                         {
@@ -135,7 +135,7 @@ namespace RedisSlimClient.Io.Pipelines
 
                             buffer = buffer.Slice(posIncDelimitter);
 
-                            _handler.Invoke(next);
+                            Handle(next);
                         }
                     }
                     while (position.HasValue);
@@ -152,6 +152,10 @@ namespace RedisSlimClient.Io.Pipelines
                         break;
                     }
                 }
+                catch (TaskCanceledException)
+                {
+                    break;
+                }
                 catch (Exception ex)
                 {
                     error = ex;
@@ -163,6 +167,30 @@ namespace RedisSlimClient.Io.Pipelines
 
             if (error != null)
                 Error?.Invoke(error);
+        }
+
+        SequencePosition? Delimit(ReadOnlySequence<byte> buffer)
+        {
+            try
+            {
+                return _delimitter.Invoke(buffer);
+            }
+            catch (Exception ex)
+            {
+                throw new BufferReadException(buffer, ex);
+            }
+        }
+
+        void Handle(ReadOnlySequence<byte> buffer)
+        {
+            try
+            {
+                _handler.Invoke(buffer);
+            }
+            catch (Exception ex)
+            {
+                throw new BufferReadException(buffer, ex);
+            }
         }
     }
 }
