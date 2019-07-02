@@ -17,9 +17,11 @@ namespace RedisSlimClient.Io.Ssl
 
         SslStream _sslStream;
 
-        public SslSocket(EndPoint endPoint, TimeSpan timeout, SslConfiguration configuration) : base(endPoint, timeout)
+        public SslSocket(EndPoint endPoint, TimeSpan timeout, SslConfiguration configuration, IReadWriteBufferSettings bufferSettings) : base(endPoint, timeout)
         {
             _configuration = configuration;
+            _readBuffer = new byte[bufferSettings.ReadBufferSize];
+            _writeBuffer = new byte[bufferSettings.WriteBufferSize];
         }
 
         public override async Task ConnectAsync()
@@ -30,7 +32,7 @@ namespace RedisSlimClient.Io.Ssl
 
             _sslStream = new SslStream(stream, false, _configuration.RemoteCertificateValidationCallback);
 
-            await _sslStream.AuthenticateAsClientAsync(_configuration.Host);
+            await _sslStream.AuthenticateAsClientAsync(_configuration.SslHost);
         }
 
         public override Task<int> ReceiveAsync(Memory<byte> memory)

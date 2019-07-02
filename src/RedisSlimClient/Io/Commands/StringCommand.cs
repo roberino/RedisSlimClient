@@ -1,6 +1,6 @@
 ﻿namespace RedisSlimClient.Io.Commands
 {
-    internal class StringCommand : RedisCommand
+    internal class StringCommand : RedisPrimativeCommand
     {
         readonly string _value;
 

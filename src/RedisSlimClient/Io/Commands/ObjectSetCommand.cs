@@ -4,71 +4,35 @@ using RedisSlimClient.Serialization.Protocol;
 using RedisSlimClient.Types;
 using System;
 using System.IO;
-using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
 
 namespace RedisSlimClient.Io.Commands
 {
-    class ObjectSetCommand<T> : IRedisResult<bool>
+    class ObjectSetCommand<T> : RedisCommand<bool>
     {
         private readonly string _key;
         private readonly ClientConfiguration _configuration;
         private readonly T _objectData;
         private readonly IObjectSerializer<T> _serializer;
-        private readonly TaskCompletionSource<bool> _taskCompletionSource;
-        public string CommandText => throw new NotImplementedException();
 
-        public Func<Task> Execute { get; set; }
-
-        public ObjectSetCommand(string key, ClientConfiguration config, T objectData)
+        public ObjectSetCommand(string key, ISerializerSettings config, T objectData) : base("SET")
         {
             _key = key;
             _configuration = config;
             _objectData = objectData;
             _serializer = config.SerializerFactory.Create<T>();
-            _taskCompletionSource = new TaskCompletionSource<bool>();
-        }
-
-        public void Complete(RedisObject result)
-        {
-            try
-            {
-                _taskCompletionSource.TrySetResult(string.Equals(result.ToString(), "OK", StringComparison.OrdinalIgnoreCase));
-            }
-            catch (Exception ex)
-            {
-                _taskCompletionSource.TrySetException(ex);
-            }
-        }
-
-        public void Abandon(Exception ex)
-        {
-            if (ex is TaskCanceledException)
-            {
-                Cancel();
-                return;
-            }
-
-            _taskCompletionSource.TrySetException(ex);
-        }
-        public void Cancel()
-        {
-            _taskCompletionSource.TrySetCanceled();
         }
 
         public void Write(Stream commandWriter)
         {
             commandWriter.WriteStartArray(3);
-            commandWriter.Write("SET", true);
+            commandWriter.Write(CommandText, true);
             commandWriter.Write(_key, true);
             commandWriter.Write(GetObjectData());
         }
 
-        public TaskAwaiter<bool> GetAwaiter() => _taskCompletionSource.Task.GetAwaiter();
+        public override object[] GetArgs() => new object[] { CommandText, _key, GetObjectData() };
 
-        TaskAwaiter IRedisCommand.GetAwaiter() => ((Task)_taskCompletionSource.Task).GetAwaiter();
-
-        public object[] GetArgs() => new object[] { "SET", _key, GetObjectData() };
+        protected override bool TranslateResult(RedisObject redisObject) => string.Equals(redisObject.ToString(), "OK", StringComparison.OrdinalIgnoreCase);
 
         byte[] GetObjectData()
         {

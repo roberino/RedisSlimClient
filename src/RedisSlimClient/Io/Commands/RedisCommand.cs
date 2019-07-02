@@ -5,12 +5,12 @@ using System.Threading.Tasks;
 
 namespace RedisSlimClient.Io.Commands
 {
-    internal abstract class RedisCommand : IRedisResult<RedisObject>
+    internal abstract class RedisCommand<T> : IRedisResult<T>
     {
         protected RedisCommand(string commandText)
         {
             CommandText = commandText;
-            CompletionSource = new TaskCompletionSource<RedisObject>();
+            CompletionSource = new TaskCompletionSource<T>();
         }
 
         public string CommandText { get; }
@@ -21,13 +21,21 @@ namespace RedisSlimClient.Io.Commands
         {
             try
             {
-                CompletionSource.SetResult(redisObject);
+                if (redisObject is RedisError err)
+                {
+                    CompletionSource.TrySetException(new RedisServerException(err.Message));
+                    return;
+                }
+
+                CompletionSource.TrySetResult(TranslateResult(redisObject));
             }
             catch (Exception ex)
             {
-                CompletionSource.SetException(ex);
+                CompletionSource.TrySetException(ex);
             }
         }
+
+        protected abstract T TranslateResult(RedisObject redisObject);
 
         public void Abandon(Exception ex)
         {
@@ -37,13 +45,13 @@ namespace RedisSlimClient.Io.Commands
                 return;
             }
 
-            CompletionSource.SetException(ex);
+            CompletionSource.TrySetException(ex);
         }
         public Func<Task> Execute { get; set; }
 
-        public TaskCompletionSource<RedisObject> CompletionSource { get; }
+        public TaskCompletionSource<T> CompletionSource { get; }
 
-        public TaskAwaiter<RedisObject> GetAwaiter() => CompletionSource.Task.GetAwaiter();
+        public TaskAwaiter<T> GetAwaiter() => CompletionSource.Task.GetAwaiter();
 
         TaskAwaiter IRedisCommand.GetAwaiter() => ((Task)CompletionSource.Task).GetAwaiter();
 

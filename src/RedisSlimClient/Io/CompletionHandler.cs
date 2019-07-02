@@ -32,9 +32,14 @@ namespace RedisSlimClient.Io
             });
         }
 
-        private void OnReceive(ReadOnlySequence<byte> obj)
+        private void OnReceive(ReadOnlySequence<byte> objData)
         {
-            var createdItems = _redisObjectBuilder.AppendObjectData(obj.Slice(0, obj.Length - 2));
+            if (objData.Slice(objData.Length - 2, 1).First.Span[0] != (byte)'\r')
+            {
+                throw new BufferReadException(objData, null);
+            }
+
+            var createdItems = _redisObjectBuilder.AppendObjectData(objData.Slice(0, objData.Length - 2));
 
             foreach (var item in createdItems)
             {

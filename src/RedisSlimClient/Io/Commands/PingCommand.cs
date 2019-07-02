@@ -1,6 +1,6 @@
 ﻿namespace RedisSlimClient.Io.Commands
 {
-    internal class PingCommand : RedisCommand
+    internal class PingCommand : RedisPrimativeCommand
     {
         public const string SuccessResponse = "PONG";
 

@@ -1,6 +1,6 @@
 ﻿namespace RedisSlimClient.Io.Commands
 {
-    internal class SetCommand : RedisCommand
+    internal class SetCommand : RedisPrimativeCommand
     {
         public const string SuccessResponse = "OK";
 

@@ -38,7 +38,7 @@ namespace RedisSlimClient.Io
             return new Connection(async () =>
             {
                 await socket.ConnectAsync();
-                var socketPipeline = new SocketPipeline(socket);
+                var socketPipeline = new SocketPipeline(socket, configuration);
                 return new AsyncCommandPipeline(socketPipeline, configuration.TelemetryWriter);
             }, configuration.TelemetryWriter);
         }

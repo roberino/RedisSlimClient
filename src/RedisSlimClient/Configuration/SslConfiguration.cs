@@ -6,7 +6,7 @@ namespace RedisSlimClient.Configuration
     {
         public bool UseSsl { get; set; }
 
-        public string Host { get; }
+        public string SslHost { get; set; }
 
         public RemoteCertificateValidationCallback RemoteCertificateValidationCallback { get; }
     }
