@@ -25,9 +25,9 @@ namespace RedisSlimClient
 
         public static IRedisClient Create(ClientConfiguration configuration) => new RedisClient(configuration);
 
-        public async Task<bool> PingAsync(CancellationToken cancellation = default)
+        public Task<bool> PingAsync(CancellationToken cancellation = default)
         {
-            return await CompareStringResponse(new PingCommand(), PingCommand.SuccessResponse, cancellation);
+            return GetResponse(new PingCommand(), cancellation);
         }
 
         public async Task<long> DeleteAsync(string key, CancellationToken cancellation = default)
@@ -35,9 +35,9 @@ namespace RedisSlimClient
             return (await GetIntResponse(new DeleteCommand(key), cancellation)).GetValueOrDefault();
         }
 
-        public async Task<bool> SetDataAsync(string key, byte[] data, CancellationToken cancellation = default)
+        public Task<bool> SetDataAsync(string key, byte[] data, CancellationToken cancellation = default)
         {
-            return await CompareStringResponse(new SetCommand(key, data), SetCommand.SuccessResponse, cancellation);
+            return GetResponse(new SetCommand(key, data), cancellation);
         }
 
         public async Task<bool> SetObjectAsync<T>(string key, T obj, CancellationToken cancellation = default)
@@ -74,6 +74,13 @@ namespace RedisSlimClient
         public void Dispose()
         {
             _connection.Dispose();
+        }
+
+        async Task<T> GetResponse<T>(IRedisResult<T> cmd, CancellationToken cancellation = default)
+        {
+            var cmdPipe = await _connection.ConnectAsync();
+
+            return await cmdPipe.Execute(cmd, cancellation);
         }
 
         async Task<bool> CompareStringResponse<T>(IRedisResult<T> cmd, string expectedResponse, CancellationToken cancellation = default)

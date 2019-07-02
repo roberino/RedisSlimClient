@@ -45,7 +45,7 @@ namespace RedisSlimClient.UnitTests.Io
 
             var result = await cmd;
 
-            Assert.IsType<RedisString>(result);
+            Assert.True(result);
         }
 
         ReadOnlySequence<byte> GetData(string data)
