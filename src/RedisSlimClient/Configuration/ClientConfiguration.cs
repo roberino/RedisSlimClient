@@ -1,6 +1,7 @@
 ﻿using RedisSlimClient.Serialization;
 using RedisSlimClient.Telemetry;
 using System;
+using System.Linq;
 using System.Text;
 
 namespace RedisSlimClient.Configuration
@@ -15,7 +16,7 @@ namespace RedisSlimClient.Configuration
 
         public SslConfiguration SslConfiguration { get; }
 
-        public Uri ServerUri { get; private set; }
+        public Uri[] ServerEndpoints { get; private set; }
 
         public TimeSpan DefaultTimeout { get; set; } = TimeSpan.FromSeconds(5);
 
@@ -37,13 +38,15 @@ namespace RedisSlimClient.Configuration
 
         void Parse(string connectionOptions)
         {
+            var endPoints = string.Empty;
+
             foreach(var item in connectionOptions.Split(','))
             {
                 var kv = item.Split('=');
 
                 if (kv.Length == 1)
                 {
-                    ServerUri = ParseUri(kv[0]);
+                    endPoints = kv[0];
                 }
                 else
                 {
@@ -76,18 +79,23 @@ namespace RedisSlimClient.Configuration
                     }
                 }
             }
+
+            ServerEndpoints = endPoints.Split(';').Select(ParseUri).ToArray();
         }
 
         Uri ParseUri(string uri)
         {
-            const string protocol = "tcp://";
-
-            if (uri.StartsWith(protocol))
+            if (Uri.TryCreate(uri, UriKind.Absolute, out var result))
             {
-                return new Uri(uri);
+                return result;
             }
 
-            return new Uri($"{protocol}{uri}");
+            if (!uri.Contains(':'))
+            {
+                uri += $":{SslConfiguration.DefaultPort}";
+            }
+
+            return new Uri($"redis://{uri}");
         }
     }
 }
