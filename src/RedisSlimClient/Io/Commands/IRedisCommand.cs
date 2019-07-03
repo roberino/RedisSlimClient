@@ -1,7 +1,8 @@
 ﻿using RedisSlimClient.Types;
+using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 
 namespace RedisSlimClient.Io.Commands
 {
@@ -12,9 +13,12 @@ namespace RedisSlimClient.Io.Commands
 
     interface IRedisCommand
     {
+        Func<Task> Execute { get; set; }
         string CommandText { get; }
-        void Read(IEnumerable<RedisObjectPart> objectParts);
-        void Write(Stream commandWriter);
+        void Complete(RedisObject obj);
+        void Cancel();
+        void Abandon(Exception ex);
+        object[] GetArgs();
         TaskAwaiter GetAwaiter();
     }
 }

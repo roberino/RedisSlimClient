@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+<meta charset='utf-8' />
+<title>RedisSlimClient.Benchmarks.RedisClientBenchmarks</title>
+
+<style type="text/css">
+	table { border-collapse: collapse; display: block; width: 100%; overflow: auto; }
+	td, th { padding: 6px 13px; border: 1px solid #ddd; }
+	tr { background-color: #fff; border-top: 1px solid #ccc; }
+	tr:nth-child(even) { background: #f8f8f8; }
+</style>
+</head>
+<body>
+<pre><code>
+BenchmarkDotNet=v0.11.3, OS=Windows 10.0.17763.557 (1809/October2018Update/Redstone5)
+Intel Core i7-8550U CPU 1.80GHz (Kaby Lake R), 1 CPU, 8 logical and 4 physical cores
+.NET Core SDK=2.2.105
+  [Host] : .NET Core 2.2.3 (CoreCLR 4.6.27414.05, CoreFX 4.6.27414.05), 64bit RyuJIT
+  Core   : .NET Core 2.2.3 (CoreCLR 4.6.27414.05, CoreFX 4.6.27414.05), 64bit RyuJIT
+</code></pre>
+<pre><code>Job=Core  Runtime=Core  InvocationCount=1  
+UnrollFactor=1  
+</code></pre>
+
+<table>
+<thead><tr><th>  Method</th><th>PipelineMode</th><th>ConnectionPoolSize</th><th>DataCollectionSize</th><th>ParallelOps</th><th>Mean</th><th>Error</th><th>StdDev</th><th>Median</th><th>Rank</th>
+</tr>
+</thead><tbody><tr><td>SetAndGetAsync</td><td>AsyncPipeline</td><td>1</td><td>5</td><td>1</td><td>916.4 us</td><td>47.53 us</td><td>137.1 us</td><td>896.8 us</td><td>1</td>
+</tr><tr><td>SetAndGetAsync</td><td>AsyncPipeline</td><td>1</td><td>5</td><td>4</td><td>984.6 us</td><td>50.02 us</td><td>145.9 us</td><td>967.1 us</td><td>2</td>
+</tr><tr><td>SetAndGetAsync</td><td>AsyncPipeline</td><td>1</td><td>10</td><td>1</td><td>1,083.5 us</td><td>53.72 us</td><td>156.7 us</td><td>1,072.2 us</td><td>2</td>
+</tr><tr><td>SetAndGetAsync</td><td>AsyncPipeline</td><td>1</td><td>10</td><td>4</td><td>1,176.1 us</td><td>62.68 us</td><td>180.8 us</td><td>1,172.5 us</td><td>3</td>
+</tr><tr><td>SetAndGetAsync</td><td>AsyncPipeline</td><td>4</td><td>5</td><td>1</td><td>1,016.5 us</td><td>58.01 us</td><td>170.1 us</td><td>977.6 us</td><td>2</td>
+</tr><tr><td>SetAndGetAsync</td><td>AsyncPipeline</td><td>4</td><td>5</td><td>4</td><td>1,046.2 us</td><td>57.26 us</td><td>168.8 us</td><td>1,015.2 us</td><td>2</td>
+</tr><tr><td>SetAndGetAsync</td><td>AsyncPipeline</td><td>4</td><td>10</td><td>1</td><td>1,121.2 us</td><td>64.96 us</td><td>190.5 us</td><td>1,078.7 us</td><td>2</td>
+</tr><tr><td>SetAndGetAsync</td><td>AsyncPipeline</td><td>4</td><td>10</td><td>4</td><td>1,273.7 us</td><td>56.15 us</td><td>164.7 us</td><td>1,262.3 us</td><td>4</td>
+</tr><tr><td>SetAndGetAsync</td><td>Sync</td><td>1</td><td>5</td><td>1</td><td>1,649.4 us</td><td>49.47 us</td><td>143.5 us</td><td>1,640.5 us</td><td>5</td>
+</tr><tr><td>SetAndGetAsync</td><td>Sync</td><td>1</td><td>5</td><td>4</td><td>6,486.7 us</td><td>208.18 us</td><td>569.9 us</td><td>6,500.7 us</td><td>7</td>
+</tr><tr><td>SetAndGetAsync</td><td>Sync</td><td>1</td><td>10</td><td>1</td><td>1,821.2 us</td><td>53.89 us</td><td>158.0 us</td><td>1,806.1 us</td><td>6</td>
+</tr><tr><td>SetAndGetAsync</td><td>Sync</td><td>1</td><td>10</td><td>4</td><td>7,349.0 us</td><td>523.56 us</td><td>1,476.7 us</td><td>6,903.8 us</td><td>8</td>
+</tr><tr><td>SetAndGetAsync</td><td>Sync</td><td>4</td><td>5</td><td>1</td><td>1,653.4 us</td><td>54.36 us</td><td>158.6 us</td><td>1,635.9 us</td><td>5</td>
+</tr><tr><td>SetAndGetAsync</td><td>Sync</td><td>4</td><td>5</td><td>4</td><td>6,428.7 us</td><td>263.23 us</td><td>738.1 us</td><td>6,282.7 us</td><td>7</td>
+</tr><tr><td>SetAndGetAsync</td><td>Sync</td><td>4</td><td>10</td><td>1</td><td>1,851.1 us</td><td>85.95 us</td><td>241.0 us</td><td>1,780.0 us</td><td>6</td>
+</tr><tr><td>SetAndGetAsync</td><td>Sync</td><td>4</td><td>10</td><td>4</td><td>6,275.4 us</td><td>186.43 us</td><td>522.8 us</td><td>6,216.9 us</td><td>7</td>
+</tr></tbody></table>
+</body>
+</html>

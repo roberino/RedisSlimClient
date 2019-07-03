@@ -1,49 +1,63 @@
 ﻿using RedisSlimClient.Types;
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-using RedisSlimClient.Serialization;
 
 namespace RedisSlimClient.Io.Commands
 {
-    internal abstract class RedisCommand : IRedisResult<RedisObject>
+    internal abstract class RedisCommand<T> : IRedisResult<T>
     {
         protected RedisCommand(string commandText)
         {
             CommandText = commandText;
-            CompletionSource = new TaskCompletionSource<RedisObject>();
+            CompletionSource = new TaskCompletionSource<T>();
         }
 
         public string CommandText { get; }
 
         public virtual object[] GetArgs() => new[] { CommandText };
 
-        public void Write(Stream commandWriter)
+        public virtual void Complete(RedisObject redisObject)
         {
-            commandWriter.Write(GetArgs());
-        }
-
-        public virtual void Read(IEnumerable<RedisObjectPart> objectParts)
-        {
-            var nextResult = objectParts.ToObjects().First();
-
             try
             {
-                CompletionSource.SetResult(nextResult);
+                if (redisObject is RedisError err)
+                {
+                    CompletionSource.TrySetException(new RedisServerException(err.Message));
+                    return;
+                }
+
+                CompletionSource.TrySetResult(TranslateResult(redisObject));
             }
             catch (Exception ex)
             {
-                CompletionSource.SetException(ex);
+                CompletionSource.TrySetException(ex);
             }
         }
 
-        public TaskCompletionSource<RedisObject> CompletionSource { get; }
+        protected abstract T TranslateResult(RedisObject redisObject);
 
-        public TaskAwaiter<RedisObject> GetAwaiter() => CompletionSource.Task.GetAwaiter();
+        public void Abandon(Exception ex)
+        {
+            if (ex is TaskCanceledException)
+            {
+                Cancel();
+                return;
+            }
+
+            CompletionSource.TrySetException(ex);
+        }
+        public Func<Task> Execute { get; set; }
+
+        public TaskCompletionSource<T> CompletionSource { get; }
+
+        public TaskAwaiter<T> GetAwaiter() => CompletionSource.Task.GetAwaiter();
 
         TaskAwaiter IRedisCommand.GetAwaiter() => ((Task)CompletionSource.Task).GetAwaiter();
+
+        public void Cancel()
+        {
+            CompletionSource.TrySetCanceled();
+        }
     }
 }

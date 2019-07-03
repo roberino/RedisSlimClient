@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace RedisSlimClient.Io.Commands
+﻿namespace RedisSlimClient.Io.Commands
 {
     class DeleteCommand : StringCommand
     {

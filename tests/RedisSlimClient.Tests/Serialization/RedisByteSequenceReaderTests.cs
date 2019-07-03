@@ -122,11 +122,11 @@ namespace RedisSlimClient.UnitTests.Serialization
             Assert.Equal(RedisType.Integer, parsedObject.Type);
         }
 
-        static RedisByteSequenceReader GetReader(string data)
+        static ArraySegmentToRedisObjectReader GetReader(string data)
         {
             var stream = new MemoryStream(GetData(data));
 
-            return new RedisByteSequenceReader(new StreamIterator(stream));
+            return new ArraySegmentToRedisObjectReader(new StreamIterator(stream));
         }
 
         static byte[] GetData(string value) => Encoding.ASCII.GetBytes(value);

@@ -1,9 +1,12 @@
 ﻿using BenchmarkDotNet.Attributes;
 using RedisSlimClient.Configuration;
-using System;
-using System.Linq;
-using System.Threading.Tasks;
 using RedisSlimClient.Stubs;
+using RedisSlimClient.Telemetry;
+using System;
+using System.Collections.Concurrent;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace RedisSlimClient.Benchmarks
 {
@@ -11,17 +14,18 @@ namespace RedisSlimClient.Benchmarks
     [RankColumn, MarkdownExporter]
     public class RedisClientBenchmarks : IDisposable
     {
-        const string ServerUri = "tcp://localhost:6379/";
+        const string ServerUri = "redis://localhost:6379/";
 
-        IRedisClient _client;
+        ConcurrentDictionary<string, IRedisClient> _clients;
+        IRedisClient _currentClient;
 
-        [Params(false, true)]
-        public bool UseAsync { get; set; }
+        [Params(PipelineMode.AsyncPipeline, PipelineMode.Sync)]
+        public PipelineMode PipelineMode { get; set; }
 
         [Params(1, 4)]
         public int ConnectionPoolSize { get; set; }
 
-        [Params(10, 100)]
+        [Params(5, 10)]
         public int DataCollectionSize { get; set; }
 
         [Params(1, 4)]
@@ -30,18 +34,24 @@ namespace RedisSlimClient.Benchmarks
         [GlobalSetup]
         public void Setup()
         {
+            _clients = new ConcurrentDictionary<string, IRedisClient>();
         }
 
         [IterationSetup]
         public void TestSetup()
         {
-            _client = RedisClient.Create(new ClientConfiguration(ServerUri)
-            {
-                ConnectionPoolSize = ConnectionPoolSize,
-                UseAsyncronousPipeline = UseAsync,
-                ConnectTimeout = TimeSpan.FromMilliseconds(500),
-                DefaultTimeout = TimeSpan.FromMilliseconds(500)
-            });
+            var key = $"{PipelineMode}/{ConnectionPoolSize}";
+
+            _currentClient = _clients.GetOrAdd(key, k =>
+                RedisClient.Create(new ClientConfiguration(ServerUri)
+                {
+                    ConnectionPoolSize = ConnectionPoolSize,
+                    PipelineMode = PipelineMode,
+                    ConnectTimeout = TimeSpan.FromMilliseconds(500),
+                    DefaultTimeout = TimeSpan.FromMilliseconds(500),
+                    TelemetryWriter= new TextTelemetryWriter(Console.WriteLine, Severity.Error)
+                })
+            );
         }
 
         [Benchmark]
@@ -62,12 +72,15 @@ namespace RedisSlimClient.Benchmarks
         [IterationCleanup]
         public void TestCleanup()
         {
-            _client.Dispose();
         }
 
         [GlobalCleanup]
         public void Cleanup()
         {
+            foreach (var x in _clients)
+            {
+                x.Value.Dispose();
+            }
         }
 
         public void Dispose()
@@ -77,11 +90,24 @@ namespace RedisSlimClient.Benchmarks
 
         async Task SetGetDeleteAsync<T>(T data, string key)
         {
-            await _client.SetObjectAsync(key, data);
+            var cancel = new CancellationTokenSource(500);
 
-            await _client.GetObjectAsync<T>(key);
+            try
+            {
+                await _currentClient.SetObjectAsync(key, data, cancel.Token);
 
-            await _client.DeleteAsync(key);
+                await _currentClient.GetObjectAsync<T>(key, cancel.Token);
+
+                await _currentClient.DeleteAsync(key, cancel.Token);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
+            finally
+            {
+                cancel.Dispose();
+            }
         }
     }
 }

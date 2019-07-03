@@ -10,19 +10,17 @@ namespace RedisSlimClient.UnitTests.Io
     {
         readonly ITestOutputHelper _output;
         readonly ICommandPipeline _pipeline;
-        readonly INetworkStreamFactory _streamFactory;
 
         public ConnectionTests(ITestOutputHelper output)
         {
             _output = output;
             _pipeline = Substitute.For<ICommandPipeline>();
-            _streamFactory = Substitute.For<INetworkStreamFactory>();
         }
 
         [Fact]
         public async Task ConnectAsync_ReturnsPipelineFromFactory()
         {
-            using (var connection = new Connection(_streamFactory, s => Task.FromResult(_pipeline)))
+            using (var connection = new Connection(() => Task.FromResult(_pipeline)))
             {
                 var pipeline = await connection.ConnectAsync();
 
@@ -31,15 +29,14 @@ namespace RedisSlimClient.UnitTests.Io
         }
 
         [Fact]
-        public async Task Dispose_CallsDisposeOnHeldResources()
+        public async Task Dispose_CallsDisposeOnPipeline()
         {
-            using (var connection = new Connection(_streamFactory, s => Task.FromResult(_pipeline)))
+            using (var connection = new Connection(() => Task.FromResult(_pipeline)))
             {
                 await connection.ConnectAsync();
             }
 
             _pipeline.Received().Dispose();
-            _streamFactory.Received().Dispose();
         }
 
         [Fact]
@@ -47,7 +44,7 @@ namespace RedisSlimClient.UnitTests.Io
         {
             _pipeline.PendingWork.Returns((7, 13));
 
-            using (var connection = new Connection(_streamFactory, s => Task.FromResult(_pipeline)))
+            using (var connection = new Connection(() => Task.FromResult(_pipeline)))
             {
                 var load = connection.WorkLoad;
 
@@ -60,7 +57,7 @@ namespace RedisSlimClient.UnitTests.Io
         {
             _pipeline.PendingWork.Returns((7, 13));
 
-            using (var connection = new Connection(_streamFactory, s => Task.FromResult(_pipeline)))
+            using (var connection = new Connection(() => Task.FromResult(_pipeline)))
             {
                 await connection.ConnectAsync();
 

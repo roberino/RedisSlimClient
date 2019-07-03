@@ -1,9 +1,12 @@
 ﻿using RedisSlimClient.Io.Commands;
 using RedisSlimClient.Serialization;
+using RedisSlimClient.Serialization.Protocol;
 using RedisSlimClient.Types;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace RedisSlimClient.Io
@@ -20,16 +23,16 @@ namespace RedisSlimClient.Io
         public SyncCommandPipeline(Stream networkStream)
         {
             _writeStream = networkStream;
-            _reader = new RedisByteSequenceReader(new StreamIterator(networkStream));
+            _reader = new ArraySegmentToRedisObjectReader(new StreamIterator(networkStream));
         }
 
         public (int PendingWrites, int PendingReads) PendingWork => (_pendingWrites, _pendingReads);
 
-        public async Task<T> Execute<T>(IRedisResult<T> command, TimeSpan timeout)
+        public async Task<T> Execute<T>(IRedisResult<T> command, CancellationToken cancellation = default)
         {
             if (_disposed)
             {
-                throw new ObjectDisposedException(nameof(CommandPipeline));
+                throw new ObjectDisposedException(nameof(SyncCommandPipeline));
             }
 
             lock (_writeStream)
@@ -38,7 +41,7 @@ namespace RedisSlimClient.Io
 
                 try
                 {
-                    command.Write(_writeStream);
+                    _writeStream.Write(command.GetArgs());
                 }
                 finally
                 {
@@ -49,7 +52,7 @@ namespace RedisSlimClient.Io
 
                 try
                 {
-                    command.Read(_reader);
+                    command.Complete(_reader.ToObjects().First());
                 }
                 finally
                 {

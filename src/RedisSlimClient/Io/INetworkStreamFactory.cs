@@ -6,6 +6,6 @@ namespace RedisSlimClient.Io
 {
     interface INetworkStreamFactory : IDisposable
     {
-        Task<Stream> CreateStreamAsync(TimeSpan timeout);
+        Task<Stream> CreateStreamAsync();
     }
 }

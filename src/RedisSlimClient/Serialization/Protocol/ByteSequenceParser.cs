@@ -1,13 +1,12 @@
-﻿using System;
-using System.Collections;
+﻿using RedisSlimClient.Types;
+using RedisSlimClient.Types.Primatives;
+using System;
 using System.Collections.Generic;
-using RedisSlimClient.Types;
 
 namespace RedisSlimClient.Serialization
 {
-    internal class RedisByteSequenceReader : IEnumerable<RedisObjectPart>, IDisposable
+    class ByteSequenceParser
     {
-        readonly IEnumerable<ArraySegment<byte>> _byteStream;
         readonly Stack<ArrayState> _arrayState;
 
         ReadState _currentState;
@@ -15,31 +14,28 @@ namespace RedisSlimClient.Serialization
 
         ArrayState _currentArrayState;
 
-        public RedisByteSequenceReader(IEnumerable<ArraySegment<byte>> byteStream)
+        public ByteSequenceParser()
         {
-            _byteStream = byteStream;
             _currentState = ReadState.Type;
             _currentType = (ResponseType.Unknown, 0, 0);
             _arrayState = new Stack<ArrayState>();
         }
 
-        public IEnumerator<RedisObjectPart> GetEnumerator()
+        public IEnumerable<RedisObjectPart> ReadItem(IByteSequence segment)
         {
-            foreach (var segment in _byteStream)
+            if (_currentState == ReadState.Type)
             {
-                if (_currentState == ReadState.Type)
-                {
-                    _currentType = segment.ToResponseType();
+                _currentType = segment.ToResponseType();
 
-                    switch (_currentType.type)
-                    {
-                        case ResponseType.BulkStringType:
-                            _currentState = ReadState.Value;
-                            continue;
-                        case ResponseType.ArrayType:
-                            yield return OpenArray(_currentType.length);
-                            continue;
-                        case ResponseType.IntType:
+                switch (_currentType.type)
+                {
+                    case ResponseType.BulkStringType:
+                        _currentState = ReadState.Value;
+                        yield break;
+                    case ResponseType.ArrayType:
+                        yield return OpenArray(_currentType.length);
+                        yield break;
+                    case ResponseType.IntType:
                         {
                             var part = YieldObjectPart(new RedisInteger(_currentType.length));
 
@@ -48,18 +44,17 @@ namespace RedisSlimClient.Serialization
                                 yield return part;
                             }
 
-                            continue;
+                            yield break;
                         }
-                    }
                 }
+            }
 
+            {
+                var part = YieldObjectPart(GetCurrentValue(segment));
+
+                if (!part.IsEmpty)
                 {
-                    var part = YieldObjectPart(GetCurrentValue(segment));
-
-                    if (!part.IsEmpty)
-                    {
-                        yield return part;
-                    }
+                    yield return part;
                 }
             }
         }
@@ -104,7 +99,7 @@ namespace RedisSlimClient.Serialization
         RedisObjectPart YieldObjectPart(RedisObject value)
         {
             _currentState = ReadState.Type;
-            
+
             if (_currentArrayState == null || value == null)
             {
                 return new RedisObjectPart
@@ -143,23 +138,19 @@ namespace RedisSlimClient.Serialization
             }
         }
 
-        RedisObject GetCurrentValue(ArraySegment<byte> segment)
+        RedisObject GetCurrentValue(IByteSequence segment)
         {
             switch (_currentType.type)
             {
                 case ResponseType.ErrorType:
                     return new RedisError(segment.ToAsciiString(_currentType.offset));
                 case ResponseType.StringType:
-                    return new RedisString(segment.ToBytes(_currentType.offset));
+                    return new RedisString(segment.ToArray(_currentType.offset));
                 case ResponseType.BulkStringType:
-                    return new RedisString(segment.ToBytes(_currentType.offset));
+                    return new RedisString(segment.ToArray(_currentType.offset));
             }
 
             throw new NotSupportedException(_currentType.type.ToString());
-        }
-
-        public void Dispose()
-        {
         }
 
         enum ReadState
@@ -179,11 +170,6 @@ namespace RedisSlimClient.Serialization
             {
                 Index++;
             }
-        }
-
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
         }
     }
 }

@@ -1,9 +1,9 @@
 ﻿using System;
 using System.IO;
 
-namespace RedisSlimClient.Serialization
+namespace RedisSlimClient.Serialization.Protocol
 {
-    internal static class RedisByteFormatter
+    static class RedisByteFormatterExtensions
     {
         public static void Write(this Stream output, object item)
         {
@@ -21,7 +21,7 @@ namespace RedisSlimClient.Serialization
                     output.Write((long)item);
                     break;
                 case TypeCode.Object:
-                    output.Write((byte[])item);
+                    output.WriteBytes((byte[])item);
                     break;
                 default:
                     throw new NotSupportedException(tc.ToString());
@@ -54,7 +54,7 @@ namespace RedisSlimClient.Serialization
 
             for (var i = 0; i < data.Length; i++)
             {
-                output.Write(data[i]);
+                output.WriteBytes(data[i]);
             }
         }
 
@@ -65,7 +65,7 @@ namespace RedisSlimClient.Serialization
             output.WriteEnd();
         }
 
-        public static void Write(this Stream output, byte[] data)
+        public static void WriteBytes(this Stream output, byte[] data)
         {
             output.Write(ResponseType.BulkStringType);
             output.WriteRaw(data.Length.ToString());

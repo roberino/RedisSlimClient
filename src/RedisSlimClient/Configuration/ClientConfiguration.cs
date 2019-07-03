@@ -1,18 +1,22 @@
 ﻿using RedisSlimClient.Serialization;
 using RedisSlimClient.Telemetry;
 using System;
+using System.Linq;
 using System.Text;
 
 namespace RedisSlimClient.Configuration
 {
-    public class ClientConfiguration
+    public class ClientConfiguration : IReadWriteBufferSettings, ISerializerSettings
     {
         public ClientConfiguration(string connectionOptions)
         {
+            SslConfiguration = new SslConfiguration();
             Parse(connectionOptions);
         }
 
-        public Uri ServerUri { get; private set; }
+        public SslConfiguration SslConfiguration { get; }
+
+        public Uri[] ServerEndpoints { get; private set; }
 
         public TimeSpan DefaultTimeout { get; set; } = TimeSpan.FromSeconds(5);
 
@@ -20,9 +24,13 @@ namespace RedisSlimClient.Configuration
 
         public Encoding Encoding { get; set; } = Encoding.UTF8;
 
-        public bool UseAsyncronousPipeline { get; set; } = true;
+        public PipelineMode PipelineMode { get; set; } = PipelineMode.Default;
 
         public int ConnectionPoolSize { get; set; } = 1;
+
+        public int ReadBufferSize { get; set; } = 1024;
+
+        public int WriteBufferSize { get; set; } = 1024;
 
         public IObjectSerializerFactory SerializerFactory { get; set; } = Serialization.SerializerFactory.Instance;
 
@@ -30,13 +38,15 @@ namespace RedisSlimClient.Configuration
 
         void Parse(string connectionOptions)
         {
+            var endPoints = string.Empty;
+
             foreach(var item in connectionOptions.Split(','))
             {
                 var kv = item.Split('=');
 
                 if (kv.Length == 1)
                 {
-                    ServerUri = ParseUri(kv[0]);
+                    endPoints = kv[0];
                 }
                 else
                 {
@@ -53,22 +63,39 @@ namespace RedisSlimClient.Configuration
                             case nameof(ConnectionPoolSize):
                                 ConnectionPoolSize = int.Parse(kv[0]);
                                 break;
+                            case nameof(ReadBufferSize):
+                                ReadBufferSize = int.Parse(kv[0]);
+                                break;
+                            case nameof(WriteBufferSize):
+                                WriteBufferSize = int.Parse(kv[0]);
+                                break;
+                            case nameof(SslConfiguration.SslHost):
+                                SslConfiguration.SslHost = kv[0];
+                                break;
+                            case nameof(SslConfiguration.UseSsl):
+                                SslConfiguration.UseSsl = bool.Parse(kv[0].ToLower());
+                                break;
                         }
                     }
                 }
             }
+
+            ServerEndpoints = endPoints.Split(';').Select(ParseUri).ToArray();
         }
 
         Uri ParseUri(string uri)
         {
-            const string protocol = "tcp://";
-
-            if (uri.StartsWith(protocol))
+            if (Uri.TryCreate(uri, UriKind.Absolute, out var result))
             {
-                return new Uri(uri);
+                return result;
             }
 
-            return new Uri($"{protocol}{uri}");
+            if (!uri.Contains(':'))
+            {
+                uri += $":{SslConfiguration.DefaultPort}";
+            }
+
+            return new Uri($"redis://{uri}");
         }
     }
 }

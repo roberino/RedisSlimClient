@@ -14,19 +14,25 @@ namespace RedisSlimClient.IntegrationTests
     public class ClientIntegrationTests
     {
         readonly ITestOutputHelper _output;
-        readonly Uri _localEndpoint = new Uri("tcp://localhost:6379/");
+        readonly Uri _localEndpoint = new Uri("redis://localhost:6379/");
 
         public ClientIntegrationTests(ITestOutputHelper output)
         {
             _output = output;
         }
 
-        [Fact]
-        public async Task PingAsync_ReturnsTrue()
+        [Theory]
+        [InlineData(PipelineMode.Sync)]
+        [InlineData(PipelineMode.AsyncPipeline)]
+        public async Task PingAsync_SpecificPipelineMode_ReturnsTrue(PipelineMode pipelineMode)
         {
-            using (var client = RedisClient.Create(new ClientConfiguration(_localEndpoint.ToString())))
+            using (var client = RedisClient.Create(new ClientConfiguration(_localEndpoint.ToString())
             {
-                var result = await client.PingAsync();
+                PipelineMode = pipelineMode
+            }))
+            {
+                var cancel = new CancellationTokenSource(10000);
+                var result = await client.PingAsync(cancel.Token);
 
                 Assert.True(result);
             }
@@ -34,7 +40,7 @@ namespace RedisSlimClient.IntegrationTests
 
         [Theory]
         [InlineData(1, 100)]
-        [InlineData(4, 100)]
+        [InlineData(4, 50)]
         public void PingAsync_MutlipleThreads_ReturnsTrue(int maxThreads, int iterations)
         {
             using (var client = RedisClient.Create(new ClientConfiguration(_localEndpoint.ToString())
@@ -60,11 +66,11 @@ namespace RedisSlimClient.IntegrationTests
                             }).ToList();
 
                         Task.WhenAll(tasks).Wait();
-
-                        success = true;
-
-                        ev.Set();
                     }
+
+                    success = true;
+
+                    ev.Set();
                 });
 
                 ev.WaitOne(2500);
@@ -78,34 +84,37 @@ namespace RedisSlimClient.IntegrationTests
         [Theory]
         [InlineData(true)]
         [InlineData(false)]
-        public async Task SetObjectAsync_WritesObjectDataToStream(bool useAsync)
+        public async Task MultipleOperations_MultipleIterations_ExecutesSuccessfully(bool useAsync)
         {
             using (var client = RedisClient.Create(new ClientConfiguration(_localEndpoint.ToString())
             {
-                UseAsyncronousPipeline = useAsync
+                PipelineMode = useAsync ? PipelineMode.AsyncPipeline : PipelineMode.Sync
             }))
             {
-                var data = ObjectGeneration.CreateObjectGraph();
-
-                var ok = await client.SetObjectAsync(data.Id, data);
-
-                Assert.True(ok);
-
-                var data2 = await client.GetObjectAsync<TestDtoWithGenericCollection<TestComplexDto>>(data.Id);
-
-                Assert.Equal(data.Id, data2.Id);
-                Assert.Equal(data.Items.Count, data2.Items.Count);
-
-                foreach (var x in data.Items.Zip(data2.Items, (a, b) => (a, b)))
+                foreach (var n in Enumerable.Range(1, 100))
                 {
-                    Assert.Equal(x.a.DataItem1, x.b.DataItem1);
-                    Assert.Equal(x.a.DataItem2, x.b.DataItem2);
-                    Assert.Equal(x.a.DataItem3.DataItem1, x.b.DataItem3.DataItem1);
+                    var data = ObjectGeneration.CreateObjectGraph(5);
+
+                    var ok = await client.SetObjectAsync(data.Id, data);
+
+                    Assert.True(ok);
+
+                    var data2 = await client.GetObjectAsync<TestDtoWithGenericCollection<TestComplexDto>>(data.Id);
+
+                    Assert.Equal(data.Id, data2.Id);
+                    Assert.Equal(data.Items.Count, data2.Items.Count);
+
+                    foreach (var x in data.Items.Zip(data2.Items, (a, b) => (a, b)))
+                    {
+                        Assert.Equal(x.a.DataItem1, x.b.DataItem1);
+                        Assert.Equal(x.a.DataItem2, x.b.DataItem2);
+                        Assert.Equal(x.a.DataItem3.DataItem1, x.b.DataItem3.DataItem1);
+                    }
+
+                    var deleted = await client.DeleteAsync(data.Id);
+
+                    Assert.Equal(1, deleted);
                 }
-
-                var deleted = await client.DeleteAsync(data.Id);
-
-                Assert.Equal(1, deleted);
             }
         }
 

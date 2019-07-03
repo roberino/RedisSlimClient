@@ -3,6 +3,7 @@ using RedisSlimClient.Io;
 using RedisSlimClient.Io.Commands;
 using RedisSlimClient.Types;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace RedisSlimClient
@@ -24,48 +25,48 @@ namespace RedisSlimClient
 
         public static IRedisClient Create(ClientConfiguration configuration) => new RedisClient(configuration);
 
-        public async Task<bool> PingAsync()
+        public Task<bool> PingAsync(CancellationToken cancellation = default)
         {
-            return await CompareStringResponse(new PingCommand(), "PONG");
+            return GetResponse(new PingCommand(), cancellation);
         }
 
-        public async Task<long> DeleteAsync(string key)
+        public async Task<long> DeleteAsync(string key, CancellationToken cancellation = default)
         {
-            return (await GetIntResponse(new DeleteCommand(key))).GetValueOrDefault();
+            return (await GetIntResponse(new DeleteCommand(key), cancellation)).GetValueOrDefault();
         }
 
-        public async Task<bool> SetDataAsync(string key, byte[] data)
+        public Task<bool> SetDataAsync(string key, byte[] data, CancellationToken cancellation = default)
         {
-            return await CompareStringResponse(new SetCommand(key, data), "OK");
+            return GetResponse(new SetCommand(key, data), cancellation);
         }
 
-        public async Task<bool> SetObjectAsync<T>(string key, T obj)
+        public async Task<bool> SetObjectAsync<T>(string key, T obj, CancellationToken cancellation = default)
         {
             var cmd = new ObjectSetCommand<T>(key, _configuration, obj);
 
             var cmdPipe = await _connection.ConnectAsync();
 
-            return await cmdPipe.Execute(cmd, _configuration.DefaultTimeout);
+            return await cmdPipe.Execute(cmd, cancellation);
         }
 
-        public async Task<T> GetObjectAsync<T>(string key)
+        public async Task<T> GetObjectAsync<T>(string key, CancellationToken cancellation = default)
         {
             var cmd = new ObjectGetCommand<T>(key, _configuration);
 
             var cmdPipe = await _connection.ConnectAsync();
 
-            var result = await cmdPipe.Execute(cmd, _configuration.DefaultTimeout);
+            var result = await cmdPipe.Execute(cmd, cancellation);
 
             return result;
         }
 
-        public async Task<byte[]> GetDataAsync(string key)
+        public async Task<byte[]> GetDataAsync(string key, CancellationToken cancellation = default)
         {
             var cmd = new GetCommand(key);
 
             var cmdPipe = await _connection.ConnectAsync();
 
-            var rstr = (RedisString) await cmdPipe.Execute(cmd, _configuration.DefaultTimeout);
+            var rstr = (RedisString) await cmdPipe.Execute(cmd, cancellation);
 
             return rstr.Value;
         }
@@ -75,22 +76,29 @@ namespace RedisSlimClient
             _connection.Dispose();
         }
 
-        async Task<bool> CompareStringResponse<T>(IRedisResult<T> cmd, string expectedResponse)
+        async Task<T> GetResponse<T>(IRedisResult<T> cmd, CancellationToken cancellation = default)
         {
             var cmdPipe = await _connection.ConnectAsync();
 
-            var result = await cmdPipe.Execute(cmd, _configuration.DefaultTimeout);
+            return await cmdPipe.Execute(cmd, cancellation);
+        }
+
+        async Task<bool> CompareStringResponse<T>(IRedisResult<T> cmd, string expectedResponse, CancellationToken cancellation = default)
+        {
+            var cmdPipe = await _connection.ConnectAsync();
+
+            var result = await cmdPipe.Execute(cmd, cancellation);
 
             var msg = result.ToString();
 
             return string.Equals(expectedResponse, msg, StringComparison.OrdinalIgnoreCase);
         }
 
-        async Task<long?> GetIntResponse(IRedisResult<RedisObject> cmd)
+        async Task<long?> GetIntResponse(IRedisResult<RedisObject> cmd, CancellationToken cancellation = default)
         {
             var cmdPipe = await _connection.ConnectAsync();
 
-            var result = await cmdPipe.Execute(cmd, _configuration.DefaultTimeout);
+            var result = await cmdPipe.Execute(cmd, cancellation);
 
             var msg = result as RedisInteger;
 

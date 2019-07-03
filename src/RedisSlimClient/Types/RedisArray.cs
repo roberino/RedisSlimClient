@@ -17,7 +17,7 @@ namespace RedisSlimClient.Types
             Items = items;
         }
 
-        public bool IsComplete => Items.Count == Count;
+        public override bool IsComplete => Items.Count == Count;
 
         public int Count { get; }
 

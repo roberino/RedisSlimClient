@@ -4,19 +4,19 @@ using System.Threading.Tasks;
 
 namespace RedisSlimClient.Util
 {
-    class AsyncLock<T> : IDisposable
+    class SyncronizedInstance<T> : IDisposable
     {
-        static readonly TimeSpan _defaultTimeout = TimeSpan.FromMilliseconds(30);
-
+        readonly TimeSpan _timeout;
         readonly SemaphoreSlim _semaphore;
         readonly Func<Task<T>> _factory;
 
         T _instance;
 
-        public AsyncLock(Func<Task<T>> factory)
+        public SyncronizedInstance(Func<Task<T>> factory, TimeSpan? timeout = null)
         {
             _factory = factory;
             _semaphore = new SemaphoreSlim(1, 1);
+            _timeout = timeout.GetValueOrDefault(TimeSpan.FromSeconds(30));
         }
 
         public TValue TryGet<TValue>(Func<T, TValue> valueFactory)
@@ -33,7 +33,7 @@ namespace RedisSlimClient.Util
 
         public async Task Execute(Func<T, Task> work, TimeSpan? timeout = null)
         {
-            await _semaphore.WaitAsync(timeout.GetValueOrDefault(_defaultTimeout));
+            await _semaphore.WaitAsync(_timeout);
 
             try
             {
@@ -50,9 +50,9 @@ namespace RedisSlimClient.Util
             }
         }
 
-        public async Task<T> GetValue(TimeSpan? timeout = null)
+        public async Task<T> GetValue()
         {
-            await _semaphore.WaitAsync(timeout.GetValueOrDefault(_defaultTimeout));
+            await _semaphore.WaitAsync(_timeout);
 
             try
             {
@@ -62,6 +62,22 @@ namespace RedisSlimClient.Util
                 }
 
                 return _instance;
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
+        }
+
+        public async Task Reset()
+        {
+            await _semaphore.WaitAsync(_timeout);
+
+            try
+            {
+                (_instance as IDisposable)?.Dispose();
+
+                _instance = default;
             }
             finally
             {

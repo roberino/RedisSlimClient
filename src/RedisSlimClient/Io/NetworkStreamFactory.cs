@@ -11,24 +11,47 @@ namespace RedisSlimClient.Io
         readonly EndPoint _endPoint;
         readonly Socket _socket;
 
-        public NetworkStreamFactory(EndPoint endPoint)
+        bool _disposed;
+
+        public NetworkStreamFactory(EndPoint endPoint, TimeSpan timeout)
         {
             _endPoint = endPoint;
-            _socket = new Socket(_endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+
+            _socket = new Socket(_endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp)
+            {
+                ReceiveTimeout = (int)timeout.TotalMilliseconds,
+                SendTimeout = (int)timeout.TotalMilliseconds,
+                NoDelay = true
+            };
+
+            _socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
         }
 
-        public Task ConnectAsync(TimeSpan timeout) => _socket.ConnectAsync(_endPoint);
+        Task ConnectAsync() => _socket.ConnectAsync(_endPoint);
 
-        public async Task<Stream> CreateStreamAsync(TimeSpan timeout)
+        public async Task<Stream> CreateStreamAsync()
         {
-            await ConnectAsync(timeout);
+            await ConnectAsync();
 
             return new NetworkStream(_socket, FileAccess.ReadWrite);
         }
 
         public void Dispose()
         {
-            _socket.Dispose();
+            if (!_disposed)
+            {
+                _disposed = true;
+
+                try
+                {
+                    _socket.Shutdown(SocketShutdown.Both);
+                    _socket.Close();
+                }
+                catch { }
+                _socket.Dispose();
+            }
         }
+
+        ~NetworkStreamFactory() { Dispose(); }
     }
 }

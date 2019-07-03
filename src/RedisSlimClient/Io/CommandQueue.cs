@@ -19,17 +19,43 @@ namespace RedisSlimClient.Io
 
         public int QueueSize => _commandQueue.Count;
 
-        public async Task Enqueue(Func<IRedisCommand> commandFactory, TimeSpan timeout)
+        public void AbortAll(Exception ex)
+        {
+            while (ProcessNextCommand(cmd =>
+             {
+                 cmd.Abandon(ex);
+             }))
+            {
+            }
+        }
+
+        public async Task Enqueue(Func<Task<IRedisCommand>> commandFactory, CancellationToken cancellation = default)
         {
             IRedisCommand cmd;
 
-            await _semaphore.WaitAsync(timeout);
+            await _semaphore.WaitAsync(cancellation);
 
             try
             {
-                cmd = commandFactory();
+                cmd = await commandFactory();
 
                 _commandQueue.Enqueue(cmd);
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
+        }
+
+        public async Task Enqueue(IRedisCommand command, CancellationToken cancellation = default)
+        {
+            await _semaphore.WaitAsync(cancellation);
+
+            try
+            {
+                await command.Execute();
+
+                _commandQueue.Enqueue(command);
             }
             finally
             {
@@ -46,7 +72,7 @@ namespace RedisSlimClient.Io
                 return true;
             }
 
-            return false;
+            return !_commandQueue.IsEmpty;
         }
     }
 }

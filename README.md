@@ -11,3 +11,13 @@ The main aims of the client are:
 * To support basic Redis operations
 * To enable fast POCO to Redis mapping
 * To be performant with granular control over thread and socket usage
+
+TODO:
+
+* Support for SSL
+* Keep alive & socket monitoring
+* Better memory management
+* Slimmer object serialization
+* Flexible thread management
+* Support for master/slave
+* Support for clustering
