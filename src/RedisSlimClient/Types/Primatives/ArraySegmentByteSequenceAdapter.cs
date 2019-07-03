@@ -20,6 +20,11 @@ namespace RedisSlimClient.Types.Primatives
 
         public byte[] ToArray(int offset)
         {
+#if NET_CORE
+            if (offset == 0)
+                return _segment.ToArray();
+#endif
+
             var buff = new byte[_segment.Count - offset];
 
             Array.Copy(_segment.Array, _segment.Offset + offset, buff, 0, buff.Length);

@@ -10,6 +10,6 @@ namespace RedisSlimClient.Io.Pipelines
         {
         }
 
-        static string GetDumpText(ReadOnlySequence<byte> data) => Encoding.UTF8.GetString(data.ToArray());
+        static string GetDumpText(ReadOnlySequence<byte> data) => Encoding.UTF8.GetString(data.ToArray()).Replace("\r", "\\r").Replace("\n", "\\n");
     }
 }

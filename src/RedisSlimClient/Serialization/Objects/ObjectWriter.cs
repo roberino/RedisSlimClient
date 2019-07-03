@@ -32,7 +32,7 @@ namespace RedisSlimClient.Serialization
 
         public void Raw(byte[] data)
         {
-            _stream.Write(data);
+            _stream.WriteBytes(data);
         }
 
         public void WriteItem(string name, string data)
@@ -156,7 +156,7 @@ namespace RedisSlimClient.Serialization
 
         void Write(string name, TypeCode type, SubType subType, byte[] data)
         {
-            Write(name, type, subType, s => s.Write(data));
+            Write(name, type, subType, s => s.WriteBytes(data));
         }
 
         void Write(string name, TypeCode type, SubType subType, Action<Stream> content)

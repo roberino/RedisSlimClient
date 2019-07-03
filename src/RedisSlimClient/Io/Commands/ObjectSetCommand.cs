@@ -27,7 +27,7 @@ namespace RedisSlimClient.Io.Commands
             commandWriter.WriteStartArray(3);
             commandWriter.Write(CommandText, true);
             commandWriter.Write(_key, true);
-            commandWriter.Write(GetObjectData());
+            commandWriter.WriteBytes(GetObjectData());
         }
 
         public override object[] GetArgs() => new object[] { CommandText, _key, GetObjectData() };

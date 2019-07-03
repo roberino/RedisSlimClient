@@ -63,6 +63,8 @@ namespace RedisSlimClient.Serialization.Protocol
                 }
             }
 
+            Reset();
+
             return null;
         }
 
@@ -103,7 +105,14 @@ namespace RedisSlimClient.Serialization.Protocol
             var seq = sequence.Slice(_startBulkString, _currentPosition - _startBulkString - 1);
             var txt = Encoding.ASCII.GetString(seq.ToArray());
 
-            return long.Parse(txt);
+            try
+            {
+                return long.Parse(txt);
+            }
+            catch (FormatException)
+            {
+                throw new ArgumentException(txt);
+            }
         }
 
         enum ReadMode : byte

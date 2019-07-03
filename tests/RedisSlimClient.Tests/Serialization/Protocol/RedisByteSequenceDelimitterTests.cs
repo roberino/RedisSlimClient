@@ -45,16 +45,36 @@ namespace RedisSlimClient.UnitTests.Serialization.Protocol
             Assert.Equal(expected2, next1.result);
         }
 
+        //$1801\r\n*2\r\n*4\r\n+Id
+
         [Fact]
-        public void Delimit_BulkStringNotComplete_DelimitsWhenDataAvailable()
+        public void Delimit_BulkStringLengthNotComplete_DelimitsWhenDataAvailable()
         {
-            var data = "$6\r\n?123";
-            var data2 = "?12345\r\n+abc\r\n";
+            var data0 = "$66545";
+            var data1 = "$66545\r\n+ab";
 
             var delimitter = new RedisByteSequenceDelimitter();
 
-            var bytes0 = BytesFromString(data);
-            var bytes1 = BytesFromString(data2);
+            var bytes0 = BytesFromString(data0);
+            var bytes1 = BytesFromString(data1);
+
+            var next0 = GetNext(delimitter, bytes0);
+            var next1 = GetNext(delimitter, bytes1);
+
+            Assert.Null(next0.result);
+            Assert.Equal("$66545\r\n", next1.result);
+        }
+
+        [Fact]
+        public void Delimit_BulkStringNotComplete_DelimitsWhenDataAvailable()
+        {
+            var data0 = "$6\r\n?123";
+            var data1 = "?12345\r\n+abc\r\n";
+
+            var delimitter = new RedisByteSequenceDelimitter();
+
+            var bytes0 = BytesFromString(data0);
+            var bytes1 = BytesFromString(data1);
 
             var next0 = GetNext(delimitter, bytes0);
             var next1 = GetNext(delimitter, next0.remaining);

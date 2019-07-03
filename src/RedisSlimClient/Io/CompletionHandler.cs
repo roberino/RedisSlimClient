@@ -13,6 +13,8 @@ namespace RedisSlimClient.Io
         readonly CommandQueue _commandQueue;
         readonly RedisByteSequenceDelimitter _delimitter;
 
+        byte[] lastData;
+
         public CompletionHandler(IPipelineReceiver receiver, CommandQueue commandQueue)
         {
             _receiver = receiver;
@@ -36,10 +38,17 @@ namespace RedisSlimClient.Io
         {
             if (objData.Slice(objData.Length - 2, 1).First.Span[0] != (byte)'\r')
             {
+                if (lastData != null)
+                {
+                    throw new BufferReadException(new ReadOnlySequence<byte>(lastData), null);
+                }
+
                 throw new BufferReadException(objData, null);
             }
 
             var createdItems = _redisObjectBuilder.AppendObjectData(objData.Slice(0, objData.Length - 2));
+
+            lastData = objData.ToArray();
 
             foreach (var item in createdItems)
             {

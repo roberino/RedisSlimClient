@@ -24,5 +24,7 @@ namespace RedisSlimClient.Types.Primatives
 
         public byte GetValue(int index) =>
             _sequence.IsSingleSegment ? _sequence.First.Span[index] : _sequence.Slice(index, 1).ToArray()[0];
+
+        public ReadOnlySequence<byte> ToSequence(int offset) => _sequence.Slice(offset);
     }
 }
