@@ -1,4 +1,5 @@
-﻿using RedisSlimClient.Io.Scheduling;
+﻿using RedisSlimClient.Io.Net;
+using RedisSlimClient.Io.Scheduling;
 using System;
 using System.Buffers;
 using System.IO.Pipelines;

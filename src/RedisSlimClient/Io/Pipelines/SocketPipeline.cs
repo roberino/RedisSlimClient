@@ -1,4 +1,5 @@
 ﻿using RedisSlimClient.Configuration;
+using RedisSlimClient.Io.Net;
 using RedisSlimClient.Io.Scheduling;
 using System;
 using System.Linq;

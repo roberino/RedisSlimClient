@@ -4,6 +4,7 @@ using System.IO.Pipelines;
 using System.Threading;
 using System.Threading.Tasks;
 using RedisSlimClient.Io.Scheduling;
+using RedisSlimClient.Io.Net;
 
 namespace RedisSlimClient.Io.Pipelines
 {

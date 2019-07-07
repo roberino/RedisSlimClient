@@ -2,7 +2,7 @@
 using System.Buffers;
 using System.Threading.Tasks;
 
-namespace RedisSlimClient.Io.Pipelines
+namespace RedisSlimClient.Io.Net
 {
     interface ISocket : IDisposable
     {

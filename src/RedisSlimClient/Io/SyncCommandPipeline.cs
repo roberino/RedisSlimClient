@@ -1,4 +1,5 @@
 ﻿using RedisSlimClient.Io.Commands;
+using RedisSlimClient.Io.Net;
 using RedisSlimClient.Io.Pipelines;
 using RedisSlimClient.Serialization;
 using RedisSlimClient.Serialization.Protocol;

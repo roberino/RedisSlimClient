@@ -1,5 +1,6 @@
 ﻿using RedisSlimClient.Configuration;
 using RedisSlimClient.Io.Pipelines;
+using RedisSlimClient.Io.Net;
 using System.Linq;
 using System.Net;
 

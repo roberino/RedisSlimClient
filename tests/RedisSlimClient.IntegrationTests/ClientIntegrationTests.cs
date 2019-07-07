@@ -41,6 +41,7 @@ namespace RedisSlimClient.IntegrationTests
 
         [Theory]
         [InlineData(PipelineMode.AsyncPipeline)]
+        [InlineData(PipelineMode.Sync)]
         public async Task PingAsync_Ssl_ReturnsTrue(PipelineMode pipelineMode)
         {
             var config = new ClientConfiguration($"{_localSslEndpoint};UseSsl=true;CertificatePath=ca.pem;PipelineMode={pipelineMode}");

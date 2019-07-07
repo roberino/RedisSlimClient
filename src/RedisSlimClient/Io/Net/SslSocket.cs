@@ -8,7 +8,7 @@ using System.Net.Security;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
-namespace RedisSlimClient.Io.Ssl
+namespace RedisSlimClient.Io.Net
 {
     class SslSocket : SocketFacade
     {

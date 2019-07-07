@@ -2,7 +2,7 @@
 using System.Net.Sockets;
 using System.Threading.Tasks;
 
-namespace RedisSlimClient.Io.Pipelines
+namespace RedisSlimClient.Io.Net
 {
     interface IManagedSocket : ISocket
     {

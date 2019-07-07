@@ -1,6 +1,6 @@
 ﻿using RedisSlimClient.Configuration;
 using RedisSlimClient.Io.Pipelines;
-using RedisSlimClient.Io.Ssl;
+using RedisSlimClient.Io.Net;
 using System.Net;
 
 namespace RedisSlimClient.Io

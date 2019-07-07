@@ -1,4 +1,5 @@
-﻿using RedisSlimClient.Io.Pipelines;
+﻿using RedisSlimClient.Io.Net;
+using RedisSlimClient.Io.Pipelines;
 using System;
 using System.Buffers;
 using System.Collections.Concurrent;
