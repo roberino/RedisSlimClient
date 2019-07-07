@@ -47,7 +47,7 @@ namespace RedisSlimClient.IntegrationTests
             {
                 DefaultTimeout = TimeSpan.FromMilliseconds(500),
                 ConnectTimeout = TimeSpan.FromMilliseconds(500),
-                TelemetryWriter = new TextTelemetryWriter(_output.WriteLine)
+                TelemetryWriter = new TextTelemetryWriter(_output.WriteLine, Severity.Warn)
             }))
             {
                 var success = false;
