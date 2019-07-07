@@ -10,7 +10,7 @@ before_build:
   - cmd: dotnet --version
   - cmd: dotnet restore ./RedisSlimClient.sln --verbosity m
 build_script:
-  - cmd: dotnet publish ./RedisSlimClient.sln
+  - cmd: dotnet build ./RedisSlimClient.sln
 after_build:
 test_script:
   - cmd: dotnet test ./tests/RedisSlimClient.Tests/RedisSlimClient.UnitTests.csproj --filter TestCategory!=BuildOmit

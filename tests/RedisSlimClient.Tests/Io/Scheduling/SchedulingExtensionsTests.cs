@@ -1,4 +1,5 @@
 ﻿using RedisSlimClient.Io.Pipelines;
+using RedisSlimClient.Io.Scheduling;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -55,9 +56,10 @@ namespace RedisSlimClient.UnitTests.Io.Scheduling
             });
         }
 
-        public void Reset()
+        public Task Reset()
         {
             _handle.Set();
+            return Task.CompletedTask;
         }
     }
 }

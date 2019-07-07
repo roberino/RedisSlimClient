@@ -22,27 +22,23 @@ namespace RedisSlimClient.Io
 
         static IConnection CreateImpl(ClientConfiguration configuration, EndPoint endPoint)
         {
+            var socket = SocketFactory.CreateSocket(configuration, endPoint);
+
             if (configuration.PipelineMode == PipelineMode.AsyncPipeline || configuration.PipelineMode == PipelineMode.Default)
             {
-                return CreatePipelineImpl(configuration, endPoint);
+                return CreatePipelineImpl(configuration, socket);
             }
 
-            var streamFactory = new NetworkStreamFactory(configuration.ServerEndpoints.Single().AsEndpoint(), configuration.ConnectTimeout);
-
-            return new Connection(
-                async () => new SyncCommandPipeline(await streamFactory.CreateStreamAsync()),
-                    configuration.TelemetryWriter);
+            return new Connection(() => SyncCommandPipeline.CreateAsync(socket), configuration.TelemetryWriter);
         }
 
-        static IConnection CreatePipelineImpl(ClientConfiguration configuration, EndPoint endPoint)
-        {
-            var socket = new SocketFacade(endPoint, configuration.ConnectTimeout);
-            
+        static IConnection CreatePipelineImpl(ClientConfiguration configuration, IManagedSocket socket)
+        {            
             return new Connection(async () =>
             {
                 await socket.ConnectAsync();
                 var socketPipeline = new SocketPipeline(socket, configuration);
-                return new AsyncCommandPipeline(socketPipeline, configuration.TelemetryWriter);
+                return new AsyncCommandPipeline(socketPipeline, configuration.Scheduler, configuration.TelemetryWriter);
             }, configuration.TelemetryWriter);
         }
     }

@@ -1,0 +1,36 @@
+version: "3"
+
+services:
+ redis1:
+  image: redis:alpine
+  container_name: redisci-1
+  ports:
+   - "9096:6379"
+  networks:
+   - net1
+ 
+ redis2:
+  image: redis:alpine
+  container_name: redisci-2
+  ports:
+   - "9097:6379"
+  networks:
+   - net1
+
+ redis-ssl1:
+  build:
+      context: ./stunnel
+      args: 
+        redis_host: redis1
+      dockerfile: Dockerfile
+  links: 
+    - redis1
+  ports:
+    - "6380:6380"
+  networks:
+   - net1
+
+volumes:
+ redis-drive:
+networks:
+ net1:

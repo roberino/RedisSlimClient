@@ -1,4 +1,5 @@
-﻿using RedisSlimClient.Serialization;
+﻿using RedisSlimClient.Io.Scheduling;
+using RedisSlimClient.Serialization;
 using RedisSlimClient.Telemetry;
 using System;
 using System.Linq;
@@ -13,6 +14,8 @@ namespace RedisSlimClient.Configuration
             SslConfiguration = new SslConfiguration();
             Parse(connectionOptions);
         }
+
+        public IWorkScheduler Scheduler { get; set; } = ThreadPoolScheduler.Instance;
 
         public SslConfiguration SslConfiguration { get; }
 

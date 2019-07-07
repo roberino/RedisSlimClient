@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Buffers;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -7,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace RedisSlimClient.Io.Pipelines
 {
-    class SocketFacade : ISocket
+    class SocketFacade : ISocket, IManagedSocket
     {
         Socket _socket;
         readonly CancellationTokenSource _cancellationTokenSource;
@@ -36,7 +37,19 @@ namespace RedisSlimClient.Io.Pipelines
             State = new SocketState(CheckConnected);
         }
 
-        protected Socket Socket => _socket;
+        protected CancellationToken CancellationToken => _cancellationTokenSource.Token;
+
+        public Socket Socket => _socket;
+
+        public virtual async Task<Stream> CreateStream()
+        {
+            if (!State.IsConnected)
+            {
+                await ConnectAsync();
+            }
+
+            return new NetworkStream(_socket, FileAccess.ReadWrite);
+        }
 
         public SocketState State { get; }
 
@@ -47,15 +60,12 @@ namespace RedisSlimClient.Io.Pipelines
                 throw new ObjectDisposedException(nameof(SocketFacade));
             }
 
-            if (_socket == null)
-            {
-                InitialiseSocket();
-            }
+            InitialiseSocket();
 
             return State.DoConnect(() => _socket.ConnectAsync(_endPoint));
         }
 
-        public virtual async Task<int> SendAsync(ReadOnlySequence<byte> buffer)
+        public virtual async ValueTask<int> SendAsync(ReadOnlySequence<byte> buffer)
         {
             var sent = 0;
 
@@ -78,7 +88,7 @@ namespace RedisSlimClient.Io.Pipelines
             return sent;
         }
 
-        public virtual async Task<int> ReceiveAsync(Memory<byte> memory)
+        public virtual async ValueTask<int> ReceiveAsync(Memory<byte> memory)
         {
             if (_cancellationTokenSource.IsCancellationRequested)
             {
@@ -161,25 +171,35 @@ namespace RedisSlimClient.Io.Pipelines
 
         void ShutdownSocket()
         {
+            var socket = _socket;
+
+            _socket = null;
             _readEventArgs.Abandon();
             _writeEventArgs.Abandon();
 
-            Try(() => _socket.Shutdown(SocketShutdown.Send));
-            Try(() => _socket.Shutdown(SocketShutdown.Receive));
-            Try(_socket.Close);
-            Try(_socket.Dispose);
+            Try(() => socket.Shutdown(SocketShutdown.Send));
+            Try(() => socket.Shutdown(SocketShutdown.Receive));
+            Try(socket.Close);
+            Try(socket.Dispose);
         }
 
         void InitialiseSocket()
         {
-            _socket = new Socket(_endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp)
+            if (_socket != null)
+            {
+                ShutdownSocket();
+            }
+
+            var socket = new Socket(_endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp)
             {
                 ReceiveTimeout = (int)_timeout.TotalMilliseconds,
                 SendTimeout = (int)_timeout.TotalMilliseconds,
                 NoDelay = true
             };
 
-            _socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
+            socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
+
+            _socket = socket;
         }
 
         void Try(Action act)

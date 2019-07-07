@@ -35,7 +35,7 @@ namespace RedisSlimClient.UnitTests.Io.Pipelines
             _receiveWaitHandle.Dispose();
         }
 
-        public async Task<int> ReceiveAsync(Memory<byte> memory)
+        public async ValueTask<int> ReceiveAsync(Memory<byte> memory)
         {
             var bytes = ReadReceivedQueue(memory);
 
@@ -46,7 +46,7 @@ namespace RedisSlimClient.UnitTests.Io.Pipelines
             return bytes;
         }
 
-        public async Task<int> SendAsync(ReadOnlySequence<byte> buffer)
+        public async ValueTask<int> SendAsync(ReadOnlySequence<byte> buffer)
         {
             Received.Enqueue(buffer);
 

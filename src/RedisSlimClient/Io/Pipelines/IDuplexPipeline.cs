@@ -1,4 +1,5 @@
-﻿using System;
+﻿using RedisSlimClient.Io.Scheduling;
+using System;
 
 namespace RedisSlimClient.Io.Pipelines
 {

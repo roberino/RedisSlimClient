@@ -2,6 +2,7 @@
 using RedisSlimClient.Io;
 using RedisSlimClient.Io.Commands;
 using RedisSlimClient.Io.Pipelines;
+using RedisSlimClient.Io.Scheduling;
 using RedisSlimClient.Telemetry;
 using RedisSlimClient.Types;
 using RedisSlimClient.UnitTests.Io.Pipelines;
@@ -19,7 +20,7 @@ namespace RedisSlimClient.UnitTests.Io
             var socket = new StubSocket();
 
             using (var socketPipe = new SocketPipeline(socket))
-            using (var pipeline = new AsyncCommandPipeline(socketPipe, NullWriter.Instance))
+            using (var pipeline = new AsyncCommandPipeline(socketPipe, ThreadPoolScheduler.Instance,  NullWriter.Instance))
             {
                 var command = Substitute.For<IRedisResult<RedisObject>>();
                 var taskCompletion = new TaskCompletionSource<RedisObject>();

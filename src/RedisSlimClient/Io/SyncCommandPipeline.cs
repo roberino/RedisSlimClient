@@ -1,4 +1,5 @@
 ﻿using RedisSlimClient.Io.Commands;
+using RedisSlimClient.Io.Pipelines;
 using RedisSlimClient.Serialization;
 using RedisSlimClient.Serialization.Protocol;
 using RedisSlimClient.Types;
@@ -14,16 +15,25 @@ namespace RedisSlimClient.Io
     internal class SyncCommandPipeline : ICommandPipeline
     {
         readonly Stream _writeStream;
+        readonly IManagedSocket _socket;
         readonly IEnumerable<RedisObjectPart> _reader;
 
         bool _disposed;
         int _pendingWrites;
         int _pendingReads;
 
-        public SyncCommandPipeline(Stream networkStream)
+        SyncCommandPipeline(Stream networkStream, IManagedSocket socket)
         {
             _writeStream = networkStream;
+            _socket = socket;
             _reader = new ArraySegmentToRedisObjectReader(new StreamIterator(networkStream));
+        }
+
+        public static async Task<ICommandPipeline> CreateAsync(IManagedSocket socket)
+        {
+            var stream = await socket.CreateStream();
+
+            return new SyncCommandPipeline(stream, socket);
         }
 
         public (int PendingWrites, int PendingReads) PendingWork => (_pendingWrites, _pendingReads);
@@ -66,6 +76,7 @@ namespace RedisSlimClient.Io
         public void Dispose()
         {
             _disposed = true;
+            _socket.Dispose();
         }
     }
 }

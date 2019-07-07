@@ -1,5 +1,6 @@
 ﻿using RedisSlimClient.Io.Commands;
 using RedisSlimClient.Io.Pipelines;
+using RedisSlimClient.Io.Scheduling;
 using RedisSlimClient.Serialization.Protocol;
 using RedisSlimClient.Telemetry;
 using RedisSlimClient.Util;
@@ -20,7 +21,7 @@ namespace RedisSlimClient.Io
 
         bool _disposed;
 
-        public AsyncCommandPipeline(IDuplexPipeline pipeline, ITelemetryWriter telemetryWriter)
+        public AsyncCommandPipeline(IDuplexPipeline pipeline, IWorkScheduler workScheduler, ITelemetryWriter telemetryWriter)
         {
             _pipeline = pipeline;
             _telemetryWriter = telemetryWriter ?? NullWriter.Instance;
@@ -33,12 +34,11 @@ namespace RedisSlimClient.Io
                 {
                      Name = $"{nameof(IDuplexPipeline)}.{nameof(IDuplexPipeline.Faulted)}"
                 });
-
-                _commandQueue.AbortAll(new Exception());
-                _pipeline.Reset();
+                
+                workScheduler.Schedule(() => _commandQueue.Requeue(_pipeline.Reset));
             };
 
-            _pipeline.ScheduleOnThreadpool();
+            workScheduler.Schedule(_pipeline.RunAsync);
         }
 
         public (int PendingWrites, int PendingReads) PendingWork => ((int)_pendingWrites.Value, _commandQueue.QueueSize);

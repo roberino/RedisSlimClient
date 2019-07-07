@@ -1,7 +1,7 @@
 ﻿using RedisSlimClient.Io.Commands;
 using RedisSlimClient.Io.Pipelines;
+using RedisSlimClient.Io.Scheduling;
 using RedisSlimClient.Serialization.Protocol;
-using System;
 using System.Buffers;
 using System.Collections.Concurrent;
 using System.Threading;
