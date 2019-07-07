@@ -19,7 +19,7 @@ services:
 
  redis-ssl1:
   build:
-      context: ./stunnel
+      context: ./build/stunnel
       args: 
         redis_host: redis1
       dockerfile: Dockerfile
