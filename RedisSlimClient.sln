@@ -34,7 +34,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "stunnel", "stunnel", "{B044
 	ProjectSection(SolutionItems) = preProject
 		build\stunnel\Dockerfile = build\stunnel\Dockerfile
 		build\stunnel\rediscert.pem = build\stunnel\rediscert.pem
-		build\stunnel\stunnel.conf = build\stunnel\stunnel.conf
+		build\stunnel\stunnel1.conf = build\stunnel\stunnel1.conf
+		build\stunnel\stunnel2.conf = build\stunnel\stunnel2.conf
 	EndProjectSection
 EndProject
 Global

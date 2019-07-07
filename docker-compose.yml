@@ -18,11 +18,13 @@ services:
    - net1
 
  redis-ssl1:
+  container_name: redisssl-1
   build:
       context: ./build/stunnel
-      args: 
-        redis_host: redis1
       dockerfile: Dockerfile
+  command: stunnel /stunnel/stunnel1.conf
+  environment:
+      redis_host: redis1
   links: 
     - redis1
   ports:

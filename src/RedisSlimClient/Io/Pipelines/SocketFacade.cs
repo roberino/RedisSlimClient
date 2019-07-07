@@ -45,7 +45,7 @@ namespace RedisSlimClient.Io.Pipelines
         {
             if (!State.IsConnected)
             {
-                await ConnectAsync();
+                await InitSocketAndNotifyAsync();
             }
 
             return new NetworkStream(_socket, FileAccess.ReadWrite);
@@ -55,14 +55,7 @@ namespace RedisSlimClient.Io.Pipelines
 
         public virtual Task ConnectAsync()
         {
-            if (_cancellationTokenSource.IsCancellationRequested)
-            {
-                throw new ObjectDisposedException(nameof(SocketFacade));
-            }
-
-            InitialiseSocket();
-
-            return State.DoConnect(() => _socket.ConnectAsync(_endPoint));
+            return InitSocketAndNotifyAsync();
         }
 
         public virtual async ValueTask<int> SendAsync(ReadOnlySequence<byte> buffer)
@@ -181,6 +174,18 @@ namespace RedisSlimClient.Io.Pipelines
             Try(() => socket.Shutdown(SocketShutdown.Receive));
             Try(socket.Close);
             Try(socket.Dispose);
+        }
+
+        Task InitSocketAndNotifyAsync()
+        {
+            if (_cancellationTokenSource.IsCancellationRequested)
+            {
+                throw new ObjectDisposedException(nameof(SocketFacade));
+            }
+
+            InitialiseSocket();
+
+            return State.DoConnect(() => _socket.ConnectAsync(_endPoint));
         }
 
         void InitialiseSocket()

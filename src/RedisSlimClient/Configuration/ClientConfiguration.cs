@@ -43,7 +43,7 @@ namespace RedisSlimClient.Configuration
         {
             var endPoints = string.Empty;
 
-            foreach(var item in connectionOptions.Split(','))
+            foreach (var item in connectionOptions.Split(',', ';'))
             {
                 var kv = item.Split('=');
 
@@ -64,19 +64,25 @@ namespace RedisSlimClient.Configuration
                                 DefaultTimeout = TimeSpan.Parse(kv[1]);
                                 break;
                             case nameof(ConnectionPoolSize):
-                                ConnectionPoolSize = int.Parse(kv[0]);
+                                ConnectionPoolSize = int.Parse(kv[1]);
                                 break;
                             case nameof(ReadBufferSize):
-                                ReadBufferSize = int.Parse(kv[0]);
+                                ReadBufferSize = int.Parse(kv[1]);
                                 break;
                             case nameof(WriteBufferSize):
-                                WriteBufferSize = int.Parse(kv[0]);
+                                WriteBufferSize = int.Parse(kv[1]);
                                 break;
                             case nameof(SslConfiguration.SslHost):
-                                SslConfiguration.SslHost = kv[0];
+                                SslConfiguration.SslHost = kv[1];
                                 break;
                             case nameof(SslConfiguration.UseSsl):
-                                SslConfiguration.UseSsl = bool.Parse(kv[0].ToLower());
+                                SslConfiguration.UseSsl = bool.Parse(kv[1].ToLower());
+                                break;
+                            case nameof(SslConfiguration.CertificatePath):
+                                SslConfiguration.CertificatePath = kv[1];
+                                break;
+                            case nameof(PipelineMode):
+                                PipelineMode = (PipelineMode)Enum.Parse(typeof(PipelineMode), kv[1], true);
                                 break;
                         }
                     }
@@ -84,6 +90,11 @@ namespace RedisSlimClient.Configuration
             }
 
             ServerEndpoints = endPoints.Split(';').Select(ParseUri).ToArray();
+
+            if (SslConfiguration.UseSsl && string.IsNullOrEmpty(SslConfiguration.SslHost))
+            {
+                SslConfiguration.SslHost = ServerEndpoints.SingleOrDefault()?.Host;
+            }
         }
 
         Uri ParseUri(string uri)

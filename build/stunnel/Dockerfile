@@ -1,15 +1,13 @@
 FROM alpine
 
-ARG redis_host
-
 RUN apk add stunnel
 
 VOLUME /stunnel
-COPY ./stunnel.conf /stunnel/
+COPY ./stunnel1.conf /stunnel/stunnel1.conf
+COPY ./stunnel2.conf /stunnel/stunnel2.conf
 COPY ./rediscert.pem /stunnel/private.pem
-CMD chmod 600 /stunnel/private.pem
+RUN chmod 600 /stunnel/private.pem
 
 EXPOSE 6380
 
-CMD echo "connect = $redis_host:6379" >> /stunnel/stunnel.conf
-CMD stunnel /stunnel/stunnel.conf
+CMD stunnel /stunnel/stunnel1.conf
