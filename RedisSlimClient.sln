@@ -13,6 +13,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{D58E4F13
 	ProjectSection(SolutionItems) = preProject
 		.travis.yml = .travis.yml
 		appveyor.yml = appveyor.yml
+		create-cert.sh = create-cert.sh
+		docker-compose.yml = docker-compose.yml
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{9AC62569-0C1A-4367-864E-9CA9227BE2BC}"
@@ -26,7 +28,14 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{7D3242BB
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RedisSlimClient.IntegrationTests", "tests\RedisSlimClient.IntegrationTests\RedisSlimClient.IntegrationTests.csproj", "{2045B2B9-300A-47ED-8BAA-FD01BC567B4F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RedisSlimClient.Stubs", "tests\RedisSlimClient.Stubs\RedisSlimClient.Stubs.csproj", "{1976F57D-1C0B-4294-B115-4D72E0611E99}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RedisSlimClient.Stubs", "tests\RedisSlimClient.Stubs\RedisSlimClient.Stubs.csproj", "{1976F57D-1C0B-4294-B115-4D72E0611E99}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "stunnel", "stunnel", "{B04410B4-D51D-4CFC-BEE3-B0C108595EF8}"
+	ProjectSection(SolutionItems) = preProject
+		build\stunnel\Dockerfile = build\stunnel\Dockerfile
+		build\stunnel\rediscert.pem = build\stunnel\rediscert.pem
+		build\stunnel\stunnel.conf = build\stunnel\stunnel.conf
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -64,6 +73,7 @@ Global
 		{475EB56E-4585-4FB0-89B9-0FAA729EBBE2} = {7D3242BB-A1A6-4A11-BBFD-F5DDD1F140C8}
 		{2045B2B9-300A-47ED-8BAA-FD01BC567B4F} = {7D3242BB-A1A6-4A11-BBFD-F5DDD1F140C8}
 		{1976F57D-1C0B-4294-B115-4D72E0611E99} = {7D3242BB-A1A6-4A11-BBFD-F5DDD1F140C8}
+		{B04410B4-D51D-4CFC-BEE3-B0C108595EF8} = {D58E4F13-AA73-4488-B769-742243BF6D02}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {13B5FD4B-6ADC-4F52-B91A-6F364DB1E8DC}

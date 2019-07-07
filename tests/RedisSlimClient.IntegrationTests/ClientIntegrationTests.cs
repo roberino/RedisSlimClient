@@ -14,7 +14,7 @@ namespace RedisSlimClient.IntegrationTests
     public class ClientIntegrationTests
     {
         readonly ITestOutputHelper _output;
-        readonly Uri _localEndpoint = new Uri("redis://localhost:6379/");
+        readonly Uri _localEndpoint = new Uri("redis://localhost:9096/");
 
         public ClientIntegrationTests(ITestOutputHelper output)
         {
