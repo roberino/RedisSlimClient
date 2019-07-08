@@ -1,10 +1,10 @@
 ﻿using System;
+using System.Threading.Tasks;
 
 namespace RedisSlimClient.Io.Scheduling
 {
-    interface IWorkScheduler : IDisposable
+    public interface IWorkScheduler : IDisposable
     {
-        void Awake();
-        void Schedule(Func<bool> work);
+        void Schedule(Func<Task> work);
     }
 }

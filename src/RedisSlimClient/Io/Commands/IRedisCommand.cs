@@ -13,6 +13,7 @@ namespace RedisSlimClient.Io.Commands
 
     interface IRedisCommand
     {
+        bool CanBeCompleted { get; }
         Func<Task> Execute { get; set; }
         string CommandText { get; }
         void Complete(RedisObject obj);

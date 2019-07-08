@@ -1,6 +1,7 @@
 ﻿using RedisSlimClient.Io.Commands;
 using System;
 using System.Collections.Concurrent;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -26,6 +27,36 @@ namespace RedisSlimClient.Io
                  cmd.Abandon(ex);
              }))
             {
+            }
+        }
+
+        public async Task Requeue(Func<Task> synchronisedWork)
+        {
+            await _semaphore.WaitAsync();
+
+            try
+            {
+                await synchronisedWork();
+
+                var salvagable = _commandQueue.ToArray();
+
+                Clear();
+
+                foreach (var command in salvagable)
+                {
+                    if (!command.CanBeCompleted)
+                    {
+                        continue;
+                    }
+
+                    await command.Execute();
+
+                    _commandQueue.Enqueue(command);
+                }
+            }
+            finally
+            {
+                _semaphore.Release();
             }
         }
 
@@ -73,6 +104,18 @@ namespace RedisSlimClient.Io
             }
 
             return !_commandQueue.IsEmpty;
+        }
+
+        void Clear()
+        {
+#if NET_CORE
+            _commandQueue.Clear();
+#else
+            while (_commandQueue.Count > 0)
+            {
+                _commandQueue.TryDequeue(out var result);
+            }
+#endif
         }
     }
 }

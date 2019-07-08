@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 
-namespace RedisSlimClient.Io.Pipelines
+namespace RedisSlimClient.Io.Net
 {
     class SocketState
     {

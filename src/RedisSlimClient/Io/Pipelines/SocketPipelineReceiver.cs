@@ -1,4 +1,6 @@
-﻿using System;
+﻿using RedisSlimClient.Io.Net;
+using RedisSlimClient.Io.Scheduling;
+using System;
 using System.Buffers;
 using System.IO.Pipelines;
 using System.Threading;
@@ -49,9 +51,10 @@ namespace RedisSlimClient.Io.Pipelines
             }
         }
 
-        public void Reset()
+        public Task Reset()
         {
             _reset = true;
+            return Task.CompletedTask;
         }
 
         public void Dispose()
@@ -72,7 +75,7 @@ namespace RedisSlimClient.Io.Pipelines
 
             while (IsRunning)
             {
-                var memory = writer.GetMemory(1);
+                var memory = writer.GetMemory(_minBufferSize);
 
                 try
                 {

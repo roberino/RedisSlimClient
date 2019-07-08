@@ -1,11 +1,11 @@
 ﻿using System.Threading.Tasks;
 
-namespace RedisSlimClient.Io.Pipelines
+namespace RedisSlimClient.Io.Scheduling
 {
     interface IRunnable
     {
         Task RunAsync();
 
-        void Reset();
+        Task Reset();
     }
 }

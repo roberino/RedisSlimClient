@@ -1,4 +1,6 @@
 ﻿using RedisSlimClient.Configuration;
+using RedisSlimClient.Io.Net;
+using RedisSlimClient.Io.Scheduling;
 using System;
 using System.Linq;
 using System.Net;
@@ -39,10 +41,12 @@ namespace RedisSlimClient.Io.Pipelines
             return Task.WhenAll(Runnables.Select(x => x.RunAsync()));
         }
 
-        public void Reset()
+        public async Task Reset()
         {
             foreach (var runnable in Runnables)
-                runnable.Reset();
+                await runnable.Reset();
+
+            await _socket.ConnectAsync();
         }
 
         public void Dispose()

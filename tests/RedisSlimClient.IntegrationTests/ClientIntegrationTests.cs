@@ -14,7 +14,8 @@ namespace RedisSlimClient.IntegrationTests
     public class ClientIntegrationTests
     {
         readonly ITestOutputHelper _output;
-        readonly Uri _localEndpoint = new Uri("redis://localhost:6379/");
+        readonly Uri _localEndpoint = new Uri("redis://localhost:9096/");
+        readonly Uri _localSslEndpoint = new Uri("redis://localhost:6380/");
 
         public ClientIntegrationTests(ITestOutputHelper output)
         {
@@ -39,6 +40,22 @@ namespace RedisSlimClient.IntegrationTests
         }
 
         [Theory]
+        [InlineData(PipelineMode.AsyncPipeline)]
+        [InlineData(PipelineMode.Sync)]
+        public async Task PingAsync_Ssl_ReturnsTrue(PipelineMode pipelineMode)
+        {
+            var config = new ClientConfiguration($"{_localSslEndpoint};UseSsl=true;CertificatePath=ca.pem;PipelineMode={pipelineMode}");
+
+            using (var client = RedisClient.Create(config))
+            {
+                var cancel = new CancellationTokenSource(1000);
+                var result = await client.PingAsync(cancel.Token);
+
+                Assert.True(result);
+            }
+        }
+
+        [Theory]
         [InlineData(1, 100)]
         [InlineData(4, 50)]
         public void PingAsync_MutlipleThreads_ReturnsTrue(int maxThreads, int iterations)
@@ -47,7 +64,7 @@ namespace RedisSlimClient.IntegrationTests
             {
                 DefaultTimeout = TimeSpan.FromMilliseconds(500),
                 ConnectTimeout = TimeSpan.FromMilliseconds(500),
-                TelemetryWriter = new TextTelemetryWriter(_output.WriteLine)
+                TelemetryWriter = new TextTelemetryWriter(_output.WriteLine, Severity.Warn)
             }))
             {
                 var success = false;

@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 
-namespace RedisSlimClient.Io.Pipelines
+namespace RedisSlimClient.Io.Net
 {
     class AwaitableSocketAsyncEventArgs : SocketAsyncEventArgs, ICriticalNotifyCompletion
     {
@@ -16,13 +16,13 @@ namespace RedisSlimClient.Io.Pipelines
         public AwaitableSocketAsyncEventArgs()
         {
             Reset(NullMemory);
-            CompletionHandler = x => x();
         }
 
         public void Reset(ReadOnlyMemory<byte> buffer)
         {
             var seg = GetArray(buffer);
             SetBuffer(seg.Array, seg.Offset, seg.Count);
+            CompletionHandler = x => x();
             _isCompleted = false;
         }
 

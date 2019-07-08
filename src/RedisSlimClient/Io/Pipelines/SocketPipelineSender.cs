@@ -3,6 +3,8 @@ using System;
 using System.IO.Pipelines;
 using System.Threading;
 using System.Threading.Tasks;
+using RedisSlimClient.Io.Scheduling;
+using RedisSlimClient.Io.Net;
 
 namespace RedisSlimClient.Io.Pipelines
 {
@@ -40,9 +42,10 @@ namespace RedisSlimClient.Io.Pipelines
             }
         }
 
-        public void Reset()
+        public Task Reset()
         {
             _reset = true;
+            return Task.CompletedTask;
         }
 
         public async Task SendAsync(byte[] data)

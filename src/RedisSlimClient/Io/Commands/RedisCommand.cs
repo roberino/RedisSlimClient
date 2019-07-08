@@ -13,6 +13,8 @@ namespace RedisSlimClient.Io.Commands
             CompletionSource = new TaskCompletionSource<T>();
         }
 
+        public bool CanBeCompleted => !(CompletionSource.Task.IsCanceled || CompletionSource.Task.IsCompleted || CompletionSource.Task.IsFaulted);
+
         public string CommandText { get; }
 
         public virtual object[] GetArgs() => new[] { CommandText };
