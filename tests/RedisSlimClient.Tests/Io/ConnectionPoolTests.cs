@@ -51,7 +51,7 @@ namespace RedisSlimClient.UnitTests.Io
                 var pipelne = Substitute.For<ICommandPipeline>();
 
                 pipelne
-                    .Execute(Arg.Any<IRedisResult<RedisObject>>(), Arg.Any<CancellationToken>())
+                    .Execute(Arg.Any<IRedisResult<IRedisObject>>(), Arg.Any<CancellationToken>())
                     .Returns(new RedisString(BitConverter.GetBytes(n)));
 
                 con.ConnectAsync().Returns(pipelne);

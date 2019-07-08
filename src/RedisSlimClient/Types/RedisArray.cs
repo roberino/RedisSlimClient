@@ -1,33 +1,28 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace RedisSlimClient.Types
 {
-    internal class RedisArray : RedisObject, IReadOnlyCollection<RedisObject>
+    internal class RedisArray : List<IRedisObject>, IRedisObject, IReadOnlyCollection<IRedisObject>
     {
-        public RedisArray(long length) : base(RedisType.Array)
+        readonly int _count;
+
+        public RedisArray(long length)
         {
-            Count = (int)length;
-            Items = new List<RedisObject>();
+            _count = (int)length;
         }
 
-        public RedisArray(params RedisObject[] items) : base(RedisType.Array)
+        public RedisArray(params IRedisObject[] items)
         {
-            Count = items.Length;
-            Items = items;
+            _count = items.Length;
+            AddRange(items);
         }
 
-        public override bool IsComplete => Items.Count == Count;
+        public new int Count => _count;
 
-        public int Count { get; }
+        public bool IsComplete => _count == base.Count;
 
-        public IEnumerator<RedisObject> GetEnumerator() => Items.GetEnumerator();
+        public bool IsNull => false;
 
-        internal IList<RedisObject> Items { get; }
-
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
-        }
+        public RedisType Type => RedisType.Array;
     }
 }

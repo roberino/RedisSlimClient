@@ -2,12 +2,12 @@
 
 namespace RedisSlimClient.Io.Commands
 {
-    internal abstract class RedisPrimativeCommand : RedisCommand<RedisObject>
+    internal abstract class RedisPrimativeCommand : RedisCommand<IRedisObject>
     {
         protected RedisPrimativeCommand(string commandText) : base(commandText)
         {
         }
 
-        protected override RedisObject TranslateResult(RedisObject redisObject) => redisObject;
+        protected override IRedisObject TranslateResult(IRedisObject redisObject) => redisObject;
     }
 }

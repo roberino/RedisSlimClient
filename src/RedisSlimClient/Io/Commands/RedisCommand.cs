@@ -19,7 +19,7 @@ namespace RedisSlimClient.Io.Commands
 
         public virtual object[] GetArgs() => new[] { CommandText };
 
-        public virtual void Complete(RedisObject redisObject)
+        public virtual void Complete(IRedisObject redisObject)
         {
             try
             {
@@ -37,7 +37,7 @@ namespace RedisSlimClient.Io.Commands
             }
         }
 
-        protected abstract T TranslateResult(RedisObject redisObject);
+        protected abstract T TranslateResult(IRedisObject redisObject);
 
         public void Abandon(Exception ex)
         {

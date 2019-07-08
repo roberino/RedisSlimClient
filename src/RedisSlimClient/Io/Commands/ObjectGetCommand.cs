@@ -20,7 +20,7 @@ namespace RedisSlimClient.Io.Commands
             _serializer = config.SerializerFactory.Create<T>();
         }
 
-        protected override T TranslateResult(RedisObject result)
+        protected override T TranslateResult(IRedisObject result)
         {
             if (result is RedisString strData)
             {

@@ -4,7 +4,7 @@ namespace RedisSlimClient.Types
 {
     static class RedisObjectExtensions
     {
-        public static RedisObject ReadObject(this IEnumerator<RedisObjectPart> partEnumerator)
+        public static IRedisObject ReadObject(this IEnumerator<RedisObjectPart> partEnumerator)
         {
             // e.g.
             // array:start:L1
@@ -33,14 +33,14 @@ namespace RedisSlimClient.Types
                     currentArray = new RedisArray(part.Length);
                     objectStack.Push(currentArray);
 
-                    prev?.Items.Add(currentArray);
+                    prev?.Add(currentArray);
 
                     continue;
                 }
 
                 if (part.IsArrayPart)
                 {
-                    currentArray.Items.Add(part.Value);
+                    currentArray.Add(part.Value);
 
                     continue;
                 }
@@ -56,7 +56,7 @@ namespace RedisSlimClient.Types
             return currentArray;
         }
 
-        public static IEnumerable<RedisObject> ToObjects(this IEnumerable<RedisObjectPart> parts)
+        public static IEnumerable<IRedisObject> ToObjects(this IEnumerable<RedisObjectPart> parts)
         {
             // e.g.
             // array:start:L1
@@ -84,7 +84,7 @@ namespace RedisSlimClient.Types
 
                     if (prev != null)
                     {
-                        prev.Items.Add(currentArray);
+                        prev.Add(currentArray);
 
                         objectStack.Push(prev);
                     }
@@ -94,7 +94,7 @@ namespace RedisSlimClient.Types
 
                 if (part.IsArrayPart)
                 {
-                    currentArray.Items.Add(part.Value);
+                    currentArray.Add(part.Value);
 
                     continue;
                 }
@@ -114,7 +114,7 @@ namespace RedisSlimClient.Types
             }
         }
 
-        public static long ToLong(this RedisObject value)
+        public static long ToLong(this IRedisObject value)
         {
             if (value is RedisInteger i)
             {

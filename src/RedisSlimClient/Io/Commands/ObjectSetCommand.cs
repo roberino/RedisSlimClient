@@ -32,7 +32,7 @@ namespace RedisSlimClient.Io.Commands
 
         public override object[] GetArgs() => new object[] { CommandText, _key, GetObjectData() };
 
-        protected override bool TranslateResult(RedisObject redisObject) => string.Equals(redisObject.ToString(), "OK", StringComparison.OrdinalIgnoreCase);
+        protected override bool TranslateResult(IRedisObject redisObject) => string.Equals(redisObject.ToString(), "OK", StringComparison.OrdinalIgnoreCase);
 
         byte[] GetObjectData()
         {

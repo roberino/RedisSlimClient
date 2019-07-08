@@ -188,7 +188,7 @@ namespace RedisSlimClient.Serialization
                 {
                     if (e.MoveNext())
                     {
-                        var str = e.Current.Value as RedisString;
+                        var str = (RedisString)e.Current.Value;
 
                         return (T)(object)str.ToString(_encoding);
                     }
@@ -203,7 +203,7 @@ namespace RedisSlimClient.Serialization
             {
                 if (e.MoveNext())
                 {
-                    var str = e.Current.Value as RedisString;
+                    var str = (RedisString)e.Current.Value;
 
                     return converter.GetValue(str.Value);
                 }
@@ -234,7 +234,7 @@ namespace RedisSlimClient.Serialization
             return (RedisString)value;
         }
 
-        RedisObject ReadSingleProperty(string name)
+        IRedisObject ReadSingleProperty(string name)
         {
             if (_buffer.TryGetValue(name, out var parts))
             {

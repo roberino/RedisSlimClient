@@ -22,8 +22,8 @@ namespace RedisSlimClient.UnitTests.Io
             using (var socketPipe = new SocketPipeline(socket))
             using (var pipeline = new AsyncCommandPipeline(socketPipe, ThreadPoolScheduler.Instance,  NullWriter.Instance))
             {
-                var command = Substitute.For<IRedisResult<RedisObject>>();
-                var taskCompletion = new TaskCompletionSource<RedisObject>();
+                var command = Substitute.For<IRedisResult<IRedisObject>>();
+                var taskCompletion = new TaskCompletionSource<IRedisObject>();
 
                 command.GetArgs().Returns(new object[] { "GET", "X" });
                 command.GetAwaiter().Returns(taskCompletion.Task.GetAwaiter());
@@ -31,9 +31,9 @@ namespace RedisSlimClient.UnitTests.Io
                 {
                     taskCompletion.SetException(call.Arg<Exception>());
                 });
-                command.When(cmd => cmd.Complete(Arg.Any<RedisObject>())).Do(call =>
+                command.When(cmd => cmd.Complete(Arg.Any<IRedisObject>())).Do(call =>
                 {
-                    var obj = call.Arg<RedisObject>();
+                    var obj = call.Arg<IRedisObject>();
 
                     taskCompletion.SetResult(obj);
                 });

@@ -18,6 +18,6 @@ namespace RedisSlimClient.Io.Commands
 
         public override object[] GetArgs() => new object[] { CommandText, _key, _data };
 
-        protected override bool TranslateResult(RedisObject redisObject) => string.Equals(redisObject.ToString(), SuccessResponse, StringComparison.OrdinalIgnoreCase);
+        protected override bool TranslateResult(IRedisObject redisObject) => string.Equals(redisObject.ToString(), SuccessResponse, StringComparison.OrdinalIgnoreCase);
     }
 }

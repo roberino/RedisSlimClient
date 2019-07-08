@@ -32,7 +32,7 @@ namespace RedisSlimClient
 
         public async Task<long> DeleteAsync(string key, CancellationToken cancellation = default)
         {
-            return (await GetIntResponse(new DeleteCommand(key), cancellation)).GetValueOrDefault();
+            return (await GetIntResponse(new DeleteCommand(key), cancellation));
         }
 
         public Task<bool> SetDataAsync(string key, byte[] data, CancellationToken cancellation = default)
@@ -94,15 +94,15 @@ namespace RedisSlimClient
             return string.Equals(expectedResponse, msg, StringComparison.OrdinalIgnoreCase);
         }
 
-        async Task<long?> GetIntResponse(IRedisResult<RedisObject> cmd, CancellationToken cancellation = default)
+        async Task<long> GetIntResponse(IRedisResult<IRedisObject> cmd, CancellationToken cancellation = default)
         {
             var cmdPipe = await _connection.ConnectAsync();
 
             var result = await cmdPipe.Execute(cmd, cancellation);
 
-            var msg = result as RedisInteger;
+            var msg = (RedisInteger)result;
 
-            return msg?.Value;
+            return msg.Value;
         }
     }
 }

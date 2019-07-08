@@ -10,7 +10,7 @@ namespace RedisSlimClient.Serialization.Protocol
     {
         readonly ByteSequenceParser _parser;
         readonly List<RedisObjectPart> _items;
-        readonly RedisObject[] _empty = new RedisObject[0];
+        readonly IRedisObject[] _empty = new IRedisObject[0];
 
         public RedisObjectBuilder()
         {
@@ -18,7 +18,7 @@ namespace RedisSlimClient.Serialization.Protocol
             _items = new List<RedisObjectPart>();
         }
 
-        public RedisObject[] AppendObjectData(ReadOnlySequence<byte> obj)
+        public IRedisObject[] AppendObjectData(ReadOnlySequence<byte> obj)
         {
             var byteSequence = new MemoryByteSequenceAdapter(obj);
 
