@@ -7,17 +7,20 @@ namespace RedisSlimClient.Io.Commands
 {
     internal abstract class RedisCommand<T> : IRedisResult<T>
     {
-        protected RedisCommand(string commandText)
+        protected RedisCommand(string commandText, string key = null)
         {
             CommandText = commandText;
+            Key = key;
             CompletionSource = new TaskCompletionSource<T>();
         }
+
+        public virtual string Key { get; }
 
         public bool CanBeCompleted => !(CompletionSource.Task.IsCanceled || CompletionSource.Task.IsCompleted || CompletionSource.Task.IsFaulted);
 
         public string CommandText { get; }
 
-        public virtual object[] GetArgs() => new[] { CommandText };
+        public virtual object[] GetArgs() => Key == null ? new[] { CommandText } : new[] { CommandText, Key };
 
         public virtual void Complete(IRedisObject redisObject)
         {

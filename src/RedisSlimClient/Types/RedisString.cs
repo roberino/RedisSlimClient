@@ -1,5 +1,4 @@
-﻿using System;
-using System.Buffers;
+﻿using System.Buffers;
 using System.IO;
 using System.Text;
 
@@ -9,13 +8,13 @@ namespace RedisSlimClient.Types
     {
         readonly ReadOnlySequence<byte> _sequence;
 
-        public RedisString(byte[] value) : this(new ReadOnlySequence<byte>(value))
+        public RedisString(byte[] value)
         {
+            _sequence = new ReadOnlySequence<byte>(value);
         }
 
-        public RedisString(ReadOnlySequence<byte> sequence)
+        public RedisString(ReadOnlySequence<byte> sequence) : this(sequence.ToArray())
         {
-            _sequence = sequence;
         }
 
         public byte[] Value => _sequence.ToArray();

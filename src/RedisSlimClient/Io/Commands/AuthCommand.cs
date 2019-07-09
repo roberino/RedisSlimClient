@@ -1,9 +1,14 @@
 ﻿namespace RedisSlimClient.Io.Commands
 {
-    internal class AuthCommand : StringCommand
+    internal class AuthCommand : RedisPrimativeCommand
     {
-        public AuthCommand(string password) : base("AUTH", password)
+        private readonly string _password;
+
+        public AuthCommand(string password) : base("AUTH")
         {
+            _password = password;
         }
+
+        public override object[] GetArgs() => new object[] { CommandText, _password };
     }
 }

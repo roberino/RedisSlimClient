@@ -4,7 +4,7 @@ namespace RedisSlimClient.Io.Commands
 {
     internal abstract class RedisPrimativeCommand : RedisCommand<IRedisObject>
     {
-        protected RedisPrimativeCommand(string commandText) : base(commandText)
+        protected RedisPrimativeCommand(string commandText, string key = null) : base(commandText, key)
         {
         }
 

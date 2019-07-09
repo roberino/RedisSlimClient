@@ -14,7 +14,7 @@ namespace RedisSlimClient.Io.Commands
         private readonly T _objectData;
         private readonly IObjectSerializer<T> _serializer;
 
-        public ObjectSetCommand(string key, ISerializerSettings config, T objectData) : base("SET")
+        public ObjectSetCommand(string key, ISerializerSettings config, T objectData) : base("SET", key)
         {
             _key = key;
             _configuration = config;

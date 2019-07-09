@@ -13,7 +13,7 @@ namespace RedisSlimClient.Io.Commands
         private readonly ISerializerSettings _configuration;
         private readonly IObjectSerializer<T> _serializer;
 
-        public ObjectGetCommand(string key, ISerializerSettings config) : base("GET")
+        public ObjectGetCommand(string key, ISerializerSettings config) : base("GET", key)
         {
             _key = key;
             _configuration = config;

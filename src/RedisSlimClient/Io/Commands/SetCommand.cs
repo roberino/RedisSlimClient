@@ -10,7 +10,7 @@ namespace RedisSlimClient.Io.Commands
         readonly string _key;
         readonly byte[] _data;
 
-        public SetCommand(string key, byte[] data) : base("SET")
+        public SetCommand(string key, byte[] data) : base("SET", key)
         {
             _key = key;
             _data = data;

@@ -17,8 +17,6 @@ namespace RedisSlimClient.Types
             AddRange(items);
         }
 
-        public new int Count => _count;
-
         public bool IsComplete => _count == base.Count;
 
         public bool IsNull => false;

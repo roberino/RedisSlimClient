@@ -10,11 +10,10 @@ namespace RedisSlimClient.Io.Commands
         new TaskAwaiter<T> GetAwaiter();
     }
 
-    interface IRedisCommand
+    interface IRedisCommand : ICommandIdentity
     {
         bool CanBeCompleted { get; }
         Func<Task> Execute { get; set; }
-        string CommandText { get; }
         void Complete(IRedisObject obj);
         void Cancel();
         void Abandon(Exception ex);
