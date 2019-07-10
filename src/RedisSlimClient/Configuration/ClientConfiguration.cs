@@ -2,18 +2,30 @@
 using RedisSlimClient.Serialization;
 using RedisSlimClient.Telemetry;
 using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using System.Threading;
 
 namespace RedisSlimClient.Configuration
 {
-    public class ClientConfiguration : IReadWriteBufferSettings, ISerializerSettings
+    public class ClientConfiguration : IReadWriteBufferSettings, ISerializerSettings, IClientCredentials
     {
+        static int _idCounter = 1;
+
         public ClientConfiguration(string connectionOptions)
         {
+            Id = Interlocked.Increment(ref _idCounter);
             SslConfiguration = new SslConfiguration();
             Parse(connectionOptions);
+            ClientName = $"RSC{Process.GetCurrentProcess().Id}-{Environment.MachineName}-{_idCounter}";
         }
+
+        public int Id { get; }
+
+        public string ClientName { get; private set; }
+
+        public string Password { get; private set; }
 
         public IWorkScheduler Scheduler { get; set; } = ThreadPoolScheduler.Instance;
 
@@ -57,6 +69,12 @@ namespace RedisSlimClient.Configuration
                     {
                         switch (kv[0])
                         {
+                            case nameof(ClientName):
+                                ClientName = kv[1];
+                                break;
+                            case nameof(Password):
+                                Password = kv[1];
+                                break;
                             case nameof(Encoding):
                                 Encoding = Encoding.GetEncoding(kv[1]);
                                 break;
@@ -94,6 +112,20 @@ namespace RedisSlimClient.Configuration
             if (SslConfiguration.UseSsl && string.IsNullOrEmpty(SslConfiguration.SslHost))
             {
                 SslConfiguration.SslHost = ServerEndpoints.SingleOrDefault()?.Host;
+            }
+
+            if (string.IsNullOrEmpty(Password))
+            {
+                var userNamePwd = ServerEndpoints.FirstOrDefault()?.UserInfo;
+
+                var parts = userNamePwd.Split(':');
+
+                if (parts.Length == 2)
+                {
+                    Password = parts[1];
+                }
+
+                ClientName = parts[0];
             }
         }
 

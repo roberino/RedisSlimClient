@@ -8,20 +8,17 @@ namespace RedisSlimClient.Io
     {
         public static EndPoint AsEndpoint(this Uri uriEndpoint)
         {
-            return ParseEndpoint($"{uriEndpoint.Host}:{uriEndpoint.Port}");
+            return ParseEndpoint(uriEndpoint.Host, uriEndpoint.Port);
         }
 
-        public static IPEndPoint ParseEndpoint(string ipAndPort)
+        static IPEndPoint ParseEndpoint(string host, int port)
         {
-            var parts = ipAndPort.Split(':');
-            var port = int.Parse(parts[1]);
-
-            if (char.IsNumber(parts[0][0]))
+            if (char.IsNumber(host[0]))
             {
-                return new IPEndPoint(IPAddress.Parse(parts[0]), port);
+                return new IPEndPoint(IPAddress.Parse(host), port);
             }
 
-            var ips = Dns.GetHostAddresses(parts[0]);
+            var ips = Dns.GetHostAddresses(host);
 
             return new IPEndPoint(ips.First(), port);
         }

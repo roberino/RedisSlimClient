@@ -2,12 +2,12 @@
 {
     class ClusterNode : ClusterInfo
     {
-        public ClusterNode(string id, string[] flags, string masterNodeId, ServerNodeType nodeType, string state, ClusterInfo clusterInfo)
+        public ClusterNode(string id, string[] flags, string masterNodeId, ServerRoleType nodeType, ServerNodeLinkState state, ClusterInfo clusterInfo)
             : base(clusterInfo.Host, clusterInfo.Port, clusterInfo.Slots)
         {
             Id = id;
             Flags = flags;
-            NodeType = nodeType;
+            RoleType = nodeType;
             State = state;
             MasterNodeId = masterNodeId;
         }
@@ -19,10 +19,10 @@
 
         public string[] Flags { get; }
 
-        public ServerNodeType NodeType { get; }
+        public ServerRoleType RoleType { get; }
 
         public string MasterNodeId { get; }
 
-        public string State { get; }
+        public ServerNodeLinkState State { get; }
     }
 }

@@ -12,12 +12,16 @@ The main aims of the client are:
 * To enable fast POCO to Redis mapping
 * To be performant with granular control over thread and socket usage
 
-TODO:
+# Features
 
 * Support for SSL
+* Flexible thread management
+
+# TODO
+
+* Support for clustering / redirection
+* Support for master/slave
 * Keep alive & socket monitoring
 * Better memory management
 * Slimmer object serialization
-* Flexible thread management
-* Support for master/slave
-* Support for clustering
+* Retry and TRYAGAIN response handling
