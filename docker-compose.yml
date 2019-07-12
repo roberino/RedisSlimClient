@@ -16,6 +16,36 @@ services:
    - "9097:6379"
   networks:
    - net1
+ 
+ redis-master1:
+  image: redis:alpine
+  container_name: redis-master1
+  ports:
+   - "9196:6379"
+  networks:
+   - net1
+ 
+ redis-slave1:
+  image: redis:alpine
+  command: redis-server --port 6377 --slaveof redis-master1 6379
+  container_name: redis-slave1
+  ports:
+   - "9194:6377"
+  networks:
+   - net1
+  depends_on:
+   - redis-master1
+ 
+ redis-slave2:
+  image: redis:alpine
+  command: redis-server --port 6378 --slaveof redis-master1 6379
+  container_name: redis-slave2
+  ports:
+   - "9195:6378"
+  networks:
+   - net1
+  depends_on:
+   - redis-master1
 
  redis-ssl1:
   container_name: redisssl-1
@@ -31,6 +61,8 @@ services:
     - "6380:6380"
   networks:
    - net1
+  depends_on:
+   - redis1
 
 volumes:
  redis-drive:
