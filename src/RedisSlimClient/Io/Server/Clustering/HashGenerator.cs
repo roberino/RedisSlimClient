@@ -1,4 +1,4 @@
-﻿namespace RedisSlimClient.Io.Commands
+﻿namespace RedisSlimClient.Io.Server.Clustering
 {
     static class HashGenerator
     {

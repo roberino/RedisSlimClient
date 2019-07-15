@@ -1,7 +1,8 @@
-﻿using RedisSlimClient.Types;
+﻿using RedisSlimClient.Io.Commands;
+using RedisSlimClient.Types;
 using System;
 
-namespace RedisSlimClient.Io.Commands
+namespace RedisSlimClient.Io.Server
 {
     internal class PingCommand : RedisCommand<bool>
     {

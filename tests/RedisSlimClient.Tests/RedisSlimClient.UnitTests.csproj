@@ -7,11 +7,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Io\Clustering\ClusterNodesResponse.csv" />
+    <None Remove="Io\Server\Clustering\ClusterNodesResponse.csv" />
+    <None Remove="Io\Server\InfoResponse.txt" />
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Io\Clustering\ClusterNodesResponse.csv" />
+    <EmbeddedResource Include="Io\Server\Clustering\ClusterNodesResponse.csv" />
+    <EmbeddedResource Include="Io\Server\InfoResponse.txt" />
   </ItemGroup>
 
   <ItemGroup>

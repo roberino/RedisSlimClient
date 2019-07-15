@@ -7,5 +7,7 @@
         public bool IsComplete => true;
         public bool IsNull => true;
         public RedisType Type => RedisType.Null;
+
+        public override string ToString() => Type.ToString();
     }
 }

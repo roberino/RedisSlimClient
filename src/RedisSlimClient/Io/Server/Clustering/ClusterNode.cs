@@ -1,13 +1,12 @@
-﻿namespace RedisSlimClient.Io.Clustering
+﻿namespace RedisSlimClient.Io.Server.Clustering
 {
-    class ClusterNode : ClusterInfo
+    class ClusterNode : ClusterNodeInfo
     {
-        public ClusterNode(string id, string[] flags, string masterNodeId, ServerRoleType nodeType, ServerNodeLinkState state, ClusterInfo clusterInfo)
-            : base(clusterInfo.Host, clusterInfo.Port, clusterInfo.Slots)
+        public ClusterNode(string id, string[] flags, string masterNodeId, ServerNodeLinkState state, ClusterNodeInfo clusterInfo)
+            : base(clusterInfo.Host, clusterInfo.Port, clusterInfo.RoleType, clusterInfo.Slots)
         {
             Id = id;
             Flags = flags;
-            RoleType = nodeType;
             State = state;
             MasterNodeId = masterNodeId;
         }
@@ -18,8 +17,6 @@
         public string Id { get; }
 
         public string[] Flags { get; }
-
-        public ServerRoleType RoleType { get; }
 
         public string MasterNodeId { get; }
 

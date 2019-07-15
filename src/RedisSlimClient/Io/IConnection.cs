@@ -1,4 +1,6 @@
-﻿using System;
+﻿using RedisSlimClient.Io.Commands;
+using RedisSlimClient.Io.Server;
+using System;
 using System.Threading.Tasks;
 
 namespace RedisSlimClient.Io
@@ -7,6 +9,7 @@ namespace RedisSlimClient.Io
     {
         string Id { get; }
         float WorkLoad { get; }
-        Task<ICommandPipeline> ConnectAsync();
+        ServerEndPointInfo EndPointInfo { get; }
+        Task<ICommandPipeline> RouteCommandAsync(ICommandIdentity command);
     }
 }

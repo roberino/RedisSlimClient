@@ -5,16 +5,16 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace RedisSlimClient.Io.Clustering
+namespace RedisSlimClient.Io.Server.Clustering
 {
-    class ClusterNodesCommand : RedisCommand<ClusterSlotsConfiguration>
+    class ClusterNodesCommand : RedisCommand<IList<ClusterNode>>
     {
         public ClusterNodesCommand() : base("CLUSTER NODES") { }
 
-        protected override ClusterSlotsConfiguration TranslateResult(IRedisObject redisObject)
+        protected override IList<ClusterNode> TranslateResult(IRedisObject redisObject)
         {
             var reader = new StringReader(redisObject.ToString());
-            var config = new ClusterSlotsConfiguration();
+            var config = new List<ClusterNode>();
 
             //  <id> <ip:port> <flags> <master> <ping-sent> <pong-recv> <config-epoch> <link-state> <slot> <slot> ... <slot>
 
@@ -46,8 +46,8 @@ namespace RedisSlimClient.Io.Clustering
                     }
                 }
 
-                config.Add(new ClusterNode(id, flags, masterNode, role, state,
-                    new ClusterInfo(ipPort[0], int.Parse(ipPort[1]), slots.ToArray())));
+                config.Add(new ClusterNode(id, flags, masterNode, state,
+                    new ClusterNodeInfo(ipPort[0], int.Parse(ipPort[1]), role, slots.ToArray())));
             }
 
             return config;

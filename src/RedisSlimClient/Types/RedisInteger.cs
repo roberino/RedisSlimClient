@@ -13,5 +13,7 @@
         public RedisType Type => RedisType.Integer;
 
         public static implicit operator long(RedisInteger x) => x.Value;
+
+        public override string ToString() => Value.ToString();
     }
 }

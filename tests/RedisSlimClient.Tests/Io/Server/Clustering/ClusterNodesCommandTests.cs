@@ -1,10 +1,10 @@
-﻿using RedisSlimClient.Io;
-using RedisSlimClient.Io.Clustering;
+﻿using RedisSlimClient.Io.Server;
+using RedisSlimClient.Io.Server.Clustering;
 using RedisSlimClient.Types;
 using System.Threading.Tasks;
 using Xunit;
 
-namespace RedisSlimClient.UnitTests.Io.Clustering
+namespace RedisSlimClient.UnitTests.Io.Server.Clustering
 {
     public class ClusterNodesCommandTests
     {

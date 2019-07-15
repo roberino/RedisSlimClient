@@ -14,46 +14,19 @@ namespace RedisSlimClient.Types
             //      int:value:L2
             // string:value:0
 
-            var objectStack = new Stack<RedisArray>();
-            RedisArray currentArray = null;
+            var builder = new ArrayBuilder();
 
             while (partEnumerator.MoveNext())
             {
-                var part = partEnumerator.Current;
+                var next = builder.AddOrYield(partEnumerator.Current);
 
-                while (part.Level < objectStack.Count)
+                if (next != null)
                 {
-                    currentArray = objectStack.Pop();
+                    return next;
                 }
-
-                if (part.IsArrayStart)
-                {
-                    var prev = currentArray;
-
-                    currentArray = new RedisArray(part.Length);
-                    objectStack.Push(currentArray);
-
-                    prev?.Add(currentArray);
-
-                    continue;
-                }
-
-                if (part.IsArrayPart)
-                {
-                    currentArray.Add(part.Value);
-
-                    continue;
-                }
-
-                if (currentArray != null)
-                {
-                    return currentArray;
-                }
-
-                return part.Value;
             }
 
-            return currentArray;
+            return null;
         }
 
         public static IEnumerable<IRedisObject> ToObjects(this IEnumerable<RedisObjectPart> parts)
@@ -66,51 +39,17 @@ namespace RedisSlimClient.Types
             //      int:value:L2
             // string:value:0
 
-            var objectStack = new Stack<RedisArray>();
-            RedisArray currentArray = null;
+
+            var builder = new ArrayBuilder();
 
             foreach (var part in parts)
             {
-                while (part.Level < objectStack.Count)
+                var next = builder.AddOrYield(part);
+
+                if (next != null)
                 {
-                    currentArray = objectStack.Pop();
+                    yield return next;
                 }
-
-                if (part.IsArrayStart)
-                {
-                    var prev = currentArray;
-
-                    currentArray = new RedisArray(part.Length);
-
-                    if (prev != null)
-                    {
-                        prev.Add(currentArray);
-
-                        objectStack.Push(prev);
-                    }
-
-                    continue;
-                }
-
-                if (part.IsArrayPart)
-                {
-                    currentArray.Add(part.Value);
-
-                    continue;
-                }
-
-                if (currentArray != null)
-                {
-                    yield return currentArray;
-                    currentArray = null;
-                }
-
-                yield return part.Value;
-            }
-
-            if (currentArray != null)
-            {
-                yield return currentArray;
             }
         }
 

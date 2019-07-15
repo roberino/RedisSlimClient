@@ -18,7 +18,7 @@ namespace RedisSlimClient.Io.Net
 
         Stream _sslStream;
 
-        public SslSocket(EndPoint endPoint, TimeSpan timeout, SslConfiguration configuration, IReadWriteBufferSettings bufferSettings) : base(endPoint, timeout)
+        public SslSocket(IServerEndpointFactory endPointFactory, TimeSpan timeout, SslConfiguration configuration, IReadWriteBufferSettings bufferSettings) : base(endPointFactory, timeout)
         {
             _configuration = configuration;
             _readBuffer = new byte[bufferSettings.ReadBufferSize];
@@ -29,7 +29,7 @@ namespace RedisSlimClient.Io.Net
         {
             var socketStream = await base.CreateStream();
 
-            var sslStream = new SslStream(socketStream, false, _configuration.RemoteCertificateValidationCallback);
+            var sslStream = new SslStream(socketStream, false, _configuration.RemoteCertificateValidationCallback, _configuration.ClientCertificateValidationCallback, EncryptionPolicy.RequireEncryption);
 
             await sslStream.AuthenticateAsClientAsync(_configuration.SslHost);
 

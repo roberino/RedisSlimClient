@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace RedisSlimClient.Io.Clustering
+namespace RedisSlimClient.Io.Server.Clustering
 {
     class ClusterSlotsConfiguration : List<ClusterNode>
     {

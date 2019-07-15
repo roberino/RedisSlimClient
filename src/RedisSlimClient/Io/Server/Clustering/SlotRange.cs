@@ -1,4 +1,4 @@
-﻿namespace RedisSlimClient.Io.Clustering
+﻿namespace RedisSlimClient.Io.Server.Clustering
 {
     readonly struct SlotRange
     {

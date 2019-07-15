@@ -6,7 +6,7 @@ namespace RedisSlimClient.Types
     {
         readonly int _count;
 
-        public RedisArray(long length)
+        public RedisArray(long length) : base((int)length)
         {
             _count = (int)length;
         }

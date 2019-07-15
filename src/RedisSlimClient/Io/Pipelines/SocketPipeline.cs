@@ -14,11 +14,6 @@ namespace RedisSlimClient.Io.Pipelines
         readonly ISocket _socket;
         readonly CancellationTokenSource _cancellationTokenSource;
 
-        public SocketPipeline(EndPoint endPoint, TimeSpan timeout, IReadWriteBufferSettings bufferSettings)
-            : this(new SocketFacade(endPoint, timeout), bufferSettings)
-        {
-        }
-
         public SocketPipeline(ISocket socket, IReadWriteBufferSettings bufferSettings = null)
         {
             _cancellationTokenSource = new CancellationTokenSource();

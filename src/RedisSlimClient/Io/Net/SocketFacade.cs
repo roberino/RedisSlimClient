@@ -11,27 +11,29 @@ namespace RedisSlimClient.Io.Net
     class SocketFacade : ISocket, IManagedSocket
     {
         Socket _socket;
+
         readonly CancellationTokenSource _cancellationTokenSource;
         readonly AwaitableSocketAsyncEventArgs _readEventArgs;
         readonly AwaitableSocketAsyncEventArgs _writeEventArgs;
         readonly EndPoint _endPoint;
         readonly TimeSpan _timeout;
 
-        public SocketFacade(EndPoint endPoint, TimeSpan timeout)
+        public SocketFacade(IServerEndpointFactory endPointFactory, TimeSpan timeout)
         {
             _cancellationTokenSource = new CancellationTokenSource();
-            
+            _endPoint = endPointFactory.CreateEndpoint();
+
             _readEventArgs = new AwaitableSocketAsyncEventArgs()
             {
-                RemoteEndPoint = endPoint
+                RemoteEndPoint = _endPoint
             };
 
             _writeEventArgs = new AwaitableSocketAsyncEventArgs()
             {
-                RemoteEndPoint = endPoint
+                RemoteEndPoint = _endPoint
             };
 
-            _endPoint = endPoint;
+
             _timeout = timeout;
 
             State = new SocketState(CheckConnected);

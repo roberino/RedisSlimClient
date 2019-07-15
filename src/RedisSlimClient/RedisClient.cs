@@ -1,6 +1,7 @@
 ﻿using RedisSlimClient.Configuration;
 using RedisSlimClient.Io;
 using RedisSlimClient.Io.Commands;
+using RedisSlimClient.Io.Server;
 using RedisSlimClient.Types;
 using System;
 using System.Threading;
@@ -44,7 +45,7 @@ namespace RedisSlimClient
         {
             var cmd = new ObjectSetCommand<T>(key, _configuration, obj);
 
-            var cmdPipe = await _connection.ConnectAsync();
+            var cmdPipe = await _connection.RouteCommandAsync(cmd);
 
             return await cmdPipe.Execute(cmd, cancellation);
         }
@@ -53,7 +54,7 @@ namespace RedisSlimClient
         {
             var cmd = new ObjectGetCommand<T>(key, _configuration);
 
-            var cmdPipe = await _connection.ConnectAsync();
+            var cmdPipe = await _connection.RouteCommandAsync(cmd);
 
             var result = await cmdPipe.Execute(cmd, cancellation);
 
@@ -64,7 +65,7 @@ namespace RedisSlimClient
         {
             var cmd = new GetCommand(key);
 
-            var cmdPipe = await _connection.ConnectAsync();
+            var cmdPipe = await _connection.RouteCommandAsync(cmd);
 
             var rstr = (RedisString) await cmdPipe.Execute(cmd, cancellation);
 
@@ -78,14 +79,14 @@ namespace RedisSlimClient
 
         async Task<T> GetResponse<T>(IRedisResult<T> cmd, CancellationToken cancellation = default)
         {
-            var cmdPipe = await _connection.ConnectAsync();
+            var cmdPipe = await _connection.RouteCommandAsync(cmd);
 
             return await cmdPipe.Execute(cmd, cancellation);
         }
 
         async Task<bool> CompareStringResponse<T>(IRedisResult<T> cmd, string expectedResponse, CancellationToken cancellation = default)
         {
-            var cmdPipe = await _connection.ConnectAsync();
+            var cmdPipe = await _connection.RouteCommandAsync(cmd);
 
             var result = await cmdPipe.Execute(cmd, cancellation);
 
@@ -96,7 +97,7 @@ namespace RedisSlimClient
 
         async Task<long> GetIntResponse(IRedisResult<IRedisObject> cmd, CancellationToken cancellation = default)
         {
-            var cmdPipe = await _connection.ConnectAsync();
+            var cmdPipe = await _connection.RouteCommandAsync(cmd);
 
             var result = await cmdPipe.Execute(cmd, cancellation);
 

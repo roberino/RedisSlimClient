@@ -11,5 +11,7 @@
         public bool IsComplete => true;
         public bool IsNull => false;
         public RedisType Type => RedisType.Error;
+
+        public override string ToString() => Message;
     }
 }

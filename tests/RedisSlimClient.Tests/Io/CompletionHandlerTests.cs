@@ -2,6 +2,7 @@
 using RedisSlimClient.Io;
 using RedisSlimClient.Io.Commands;
 using RedisSlimClient.Io.Pipelines;
+using RedisSlimClient.Io.Server;
 using RedisSlimClient.Types;
 using System;
 using System.Buffers;

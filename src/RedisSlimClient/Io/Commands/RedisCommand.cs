@@ -28,7 +28,7 @@ namespace RedisSlimClient.Io.Commands
             {
                 if (redisObject is RedisError err)
                 {
-                    CompletionSource.TrySetException(new RedisServerException(err.Message));
+                    CompletionSource.TrySetException(TranslateError(err));
                     return;
                 }
 
@@ -39,6 +39,8 @@ namespace RedisSlimClient.Io.Commands
                 CompletionSource.TrySetException(ex);
             }
         }
+
+        protected virtual Exception TranslateError(RedisError err) => new RedisServerException(err.Message);
 
         protected abstract T TranslateResult(IRedisObject redisObject);
 

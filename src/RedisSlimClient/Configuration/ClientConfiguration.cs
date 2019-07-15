@@ -70,7 +70,7 @@ namespace RedisSlimClient.Configuration
                         switch (kv[0])
                         {
                             case nameof(ClientName):
-                                ClientName = kv[1];
+                                ClientName = ValidateSpaceFree(kv[1], nameof(ClientName));
                                 break;
                             case nameof(Password):
                                 Password = kv[1];
@@ -142,6 +142,21 @@ namespace RedisSlimClient.Configuration
             }
 
             return new Uri($"redis://{uri}");
+        }
+
+        static string ValidateSpaceFree(string value, string argName)
+        {
+            if (value == null)
+            {
+                throw new ArgumentException(argName);
+            }
+
+            if (value.Any(x => char.IsWhiteSpace(x) || char.IsControl(x)))
+            {
+                throw new ArgumentException(argName);
+            }
+
+            return value;
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿namespace RedisSlimClient.Io
+﻿namespace RedisSlimClient.Io.Server
 {
     enum ServerNodeLinkState
     {

@@ -1,7 +1,8 @@
 ﻿using RedisSlimClient.Io.Commands;
+using RedisSlimClient.Io.Server.Clustering;
 using Xunit;
 
-namespace RedisSlimClient.UnitTests.Io.Clustering
+namespace RedisSlimClient.UnitTests.Io.Server.Clustering
 {
     public class HashGeneratorTests
     {

@@ -46,6 +46,8 @@ namespace RedisSlimClient.Configuration
 
         public RemoteCertificateValidationCallback RemoteCertificateValidationCallback { get; set; }
 
+        public LocalCertificateSelectionCallback ClientCertificateValidationCallback { get; set; }
+
         static RemoteCertificateValidationCallback Trust(X509Certificate2 issuer)
         {
             return (object _, X509Certificate certificate, X509Chain __, SslPolicyErrors sslPolicyError)

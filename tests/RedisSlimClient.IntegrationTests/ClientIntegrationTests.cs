@@ -23,7 +23,7 @@ namespace RedisSlimClient.IntegrationTests
         }
 
         [Theory]
-        [InlineData(PipelineMode.Sync)]
+        //[InlineData(PipelineMode.Sync)]
         [InlineData(PipelineMode.AsyncPipeline)]
         public async Task PingAsync_SpecificPipelineMode_ReturnsTrue(PipelineMode pipelineMode)
         {

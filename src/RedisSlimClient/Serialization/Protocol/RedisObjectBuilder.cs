@@ -28,7 +28,7 @@ namespace RedisSlimClient.Serialization.Protocol
             {
                 var objs = _items.ToObjects().ToArray();
 
-                if (objs.Last().IsComplete)
+                if (objs.Length > 0 && objs.Last().IsComplete)
                 {
                     _items.Clear();
                     return objs;

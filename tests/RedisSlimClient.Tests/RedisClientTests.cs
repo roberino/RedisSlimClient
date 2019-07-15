@@ -25,7 +25,7 @@ namespace RedisSlimClient.UnitTests
             var connection = Substitute.For<IConnection>();
             var pipeline = Substitute.For<ICommandPipeline>();
             
-            connection.ConnectAsync().Returns(pipeline);
+            connection.RouteCommandAsync(Arg.Any<ICommandIdentity>()).Returns(pipeline);
             pipeline.Execute(Arg.Any<ObjectSetCommand<MyData>>(), Arg.Any<CancellationToken>())
                 .Returns(call =>
                 {
