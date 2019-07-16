@@ -6,11 +6,11 @@ using System.Linq;
 
 namespace RedisSlimClient.Io.Server
 {
-    class RoleCommand : RedisCommand<IReadOnlyCollection<ServerEndPointInfo>>
+    class RoleCommand : RedisCommand<ServerRole>
     {
         public RoleCommand() : base("ROLE") { }
 
-        protected override IReadOnlyCollection<ServerEndPointInfo> TranslateResult(IRedisObject redisObject)
+        protected override ServerRole TranslateResult(IRedisObject redisObject)
         {
             // e.g.
 
@@ -35,14 +35,24 @@ namespace RedisSlimClient.Io.Server
                 {
                     var slaveData = (RedisArray)arr[2];
 
-                    foreach(var item in slaveData.Cast<RedisArray>())
+                    foreach (var item in slaveData.Cast<RedisArray>())
                     {
                         results.Add(new ServerEndPointInfo(item[0].ToString(), int.Parse(item[1].ToString()), ServerRoleType.Slave));
                     }
+
+                    return new ServerRole(role, null, results);
+                }
+
+                if (role == ServerRoleType.Slave)
+                {
+                    var masterHost = arr[1].ToString();
+                    var masterPort = (int)arr[2].ToLong();
+
+                    return new ServerRole(role, new ServerEndPointInfo(masterHost, masterPort, ServerRoleType.Master), results);
                 }
             }
 
-            return results;
+            return new ServerRole(ServerRoleType.Unknown, null, results);
         }
     }
 }

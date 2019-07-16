@@ -1,4 +1,5 @@
-﻿using RedisSlimClient.Io.Server;
+﻿using RedisSlimClient.Io.Monitoring;
+using RedisSlimClient.Io.Server;
 using RedisSlimClient.Util;
 using System.Threading.Tasks;
 
@@ -19,17 +20,11 @@ namespace RedisSlimClient.Io
 
         public ServerEndPointInfo EndPointInfo { get; }
 
+        public ConnectionMetrics Metrics => _pipeline.TryGet(p => p.Metrics);
+
         public Task<ICommandPipeline> GetPipeline() => _pipeline.GetValue();
 
-        public float Workload
-        {
-            get
-            {
-                var work = _pipeline.TryGet(x => x.PendingWork);
-
-                return work.PendingReads + work.PendingWrites;
-            }
-        }
+        public PipelineStatus Status => _pipeline.TryGet(p => p.Status, PipelineStatus.Uninitialized);
 
         public void Dispose()
         {

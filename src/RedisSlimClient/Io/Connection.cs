@@ -29,30 +29,26 @@ namespace RedisSlimClient.Io
 
         public string Id { get; }
 
-        public ServerEndPointInfo EndPointInfo { get; }
-
         public async Task<ICommandPipeline> RouteCommandAsync(ICommandIdentity command)
         {
-            var connections = await GetSubConnections(command);
+            var connections = await _subConnections.GetValue();
 
-            return await connections.First().GetPipeline();
+            var pipe = connections
+                .Where(c => c.Status != PipelineStatus.Broken && c.EndPointInfo.CanServe(command))
+                .OrderBy(c => c.Metrics.Workload)
+                .FirstOrDefault();
+
+            if (pipe == null)
+            {
+                throw new NoAvailableConnectionException();
+            }
+
+            return await pipe.GetPipeline();
         }
 
         public void Dispose()
         {
             _subConnections.Dispose();
-        }
-
-        public async Task<float> CalculateWorkLoad(ICommandIdentity command)
-        {
-            var connections = await GetSubConnections(command);
-
-            return connections.Min(x => x.Workload);
-        }
-
-        Task<IReadOnlyCollection<IConnectedPipeline>> GetSubConnections(ICommandIdentity command)
-        {
-            return _subConnections.GetValue();
         }
     }
 }

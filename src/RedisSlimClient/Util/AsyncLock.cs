@@ -20,7 +20,7 @@ namespace RedisSlimClient.Util
             _timeout = timeout.GetValueOrDefault(TimeSpan.FromSeconds(30));
         }
 
-        public TValue TryGet<TValue>(Func<T, TValue> valueFactory)
+        public TValue TryGet<TValue>(Func<T, TValue> valueFactory, TValue defaultValue = default)
         {
             var instance = _instance;
 
@@ -29,7 +29,7 @@ namespace RedisSlimClient.Util
                 return valueFactory(instance);
             }
 
-            return default;
+            return defaultValue;
         }
 
         public async Task Execute(Func<T, Task> work, TimeSpan? timeout = null)

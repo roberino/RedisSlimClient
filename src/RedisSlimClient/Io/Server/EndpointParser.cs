@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Net;
 
-namespace RedisSlimClient.Io
+namespace RedisSlimClient.Io.Server
 {
     internal static class EndpointParser
     {

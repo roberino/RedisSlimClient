@@ -1,6 +1,7 @@
 ﻿using NSubstitute;
 using RedisSlimClient.Io;
 using RedisSlimClient.Io.Commands;
+using RedisSlimClient.Io.Monitoring;
 using RedisSlimClient.Types;
 using System;
 using System.Linq;
@@ -33,7 +34,7 @@ namespace RedisSlimClient.UnitTests.Io
 
             var pipe = await pool.RouteCommandAsync(cmd);
 
-            connections[4].CalculateWorkLoad(cmd).Returns(-1f);
+            (await connections[4].RouteCommandAsync(cmd)).Metrics.Returns(new ConnectionMetrics());
 
             var pipe2 = await pool.RouteCommandAsync(cmd);
 
@@ -51,13 +52,14 @@ namespace RedisSlimClient.UnitTests.Io
                 var con = Substitute.For<IConnection>();
                 var pipelne = Substitute.For<ICommandPipeline>();
 
+                pipelne.Metrics.Returns(new ConnectionMetrics(100 - n, 100 - n));
+
                 pipelne
                     .Execute(Arg.Any<IRedisResult<IRedisObject>>(), Arg.Any<CancellationToken>())
                     .Returns(new RedisString(BitConverter.GetBytes(n)));
 
                 con.RouteCommandAsync(Arg.Any<ICommandIdentity>()).Returns(pipelne);
                 con.Id.Returns(n.ToString());
-                con.CalculateWorkLoad(Arg.Any<ICommandIdentity>()).Returns(1f / n);
                 return con;
             }).ToArray();
         }

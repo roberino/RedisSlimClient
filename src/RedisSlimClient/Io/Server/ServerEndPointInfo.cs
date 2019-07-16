@@ -24,7 +24,7 @@ namespace RedisSlimClient.Io.Server
             RoleType = role;
         }
 
-        public virtual bool CanServe(ICommandIdentity command) => true;
+        public virtual bool CanServe(ICommandIdentity command) => !command.RequireMaster || RoleType == ServerRoleType.Master;
 
         public EndPoint CreateEndpoint() => new Uri($"redis://{Host}:{Port}").AsEndpoint();
     }

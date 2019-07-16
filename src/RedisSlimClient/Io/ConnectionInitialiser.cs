@@ -58,17 +58,26 @@ namespace RedisSlimClient.Io.Server
 
             var roles = await pipeline.Execute(_roleCommand);
 
-            return roles.Select(r =>
+            _endPointInfo.UpdateRole(roles.RoleType);
+
+            if (roles.RoleType == ServerRoleType.Master)
             {
-                return new ConnectedPipeline(r, new SyncronizedInstance<ICommandPipeline>(async () =>
+                return roles.Slaves.Select(r =>
                 {
-                    var subPipe = await _pipelineFactory(r);
+                    return new ConnectedPipeline(r, new SyncronizedInstance<ICommandPipeline>(async () =>
+                    {
+                        var subPipe = await _pipelineFactory(r);
 
-                    await Auth(subPipe);
+                        await Auth(subPipe);
 
-                    return subPipe;
-                }));
-            });
+                        return subPipe;
+                    }));
+                });
+            }
+
+            // TODO: Invert - lookup master
+
+            throw new NotSupportedException();
         }
 
         async Task<ICommandPipeline> Auth(ICommandPipeline pipeline)

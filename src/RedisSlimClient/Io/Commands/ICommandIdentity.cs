@@ -2,6 +2,7 @@
 {
     interface ICommandIdentity
     {
+        bool RequireMaster { get; }
         string CommandText { get; }
         string Key { get; }
     }

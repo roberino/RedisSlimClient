@@ -1,6 +1,6 @@
 ﻿using RedisSlimClient.Io.Commands;
+using RedisSlimClient.Io.Monitoring;
 using RedisSlimClient.Io.Net;
-using RedisSlimClient.Io.Pipelines;
 using RedisSlimClient.Serialization;
 using RedisSlimClient.Serialization.Protocol;
 using RedisSlimClient.Types;
@@ -28,6 +28,8 @@ namespace RedisSlimClient.Io
             _writeStream = networkStream;
             _socket = socket;
             _reader = new ArraySegmentToRedisObjectReader(new StreamIterator(networkStream));
+
+            Status = PipelineStatus.Uninitialized;
         }
 
         public static async Task<ICommandPipeline> CreateAsync(IManagedSocket socket)
@@ -37,7 +39,9 @@ namespace RedisSlimClient.Io
             return new SyncCommandPipeline(stream, socket);
         }
 
-        public (int PendingWrites, int PendingReads) PendingWork => (_pendingWrites, _pendingReads);
+        public ConnectionMetrics Metrics => new ConnectionMetrics(_pendingWrites, _pendingReads);
+
+        public PipelineStatus Status { get; private set; }
 
         public async Task<T> Execute<T>(IRedisResult<T> command, CancellationToken cancellation = default)
         {
@@ -65,13 +69,22 @@ namespace RedisSlimClient.Io
                 {
                     command.Complete(_reader.ToObjects().First());
                 }
+                catch
+                {
+                    Status = PipelineStatus.Broken;
+                    throw;
+                }
                 finally
                 {
                     _pendingReads--;
                 }
             }
 
-            return await command;
+            var result = await command;
+
+            Status = PipelineStatus.Ok;
+
+            return result;
         }
 
         public void Dispose()

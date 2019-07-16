@@ -1,4 +1,5 @@
 ﻿using RedisSlimClient.Io.Commands;
+using RedisSlimClient.Io.Monitoring;
 using RedisSlimClient.Io.Pipelines;
 using RedisSlimClient.Io.Scheduling;
 using RedisSlimClient.Serialization.Protocol;
@@ -30,6 +31,8 @@ namespace RedisSlimClient.Io
             
             _pipeline.Faulted += () =>
             {
+                Status = PipelineStatus.Broken;
+
                 telemetryWriter.Write(new TelemetryEvent()
                 {
                      Name = $"{nameof(IDuplexPipeline)}.{nameof(IDuplexPipeline.Faulted)}"
@@ -39,9 +42,13 @@ namespace RedisSlimClient.Io
             };
 
             workScheduler.Schedule(_pipeline.RunAsync);
+
+            Status = PipelineStatus.Uninitialized;
         }
 
-        public (int PendingWrites, int PendingReads) PendingWork => ((int)_pendingWrites.Value, _commandQueue.QueueSize);
+        public PipelineStatus Status { get; private set; }
+
+        public ConnectionMetrics Metrics => new ConnectionMetrics((int)_pendingWrites.Value, _commandQueue.QueueSize);
 
         public async Task<T> Execute<T>(IRedisResult<T> command, CancellationToken cancellation = default)
         {
@@ -82,7 +89,11 @@ namespace RedisSlimClient.Io
                 _pendingWrites.Decrement();
             }
 
-            return await command;
+            var result = await command;
+
+            Status = PipelineStatus.Ok;
+
+            return result;
         }
 
         public void Dispose()
