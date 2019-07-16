@@ -11,44 +11,26 @@ using Xunit.Abstractions;
 
 namespace RedisSlimClient.IntegrationTests
 {
-    public class ClientIntegrationTests
+    public class BasicTests
     {
         readonly ITestOutputHelper _output;
-        readonly Uri _localEndpoint = new Uri("redis://localhost:9096/");
-        readonly Uri _localSslEndpoint = new Uri("redis://localhost:6380/");
 
-        public ClientIntegrationTests(ITestOutputHelper output)
+        public BasicTests(ITestOutputHelper output)
         {
             _output = output;
         }
 
         [Theory]
-        //[InlineData(PipelineMode.Sync)]
-        [InlineData(PipelineMode.AsyncPipeline)]
-        public async Task PingAsync_SpecificPipelineMode_ReturnsTrue(PipelineMode pipelineMode)
+        //[InlineData(PipelineMode.Sync, ConfigurationScenario.NonSslBasic)]
+        //[InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
+        //[InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.SslBasic)]
+        //[InlineData(PipelineMode.Sync, ConfigurationScenario.SslBasic)]
+        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslReplicaSet)]
+        public async Task PingAsync_VariousConfigurations_ReturnsTrue(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
         {
-            using (var client = RedisClient.Create(new ClientConfiguration(_localEndpoint.ToString())
-            {
-                PipelineMode = pipelineMode
-            }))
+            using (var client = RedisClient.Create(Environments.GetConfiguration(configurationScenario, pipelineMode)))
             {
                 var cancel = new CancellationTokenSource(10000);
-                var result = await client.PingAsync(cancel.Token);
-
-                Assert.True(result);
-            }
-        }
-
-        [Theory]
-        [InlineData(PipelineMode.AsyncPipeline)]
-        [InlineData(PipelineMode.Sync)]
-        public async Task PingAsync_Ssl_ReturnsTrue(PipelineMode pipelineMode)
-        {
-            var config = new ClientConfiguration($"{_localSslEndpoint};UseSsl=true;CertificatePath=ca.pem;PipelineMode={pipelineMode}");
-
-            using (var client = RedisClient.Create(config))
-            {
-                var cancel = new CancellationTokenSource(1000);
                 var result = await client.PingAsync(cancel.Token);
 
                 Assert.True(result);
@@ -60,7 +42,7 @@ namespace RedisSlimClient.IntegrationTests
         [InlineData(4, 50)]
         public void PingAsync_MutlipleThreads_ReturnsTrue(int maxThreads, int iterations)
         {
-            using (var client = RedisClient.Create(new ClientConfiguration(_localEndpoint.ToString())
+            using (var client = RedisClient.Create(new ClientConfiguration(Environments.DefaultEndpoint.ToString())
             {
                 DefaultTimeout = TimeSpan.FromMilliseconds(500),
                 ConnectTimeout = TimeSpan.FromMilliseconds(500),
@@ -99,14 +81,13 @@ namespace RedisSlimClient.IntegrationTests
         }
 
         [Theory]
-        [InlineData(true)]
-        [InlineData(false)]
-        public async Task MultipleOperations_MultipleIterations_ExecutesSuccessfully(bool useAsync)
+        [InlineData(PipelineMode.Sync, ConfigurationScenario.NonSslBasic)]
+        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
+        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.SslBasic)]
+        [InlineData(PipelineMode.Sync, ConfigurationScenario.SslBasic)]
+        public async Task MultipleOperations_MultipleIterations_ExecutesSuccessfully(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
         {
-            using (var client = RedisClient.Create(new ClientConfiguration(_localEndpoint.ToString())
-            {
-                PipelineMode = useAsync ? PipelineMode.AsyncPipeline : PipelineMode.Sync
-            }))
+            using (var client = RedisClient.Create(Environments.GetConfiguration(configurationScenario, pipelineMode)))
             {
                 foreach (var n in Enumerable.Range(1, 100))
                 {
@@ -138,7 +119,7 @@ namespace RedisSlimClient.IntegrationTests
         [Fact]
         public async Task ConnectAsync_RemoteServer_CanSetAndGet()
         {
-            using (var client = RedisClient.Create(new ClientConfiguration(_localEndpoint.ToString())))
+            using (var client = RedisClient.Create(new ClientConfiguration(Environments.DefaultEndpoint.ToString())))
             {
                 var data = Encoding.ASCII.GetBytes("abcdefg");
 
@@ -155,7 +136,7 @@ namespace RedisSlimClient.IntegrationTests
         [Fact]
         public async Task ConnectAsync_TwoGetCallsSameData_ReturnsTwoResults()
         {
-            using (var client = RedisClient.Create(new ClientConfiguration(_localEndpoint.ToString())))
+            using (var client = RedisClient.Create(new ClientConfiguration(Environments.DefaultEndpoint.ToString())))
             {
                 var data = Encoding.ASCII.GetBytes("abcdefg");
 
@@ -178,7 +159,7 @@ namespace RedisSlimClient.IntegrationTests
         [Fact]
         public async Task ConnectAsync_RemoteServerMultipleThreads_CanGet()
         {
-            using (var client = RedisClient.Create(new ClientConfiguration(_localEndpoint.ToString())))
+            using (var client = RedisClient.Create(new ClientConfiguration(Environments.DefaultEndpoint.ToString())))
             {
                 var data = Encoding.ASCII.GetBytes("abcdefg");
 

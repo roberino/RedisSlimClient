@@ -1,10 +1,9 @@
 ﻿using RedisSlimClient.Io.Commands;
-using RedisSlimClient.Io.Net;
 using RedisSlimClient.Io.Server;
 using RedisSlimClient.Telemetry;
 using RedisSlimClient.Util;
-using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace RedisSlimClient.Io
@@ -13,66 +12,47 @@ namespace RedisSlimClient.Io
     {
         static readonly SyncedCounter IdGenerator = new SyncedCounter();
 
-        readonly Func<IServerEndpointFactory, Task<ICommandPipeline>> _pipelineFactory;
         readonly IServerNodeInitialiser _serverNodeInitialiser;
         readonly ITelemetryWriter _telemetryWriter;
-        readonly SyncronizedInstance<ICommandPipeline> _pipeline;
-        readonly IList<IConnection> _subConnections;
+        readonly SyncronizedInstance<IReadOnlyCollection<IConnectedPipeline>> _subConnections;
 
         public Connection(
-            ServerEndPointInfo endPointInfo,
-            Func<IServerEndpointFactory, Task<ICommandPipeline>> pipelineFactory,
-            IServerNodeInitialiser serverNodeInitialiser = null,
+            IServerNodeInitialiser serverNodeInitialiser,
             ITelemetryWriter telemetryWriter = null)
         {
+            _serverNodeInitialiser = serverNodeInitialiser;
             _telemetryWriter = telemetryWriter ?? NullWriter.Instance;
-            _pipeline = new SyncronizedInstance<ICommandPipeline>(InitPipeline);
-            _subConnections = new List<IConnection>();
+            _subConnections = new SyncronizedInstance<IReadOnlyCollection<IConnectedPipeline>>(_serverNodeInitialiser.InitialiseAsync);
 
             Id = IdGenerator.Increment().ToString();
-            _pipelineFactory = pipelineFactory;
-            _serverNodeInitialiser = serverNodeInitialiser;
-            EndPointInfo = endPointInfo;
         }
-
-        public float WorkLoad => _pipeline.TryGet(p =>
-        {
-            var pending = p.PendingWork;
-
-            return pending.PendingReads * pending.PendingWrites;
-        });
 
         public string Id { get; }
 
         public ServerEndPointInfo EndPointInfo { get; }
 
-        public Task<ICommandPipeline> RouteCommandAsync(ICommandIdentity command)
+        public async Task<ICommandPipeline> RouteCommandAsync(ICommandIdentity command)
         {
-            return _telemetryWriter.ExecuteAsync(_ => _pipeline.GetValue(), nameof(RouteCommandAsync));
+            var connections = await GetSubConnections(command);
+
+            return await connections.First().GetPipeline();
         }
 
         public void Dispose()
         {
-            _telemetryWriter.ExecuteAsync(ctx =>
-            {
-                _pipeline.Dispose();
-                return Task.FromResult(1);
-            }, nameof(Dispose))
-            .GetAwaiter().GetResult();
+            _subConnections.Dispose();
         }
 
-        async Task<ICommandPipeline> InitPipeline()
+        public async Task<float> CalculateWorkLoad(ICommandIdentity command)
         {
-            var pipeline = await _pipelineFactory(EndPointInfo);
+            var connections = await GetSubConnections(command);
 
-            var inf = await _serverNodeInitialiser.InitialiseAsync(pipeline);
+            return connections.Min(x => x.Workload);
+        }
 
-            foreach(var item in inf)
-            {
-                _subConnections.Add(new Connection(item, _pipelineFactory, _serverNodeInitialiser, _telemetryWriter));
-            }
-
-            return pipeline;
+        Task<IReadOnlyCollection<IConnectedPipeline>> GetSubConnections(ICommandIdentity command)
+        {
+            return _subConnections.GetValue();
         }
     }
 }

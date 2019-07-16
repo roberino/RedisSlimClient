@@ -2,6 +2,7 @@
 using RedisSlimClient.Types;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace RedisSlimClient.Io.Server
 {
@@ -34,9 +35,9 @@ namespace RedisSlimClient.Io.Server
                 {
                     var slaveData = (RedisArray)arr[2];
 
-                    foreach(var item in slaveData)
+                    foreach(var item in slaveData.Cast<RedisArray>())
                     {
-                        results.Add(new ServerEndPointInfo(slaveData[0].ToString(), int.Parse(slaveData[1].ToString()), ServerRoleType.Slave));
+                        results.Add(new ServerEndPointInfo(item[0].ToString(), int.Parse(item[1].ToString()), ServerRoleType.Slave));
                     }
                 }
             }

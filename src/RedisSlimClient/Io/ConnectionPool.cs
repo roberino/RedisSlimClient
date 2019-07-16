@@ -22,15 +22,19 @@ namespace RedisSlimClient.Io
 
         public string Id { get; }
 
-        public float WorkLoad => _connections.Average(c => c.WorkLoad);
-
         public ServerEndPointInfo EndPointInfo { get; }
 
-        public Task<ICommandPipeline> RouteCommandAsync(ICommandIdentity command)
+        public async Task<ICommandPipeline> RouteCommandAsync(ICommandIdentity command)
         {
-            var candidate = _connections.OrderBy(c => c.WorkLoad).FirstOrDefault();
+            var results = await Task.WhenAll(_connections.Select(async c => new
+            {
+                cmd = c,
+                score = await c.CalculateWorkLoad(command)
+            }));
 
-            return candidate.RouteCommandAsync(command);
+            var candidate = results.OrderBy(r => r.score).Select(c => c.cmd).FirstOrDefault();
+
+            return await candidate.RouteCommandAsync(command);
         }
 
         public void Dispose()
@@ -39,6 +43,13 @@ namespace RedisSlimClient.Io
             {
                 conn.Dispose();
             }
+        }
+
+        public async Task<float> CalculateWorkLoad(ICommandIdentity command)
+        {
+            var results = await Task.WhenAll(_connections.Select(c => c.CalculateWorkLoad(command)));
+
+            return results.Min();
         }
     }
 }

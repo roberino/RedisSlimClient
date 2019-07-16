@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -90,6 +91,17 @@ namespace RedisSlimClient.Util
             if (_instance is IDisposable d)
             {
                 d.Dispose();
+            }
+
+            if (_instance is IEnumerable e)
+            {
+                foreach (var x in e)
+                {
+                    if (x is IDisposable ed)
+                    {
+                        ed.Dispose();
+                    }
+                }
             }
 
             _semaphore.Dispose();

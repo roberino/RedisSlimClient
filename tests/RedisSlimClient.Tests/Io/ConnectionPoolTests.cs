@@ -33,7 +33,7 @@ namespace RedisSlimClient.UnitTests.Io
 
             var pipe = await pool.RouteCommandAsync(cmd);
 
-            connections[4].WorkLoad.Returns(-1f);
+            connections[4].CalculateWorkLoad(cmd).Returns(-1f);
 
             var pipe2 = await pool.RouteCommandAsync(cmd);
 
@@ -57,7 +57,7 @@ namespace RedisSlimClient.UnitTests.Io
 
                 con.RouteCommandAsync(Arg.Any<ICommandIdentity>()).Returns(pipelne);
                 con.Id.Returns(n.ToString());
-                con.WorkLoad.Returns(1f / n);
+                con.CalculateWorkLoad(Arg.Any<ICommandIdentity>()).Returns(1f / n);
                 return con;
             }).ToArray();
         }

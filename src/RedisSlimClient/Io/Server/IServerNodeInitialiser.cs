@@ -5,6 +5,6 @@ namespace RedisSlimClient.Io.Server
 {
     interface IServerNodeInitialiser
     {
-        Task<IReadOnlyCollection<ServerEndPointInfo>> InitialiseAsync(ICommandPipeline pipeline);
+        Task<IReadOnlyCollection<IConnectedPipeline>> InitialiseAsync();
     }
 }

@@ -1,6 +1,10 @@
 ﻿using RedisSlimClient.Configuration;
+using RedisSlimClient.Io.Net;
 using RedisSlimClient.Io.Server.Clustering;
+using RedisSlimClient.Util;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Authentication;
 using System.Threading.Tasks;
 
@@ -8,15 +12,21 @@ namespace RedisSlimClient.Io.Server
 {
     class ConnectionInitialiser : IServerNodeInitialiser
     {
+        private readonly ServerEndPointInfo _endPointInfo;
         private readonly IClientCredentials _clientCredentials;
+        private readonly Func<IServerEndpointFactory, Task<ICommandPipeline>> _pipelineFactory;
         private readonly AuthCommand _authCommand;
         private readonly RoleCommand _roleCommand;
         private readonly ClusterNodesCommand _clusterNodesCommand;
         private readonly ClientSetNameCommand _setNameCommand;
 
-        public ConnectionInitialiser(IClientCredentials clientCredentials)
+        public ConnectionInitialiser(
+            ServerEndPointInfo endPointInfo, IClientCredentials clientCredentials,
+            Func<IServerEndpointFactory, Task<ICommandPipeline>> pipelineFactory)
         {
+            _endPointInfo = endPointInfo;
             _clientCredentials = clientCredentials;
+            _pipelineFactory = pipelineFactory;
 
             if (!string.IsNullOrEmpty(_clientCredentials.Password))
             {
@@ -28,11 +38,44 @@ namespace RedisSlimClient.Io.Server
             _clusterNodesCommand = new ClusterNodesCommand();
         }
 
-        public async Task<IReadOnlyCollection<ServerEndPointInfo>> InitialiseAsync(ICommandPipeline pipeline)
+        public async Task<IReadOnlyCollection<IConnectedPipeline>> InitialiseAsync()
+        {
+            var items = new List<ConnectedPipeline>();
+
+            var pipeline = await _pipelineFactory(_endPointInfo);
+
+            var subItems = await InitialiseAsync(pipeline);
+
+            items.Add(new ConnectedPipeline(_endPointInfo, new SyncronizedInstance<ICommandPipeline>(() => Task.FromResult(pipeline))));
+            items.AddRange(await InitialiseAsync(pipeline));
+
+            return items;
+        }
+
+        async Task<IEnumerable<ConnectedPipeline>> InitialiseAsync(ICommandPipeline pipeline)
+        {
+            await Auth(pipeline);
+
+            var roles = await pipeline.Execute(_roleCommand);
+
+            return roles.Select(r =>
+            {
+                return new ConnectedPipeline(r, new SyncronizedInstance<ICommandPipeline>(async () =>
+                {
+                    var subPipe = await _pipelineFactory(r);
+
+                    await Auth(subPipe);
+
+                    return subPipe;
+                }));
+            });
+        }
+
+        async Task<ICommandPipeline> Auth(ICommandPipeline pipeline)
         {
             if (_authCommand != null)
             {
-                if(!await pipeline.Execute(_authCommand))
+                if (!await pipeline.Execute(_authCommand))
                 {
                     throw new AuthenticationException();
                 }
@@ -40,9 +83,7 @@ namespace RedisSlimClient.Io.Server
 
             await pipeline.Execute(_setNameCommand);
 
-            var roles = await pipeline.Execute(_roleCommand);
-
-            return roles;
+            return pipeline;
         }
     }
 }

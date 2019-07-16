@@ -1,8 +1,10 @@
 ﻿using RedisSlimClient.Configuration;
+using RedisSlimClient.Io.Net;
 using RedisSlimClient.Io.Pipelines;
 using RedisSlimClient.Io.Server;
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace RedisSlimClient.Io
 {
@@ -22,30 +24,40 @@ namespace RedisSlimClient.Io
 
         static IConnection CreateImpl(ClientConfiguration configuration, Uri endPoint)
         {
+            ConnectionInitialiser connectionInit;
+
             var endPointInfo = new ServerEndPointInfo(endPoint.Host, endPoint.Port);
-            var initialiser = new ConnectionInitialiser(configuration);
 
             if (configuration.PipelineMode == PipelineMode.AsyncPipeline || configuration.PipelineMode == PipelineMode.Default)
             {
-                return CreatePipelineImpl(configuration, initialiser, endPointInfo);
+                connectionInit = new ConnectionInitialiser(endPointInfo, configuration, CreateAsyncPipe(configuration));
+            }
+            else
+            {
+                connectionInit = new ConnectionInitialiser(endPointInfo, configuration, CreateSyncPipe(configuration));
             }
 
-            return new Connection(endPointInfo, (ep) =>
+            return new Connection(connectionInit, configuration.TelemetryWriter);
+        }
+
+        static Func<IServerEndpointFactory, Task<ICommandPipeline>> CreateSyncPipe(ClientConfiguration configuration)
+        {
+            return ep =>
             {
                 var socket = SocketFactory.CreateSocket(configuration, ep);
                 return SyncCommandPipeline.CreateAsync(socket);
-            }, initialiser, configuration.TelemetryWriter);
+            };
         }
 
-        static IConnection CreatePipelineImpl(ClientConfiguration configuration, IServerNodeInitialiser initialiser, ServerEndPointInfo endPointInfo)
+        static Func<IServerEndpointFactory, Task<ICommandPipeline>> CreateAsyncPipe(ClientConfiguration configuration)
         {
-            return new Connection(endPointInfo, async (ep) =>
+            return async ep =>
             {
                 var socket = SocketFactory.CreateSocket(configuration, ep);
                 await socket.ConnectAsync();
                 var socketPipeline = new SocketPipeline(socket, configuration);
                 return new AsyncCommandPipeline(socketPipeline, configuration.Scheduler, configuration.TelemetryWriter);
-            }, initialiser, configuration.TelemetryWriter);
+            };
         }
     }
 }

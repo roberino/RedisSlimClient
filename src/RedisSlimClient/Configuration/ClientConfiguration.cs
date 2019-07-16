@@ -109,7 +109,7 @@ namespace RedisSlimClient.Configuration
 
             ServerEndpoints = endPoints.Split(';').Select(ParseUri).ToArray();
 
-            if (SslConfiguration.UseSsl && string.IsNullOrEmpty(SslConfiguration.SslHost))
+            if (string.IsNullOrEmpty(SslConfiguration.SslHost))
             {
                 SslConfiguration.SslHost = ServerEndpoints.SingleOrDefault()?.Host;
             }
