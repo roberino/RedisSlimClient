@@ -1,9 +1,11 @@
-﻿namespace RedisSlimClient.Io.Commands
+﻿using RedisSlimClient.Types;
+
+namespace RedisSlimClient.Io.Commands
 {
     interface ICommandIdentity
     {
         bool RequireMaster { get; }
         string CommandText { get; }
-        string Key { get; }
+        RedisKey Key { get; }
     }
 }

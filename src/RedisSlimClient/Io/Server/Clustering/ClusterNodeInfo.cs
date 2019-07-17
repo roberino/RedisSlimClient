@@ -14,7 +14,7 @@ namespace RedisSlimClient.Io.Server.Clustering
 
         public override bool CanServe(ICommandIdentity command)
         {
-            return base.CanServe(command) && Slots.Any(s => s.IsWithinRange(HashGenerator.Generate(command.Key)));
+            return base.CanServe(command) && (command.Key.IsNull || Slots.Any(s => s.IsWithinRange(HashGenerator.Generate(command.Key.Bytes))));
         }
     }
 }

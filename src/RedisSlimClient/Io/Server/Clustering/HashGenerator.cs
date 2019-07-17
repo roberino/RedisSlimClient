@@ -1,4 +1,6 @@
-﻿namespace RedisSlimClient.Io.Server.Clustering
+﻿using System;
+
+namespace RedisSlimClient.Io.Server.Clustering
 {
     static class HashGenerator
     {
@@ -51,23 +53,25 @@
         };
 
         // CRC16(key) mod 16384        
-        public static long Generate(string value)
+        public static long Generate(byte[] value)
         {
             if (value == null)
             {
                 return 0;
             }
 
-            var tagFound = false;
-            var subStr = string.Empty;
+            var startTag = -1;
+            var endTag = 0;
 
-            foreach (var c in value)
+            for (var i = 0; i < value.Length; i++)
             {
-                if (!tagFound)
+                var c = (byte)value[i];
+
+                if (startTag == -1)
                 {
                     if (c == '{')
                     {
-                        tagFound = true;
+                        startTag = i;
                     }
                     continue;
                 }
@@ -75,26 +79,32 @@
                 {
                     if (c == '}')
                     {
+                        endTag = i;
                         break;
                     }
-
-                    subStr += c;
                 }
             }
 
-            return CalculateCrc16(subStr.Length == 0 ? value : subStr) % 16384;
+            var hasHashTag = startTag > -1 && (endTag - startTag) > 1;
+
+            // e.g 01{34}67
+            // start = 2, end = 5
+            // offset = 3, length = 2
+
+            var targBytes = !hasHashTag ? new ArraySegment<byte>(value) : new ArraySegment<byte>(value, startTag + 1, endTag - startTag - 1);
+
+            return CalculateCrc16(targBytes) % 16384;
         }
 
-        static ushort CalculateCrc16(string value)
+        static ushort CalculateCrc16(ArraySegment<byte> value)
         {
             ushort crc = 0;
             ushort crc1 = 0;
             bool started = false;
-            var s = string.Empty;
 
-            foreach (var c in value)
+            for (var i = value.Offset; i < value.Offset + value.Count; i++)
             {
-                var b = (byte)c;
+                var b = value.Array[i];
                 var x = Crc16Table[((crc >> 8) ^ b) & 0x00FF];
                 crc = (ushort)((crc << 8) ^ x);
             }

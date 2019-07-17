@@ -1,6 +1,5 @@
 ﻿using RedisSlimClient.Configuration;
 using RedisSlimClient.Serialization;
-using RedisSlimClient.Serialization.Protocol;
 using RedisSlimClient.Types;
 using System;
 using System.IO;
@@ -9,28 +8,18 @@ namespace RedisSlimClient.Io.Commands
 {
     class ObjectSetCommand<T> : RedisCommand<bool>
     {
-        private readonly string _key;
         private readonly ISerializerSettings _configuration;
         private readonly T _objectData;
         private readonly IObjectSerializer<T> _serializer;
 
-        public ObjectSetCommand(string key, ISerializerSettings config, T objectData) : base("SET", key)
+        public ObjectSetCommand(RedisKey key, ISerializerSettings config, T objectData) : base("SET", true, key)
         {
-            _key = key;
             _configuration = config;
             _objectData = objectData;
             _serializer = config.SerializerFactory.Create<T>();
         }
 
-        public void Write(Stream commandWriter)
-        {
-            commandWriter.WriteStartArray(3);
-            commandWriter.Write(CommandText, true);
-            commandWriter.Write(_key, true);
-            commandWriter.WriteBytes(GetObjectData());
-        }
-
-        public override object[] GetArgs() => new object[] { CommandText, _key, GetObjectData() };
+        public override object[] GetArgs() => new object[] { CommandText, Key.Bytes, GetObjectData() };
 
         protected override bool TranslateResult(IRedisObject redisObject) => string.Equals(redisObject.ToString(), "OK", StringComparison.OrdinalIgnoreCase);
 

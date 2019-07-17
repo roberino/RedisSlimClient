@@ -7,16 +7,14 @@ namespace RedisSlimClient.Io.Commands
     {
         public const string SuccessResponse = "OK";
 
-        readonly string _key;
         readonly byte[] _data;
 
-        public SetCommand(string key, byte[] data) : base("SET", key)
+        public SetCommand(RedisKey key, byte[] data) : base("SET", true, key)
         {
-            _key = key;
             _data = data;
         }
 
-        public override object[] GetArgs() => new object[] { CommandText, _key, _data };
+        public override object[] GetArgs() => new object[] { CommandText, Key.Bytes, _data };
 
         protected override bool TranslateResult(IRedisObject redisObject) => string.Equals(redisObject.ToString(), SuccessResponse, StringComparison.OrdinalIgnoreCase);
     }

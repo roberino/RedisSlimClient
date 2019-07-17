@@ -9,13 +9,11 @@ namespace RedisSlimClient.Io.Commands
 {
     class ObjectGetCommand<T> : RedisCommand<T>
     {
-        private readonly string _key;
         private readonly ISerializerSettings _configuration;
         private readonly IObjectSerializer<T> _serializer;
 
-        public ObjectGetCommand(string key, ISerializerSettings config) : base("GET", key)
+        public ObjectGetCommand(RedisKey key, ISerializerSettings config) : base("GET", false, key)
         {
-            _key = key;
             _configuration = config;
             _serializer = config.SerializerFactory.Create<T>();
         }
@@ -37,7 +35,5 @@ namespace RedisSlimClient.Io.Commands
         {
             commandWriter.Write(GetArgs());
         }
-
-        public override object[] GetArgs() => new object[] { CommandText, _key };
     }
 }
