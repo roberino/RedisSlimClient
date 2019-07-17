@@ -3,7 +3,6 @@ using RedisSlimClient.Io.Net;
 using RedisSlimClient.Io.Scheduling;
 using System;
 using System.Linq;
-using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 

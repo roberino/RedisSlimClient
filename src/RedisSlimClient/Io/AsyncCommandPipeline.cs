@@ -38,13 +38,15 @@ namespace RedisSlimClient.Io
                      Name = $"{nameof(IDuplexPipeline)}.{nameof(IDuplexPipeline.Faulted)}"
                 });
                 
-                workScheduler.Schedule(() => _commandQueue.Requeue(_pipeline.Reset));
+                workScheduler.Schedule(Reconnect);
             };
 
             workScheduler.Schedule(_pipeline.RunAsync);
 
             Status = PipelineStatus.Uninitialized;
         }
+
+        public event Action<ICommandPipeline> Initialising;
 
         public PipelineStatus Status { get; private set; }
 
@@ -104,6 +106,16 @@ namespace RedisSlimClient.Io
             }
 
             _disposed = true;
+        }
+
+        Task Reconnect()
+        {
+            return _commandQueue.Requeue(async () =>
+            {
+                await _pipeline.Reset();
+
+                Initialising?.Invoke(this);
+            });
         }
     }
 }

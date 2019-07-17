@@ -8,6 +8,8 @@ namespace RedisSlimClient.Io
 {
     internal interface ICommandPipeline : IDisposable
     {
+        event Action<ICommandPipeline> Initialising;
+
         PipelineStatus Status { get; }
 
         ConnectionMetrics Metrics { get; }

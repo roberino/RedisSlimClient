@@ -15,13 +15,14 @@ namespace RedisSlimClient.Io
 {
     internal class SyncCommandPipeline : ICommandPipeline
     {
-        readonly Stream _writeStream;
         readonly IManagedSocket _socket;
         readonly IEnumerable<RedisObjectPart> _reader;
 
         bool _disposed;
         int _pendingWrites;
         int _pendingReads;
+
+        Stream _writeStream;
 
         SyncCommandPipeline(Stream networkStream, IManagedSocket socket)
         {
@@ -30,6 +31,14 @@ namespace RedisSlimClient.Io
             _reader = new ArraySegmentToRedisObjectReader(new StreamIterator(networkStream));
 
             Status = PipelineStatus.Uninitialized;
+
+            _socket.State.Changed += s =>
+            {
+                if (s == SocketStatus.WriteFault || s == SocketStatus.ReadFault)
+                {
+                    Reconnect();
+                }
+            };
         }
 
         public static async Task<ICommandPipeline> CreateAsync(IManagedSocket socket)
@@ -38,6 +47,8 @@ namespace RedisSlimClient.Io
 
             return new SyncCommandPipeline(stream, socket);
         }
+
+        public event Action<ICommandPipeline> Initialising;
 
         public ConnectionMetrics Metrics => new ConnectionMetrics(_pendingWrites, _pendingReads);
 
@@ -91,6 +102,28 @@ namespace RedisSlimClient.Io
         {
             _disposed = true;
             _socket.Dispose();
+        }
+
+        async Task Reconnect()
+        {
+            Status = PipelineStatus.Broken;
+
+            var currentStream = _writeStream;
+
+            try
+            {
+                await _socket.ConnectAsync();
+                _writeStream = await _socket.CreateStream();
+
+                Initialising?.Invoke(this);
+
+                Status = PipelineStatus.Ok;
+            }
+            catch
+            {
+            }
+
+            currentStream?.Dispose();
         }
     }
 }
