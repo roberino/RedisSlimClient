@@ -12,7 +12,8 @@ namespace RedisSlimClient.Io.Server
 {
     class ConnectionInitialiser : IServerNodeInitialiser
     {
-        private readonly ServerEndPointInfo _endPointInfo;
+        private readonly IDictionary<ServerEndPointInfo, IConnectionSubordinate> _pipelineCache;
+        private readonly ServerEndPointInfo _initialEndPoint;
         private readonly IClientCredentials _clientCredentials;
         private readonly Func<IServerEndpointFactory, Task<ICommandPipeline>> _pipelineFactory;
         private readonly AuthCommand _authCommand;
@@ -24,7 +25,7 @@ namespace RedisSlimClient.Io.Server
             ServerEndPointInfo endPointInfo, IClientCredentials clientCredentials,
             Func<IServerEndpointFactory, Task<ICommandPipeline>> pipelineFactory)
         {
-            _endPointInfo = endPointInfo;
+            _initialEndPoint = endPointInfo;
             _clientCredentials = clientCredentials;
             _pipelineFactory = pipelineFactory;
 
@@ -36,48 +37,60 @@ namespace RedisSlimClient.Io.Server
             _setNameCommand = new ClientSetNameCommand(clientCredentials.ClientName);
             _roleCommand = new RoleCommand();
             _clusterNodesCommand = new ClusterNodesCommand();
+
+            _pipelineCache = new Dictionary<ServerEndPointInfo, IConnectionSubordinate>();
         }
 
-        public async Task<IReadOnlyCollection<IConnectedPipeline>> InitialiseAsync()
+        public async Task<IReadOnlyCollection<IConnectionSubordinate>> InitialiseAsync()
         {
-            var items = new List<ConnectedPipeline>();
+            var pipelines = await InitialiseAsync(CreatePipeline(_initialEndPoint));
 
-            var pipeline = await _pipelineFactory(_endPointInfo);
+            _pipelineCache.Clear();
 
-            var subItems = await InitialiseAsync(pipeline);
-
-            items.Add(new ConnectedPipeline(_endPointInfo, new SyncronizedInstance<ICommandPipeline>(() => Task.FromResult(pipeline))));
-            items.AddRange(await InitialiseAsync(pipeline));
-
-            return items;
+            return pipelines;
         }
 
-        async Task<IEnumerable<ConnectedPipeline>> InitialiseAsync(ICommandPipeline pipeline)
+        async Task<IReadOnlyCollection<IConnectionSubordinate>> InitialiseAsync(IConnectionSubordinate initialPipeline, int level = 0)
         {
-            await Auth(pipeline);
+            if (level > 5)
+            {
+                throw new InvalidOperationException();
+            }
+
+            var pipeline = await initialPipeline.GetPipeline();
 
             var roles = await pipeline.Execute(_roleCommand);
 
-            _endPointInfo.UpdateRole(roles.RoleType);
+            initialPipeline.EndPointInfo.UpdateRole(roles.RoleType);
 
             if (roles.RoleType == ServerRoleType.Master)
             {
-                return roles.Slaves.Select(r =>
-                {
-                    return new ConnectedPipeline(r, new SyncronizedInstance<ICommandPipeline>(async () =>
-                    {
-                        var subPipe = await _pipelineFactory(r);
-
-                        await Auth(subPipe);
-
-                        return subPipe;
-                    }));
-                });
+                return new[] { initialPipeline }.Concat(roles.Slaves.Select(CreatePipeline)).ToArray();
             }
 
-            // TODO: Invert - lookup master
+            if (roles.RoleType == ServerRoleType.Slave)
+            {
+                return await InitialiseAsync(CreatePipeline(roles.Master), level + 1);
+            }
 
-            throw new NotSupportedException();
+            throw new NotSupportedException(roles.RoleType.ToString());
+        }
+
+        IConnectionSubordinate CreatePipeline(ServerEndPointInfo endPointInfo)
+        {
+            if (!_pipelineCache.TryGetValue(endPointInfo, out var pipeline))
+            {
+                _pipelineCache[endPointInfo] = pipeline = new ConnectionSubordinate(endPointInfo, new SyncronizedInstance<ICommandPipeline>(async () =>
+                {
+                    var subPipe = await _pipelineFactory(endPointInfo);
+
+                    await Auth(subPipe);
+
+                    return subPipe;
+                }));
+            }
+
+            return pipeline;
         }
 
         async Task<ICommandPipeline> Auth(ICommandPipeline pipeline)

@@ -1,5 +1,4 @@
 ﻿using RedisSlimClient.Io.Commands;
-using RedisSlimClient.Io.Monitoring;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;

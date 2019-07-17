@@ -5,7 +5,7 @@ using RedisSlimClient.Io.Server;
 
 namespace RedisSlimClient.Io
 {
-    interface IConnectedPipeline : IDisposable
+    interface IConnectionSubordinate : IDisposable
     {
         PipelineStatus Status { get; }
 

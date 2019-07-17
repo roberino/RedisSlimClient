@@ -5,11 +5,11 @@ using System.Threading.Tasks;
 
 namespace RedisSlimClient.Io
 {
-    class ConnectedPipeline : IConnectedPipeline
+    class ConnectionSubordinate : IConnectionSubordinate
     {
         readonly SyncronizedInstance<ICommandPipeline> _pipeline;
 
-        public ConnectedPipeline(
+        public ConnectionSubordinate(
             ServerEndPointInfo endPointInfo,
             SyncronizedInstance<ICommandPipeline> pipeline)
         {
