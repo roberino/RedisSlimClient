@@ -16,6 +16,7 @@ The main aims of the client are:
 
 * Support for SSL
 * Flexible thread management
+* Support for clusters and replica configurations
 
 # TODO
 
