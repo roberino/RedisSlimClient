@@ -3,6 +3,7 @@ using RedisSlimClient.Io;
 using RedisSlimClient.Io.Commands;
 using RedisSlimClient.Io.Pipelines;
 using RedisSlimClient.Io.Scheduling;
+using RedisSlimClient.Io.Server;
 using RedisSlimClient.Telemetry;
 using RedisSlimClient.Types;
 using RedisSlimClient.UnitTests.Io.Pipelines;
@@ -38,6 +39,7 @@ namespace RedisSlimClient.UnitTests.Io
                     taskCompletion.SetResult(obj);
                 });
 
+                var init = await pipeline.ExecuteAdmin(new PingCommand());
                 var result = await pipeline.Execute(command);
             }
         }

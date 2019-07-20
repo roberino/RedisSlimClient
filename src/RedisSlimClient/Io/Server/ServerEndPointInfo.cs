@@ -1,4 +1,5 @@
-﻿using RedisSlimClient.Io.Commands;
+﻿using RedisSlimClient.Configuration;
+using RedisSlimClient.Io.Commands;
 using RedisSlimClient.Io.Net;
 using System;
 using System.Net;
@@ -7,16 +8,22 @@ namespace RedisSlimClient.Io.Server
 {
     class ServerEndPointInfo : IServerEndpointFactory, IEquatable<ServerEndPointInfo>
     {
-        public ServerEndPointInfo(string host, int port, ServerRoleType role = ServerRoleType.Unknown)
+        public ServerEndPointInfo(string host, int port, int mappedPort, IDnsResolver dnsResolver, ServerRoleType role = ServerRoleType.Unknown)
         {
             Host = host;
             Port = port;
+            MappedPort = mappedPort;
             RoleType = role;
+            DnsResolver = dnsResolver;
         }
+
+        public IDnsResolver DnsResolver { get; }
 
         public string Host { get; }
 
         public int Port { get; }
+
+        public int MappedPort { get; }
 
         public ServerRoleType RoleType { get; private set; }
 
@@ -27,7 +34,7 @@ namespace RedisSlimClient.Io.Server
 
         public virtual bool CanServe(ICommandIdentity command) => !command.RequireMaster || RoleType == ServerRoleType.Master;
 
-        public EndPoint CreateEndpoint() => EndpointUtility.ParseEndpoint(Host, Port);
+        public EndPoint CreateEndpoint() => DnsResolver.CreateEndpoint(Host, MappedPort);
 
         public bool Equals(ServerEndPointInfo other)
         {
@@ -41,7 +48,7 @@ namespace RedisSlimClient.Io.Server
                 return true;
             }
 
-            if(Port != other.Port)
+            if (Port != other.Port)
             {
                 return false;
             }
@@ -51,7 +58,7 @@ namespace RedisSlimClient.Io.Server
                 return true;
             }
 
-            return EndpointUtility.AreIpEquivalent(Host, other.Host);
+            return DnsResolver.AreIpEquivalent(Host, other.Host);
         }
 
         public override bool Equals(object obj)

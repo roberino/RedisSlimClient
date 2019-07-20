@@ -1,5 +1,6 @@
 ﻿using RedisSlimClient.Io.Commands;
 using RedisSlimClient.Types;
+using System;
 using System.Collections.Generic;
 using System.IO;
 
@@ -11,7 +12,7 @@ namespace RedisSlimClient.Io.Server
 
         protected override IDictionary<string, IDictionary<string, object>> TranslateResult(IRedisObject redisObject)
         {
-            var results = new Dictionary<string, IDictionary<string, object>>();
+            var results = new Dictionary<string, IDictionary<string, object>>(StringComparer.OrdinalIgnoreCase);
 
             IDictionary<string, object> currentValues = null;
 
@@ -28,7 +29,7 @@ namespace RedisSlimClient.Io.Server
 
                 if (line.StartsWith("#"))
                 {
-                    currentValues = new Dictionary<string, object>();
+                    currentValues = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
 
                     results[line.Substring(1).Trim()] = currentValues;
 

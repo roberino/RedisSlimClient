@@ -13,15 +13,19 @@ namespace RedisSlimClient.Configuration
     {
         static int _idCounter = 1;
 
-        public ClientConfiguration(string connectionOptions)
+        public ClientConfiguration(string connectionOptions, NetworkConfiguration networkConfiguration = null)
         {
             Id = Interlocked.Increment(ref _idCounter);
             SslConfiguration = new SslConfiguration();
-            Parse(connectionOptions);
             ClientName = $"RSC{Process.GetCurrentProcess().Id}-{Environment.MachineName}-{_idCounter}";
+            NetworkConfiguration = networkConfiguration ?? new NetworkConfiguration();
+
+            Parse(connectionOptions);
         }
 
         public int Id { get; }
+
+        public NetworkConfiguration NetworkConfiguration { get; }
 
         public string ClientName { get; private set; }
 
@@ -54,6 +58,7 @@ namespace RedisSlimClient.Configuration
         void Parse(string connectionOptions)
         {
             var endPoints = string.Empty;
+            var clientNameSet = false;
 
             foreach (var item in connectionOptions.Split(',', ';'))
             {
@@ -71,6 +76,7 @@ namespace RedisSlimClient.Configuration
                         {
                             case nameof(ClientName):
                                 ClientName = ValidateSpaceFree(kv[1], nameof(ClientName));
+                                clientNameSet = true;
                                 break;
                             case nameof(Password):
                                 Password = kv[1];
@@ -102,6 +108,9 @@ namespace RedisSlimClient.Configuration
                             case nameof(PipelineMode):
                                 PipelineMode = (PipelineMode)Enum.Parse(typeof(PipelineMode), kv[1], true);
                                 break;
+                            case nameof(NetworkConfiguration.PortMappings):
+                                NetworkConfiguration.PortMappings.Import(kv[1]);
+                                break;
                         }
                     }
                 }
@@ -125,13 +134,16 @@ namespace RedisSlimClient.Configuration
                     Password = parts[1];
                 }
 
-                ClientName = parts[0];
+                if (!clientNameSet && !string.IsNullOrEmpty(parts[0]))
+                {
+                    ClientName = parts[0];
+                }
             }
         }
 
         Uri ParseUri(string uri)
         {
-            if (Uri.TryCreate(uri, UriKind.Absolute, out var result))
+            if (Uri.TryCreate(uri, UriKind.Absolute, out var result) && !string.IsNullOrEmpty(result.Host))
             {
                 return result;
             }

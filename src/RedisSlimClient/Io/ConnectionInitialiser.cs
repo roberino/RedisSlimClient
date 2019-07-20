@@ -12,43 +12,43 @@ namespace RedisSlimClient.Io.Server
 {
     class ConnectionInitialiser : IServerNodeInitialiser
     {
-        private readonly IDictionary<ServerEndPointInfo, IConnectionSubordinate> _pipelineCache;
-        private readonly ServerEndPointInfo _initialEndPoint;
-        private readonly IClientCredentials _clientCredentials;
-        private readonly Func<IServerEndpointFactory, Task<ICommandPipeline>> _pipelineFactory;
-        private readonly AuthCommand _authCommand;
-        private readonly RoleCommand _roleCommand;
-        private readonly ClusterNodesCommand _clusterNodesCommand;
-        private readonly ClientSetNameCommand _setNameCommand;
+        readonly IDictionary<ServerEndPointInfo, IConnectionSubordinate> _connectionCache;
+        readonly ServerEndPointInfo _initialEndPoint;
+        private readonly NetworkConfiguration _networkConfiguration;
+        readonly IClientCredentials _clientCredentials;
+        readonly Func<IServerEndpointFactory, Task<ICommandPipeline>> _pipelineFactory;
 
         public ConnectionInitialiser(
-            ServerEndPointInfo endPointInfo, IClientCredentials clientCredentials,
+            ServerEndPointInfo endPointInfo, NetworkConfiguration networkConfiguration, IClientCredentials clientCredentials,
             Func<IServerEndpointFactory, Task<ICommandPipeline>> pipelineFactory)
         {
             _initialEndPoint = endPointInfo;
+            _networkConfiguration = networkConfiguration;
             _clientCredentials = clientCredentials;
             _pipelineFactory = pipelineFactory;
 
-            if (!string.IsNullOrEmpty(_clientCredentials.Password))
-            {
-                _authCommand = new AuthCommand(_clientCredentials.Password);
-            }
-
-            _setNameCommand = new ClientSetNameCommand(clientCredentials.ClientName);
-            _roleCommand = new RoleCommand();
-            _clusterNodesCommand = new ClusterNodesCommand();
-
-            _pipelineCache = new Dictionary<ServerEndPointInfo, IConnectionSubordinate>();
+            _connectionCache = new Dictionary<ServerEndPointInfo, IConnectionSubordinate>();
         }
 
         public async Task<IReadOnlyCollection<IConnectionSubordinate>> InitialiseAsync()
         {
-            var pipelines = await InitialiseAsync(CreatePipeline(_initialEndPoint));
+            var pipelines = await InitialiseAsync(CreatePipelineConnection(_initialEndPoint));
 
-            _pipelineCache.Clear();
+            _connectionCache.Clear();
 
             return pipelines;
         }
+
+        AuthCommand AuthCommand => new AuthCommand(_clientCredentials.Password);
+
+        ClientSetNameCommand ClientSetName => new ClientSetNameCommand(_clientCredentials.ClientName);
+
+        RoleCommand RoleCommand => new RoleCommand(_networkConfiguration);
+
+        InfoCommand InfoCommand => new InfoCommand();
+
+        ClusterNodesCommand ClusterCommand => new ClusterNodesCommand(_networkConfiguration);
+
 
         async Task<IReadOnlyCollection<IConnectionSubordinate>> InitialiseAsync(IConnectionSubordinate initialPipeline, int level = 0)
         {
@@ -59,51 +59,70 @@ namespace RedisSlimClient.Io.Server
 
             var pipeline = await initialPipeline.GetPipeline();
 
-            var roles = await pipeline.Execute(_roleCommand);
+            var roles = await pipeline.ExecuteAdmin(RoleCommand);
 
             initialPipeline.EndPointInfo.UpdateRole(roles.RoleType);
 
             if (roles.RoleType == ServerRoleType.Master)
             {
-                return new[] { initialPipeline }.Concat(roles.Slaves.Select(CreatePipeline)).ToArray();
+                var info = await pipeline.ExecuteAdmin(InfoCommand);
+
+                if (info.TryGetValue("cluster", out var cluster) && cluster.TryGetValue("cluster_enabled", out var ce) && (long)ce == 1)
+                {
+                    var clusterNodes = await pipeline.ExecuteAdmin(ClusterCommand);
+                    var me = clusterNodes.FirstOrDefault(n => n.IsMyself);
+
+                    var updatedPipe = initialPipeline;
+
+                    if (me != null)
+                    {
+                        updatedPipe = initialPipeline.Clone(me);
+                    }
+
+                    return new[] { updatedPipe }.Concat(clusterNodes.Where(n => !n.IsMyself).Select(CreatePipelineConnection)).ToArray();
+                }
+
+                return new[] { initialPipeline }.Concat(roles.Slaves.Select(CreatePipelineConnection)).ToArray();
             }
 
             if (roles.RoleType == ServerRoleType.Slave)
             {
-                return await InitialiseAsync(CreatePipeline(roles.Master), level + 1);
+                return await InitialiseAsync(CreatePipelineConnection(roles.Master), level + 1);
             }
 
             throw new NotSupportedException(roles.RoleType.ToString());
         }
 
-        IConnectionSubordinate CreatePipeline(ServerEndPointInfo endPointInfo)
+        IConnectionSubordinate CreatePipelineConnection(ServerEndPointInfo endPointInfo)
         {
-            if (!_pipelineCache.TryGetValue(endPointInfo, out var pipeline))
+            if (!_connectionCache.TryGetValue(endPointInfo, out var connection))
             {
-                _pipelineCache[endPointInfo] = pipeline = new ConnectionSubordinate(endPointInfo, new SyncronizedInstance<ICommandPipeline>(async () =>
+                _connectionCache[endPointInfo] = connection = new ConnectionSubordinate(endPointInfo, new SyncronizedInstance<ICommandPipeline>(async () =>
                 {
                     var subPipe = await _pipelineFactory(endPointInfo);
 
                     await Auth(subPipe);
 
+                    subPipe.Initialising.Subscribe(Auth);
+
                     return subPipe;
                 }));
             }
 
-            return pipeline;
+            return connection;
         }
 
         async Task<ICommandPipeline> Auth(ICommandPipeline pipeline)
         {
-            if (_authCommand != null)
+            if (_clientCredentials.Password != null)
             {
-                if (!await pipeline.Execute(_authCommand))
+                if (!await pipeline.ExecuteAdmin(AuthCommand))
                 {
                     throw new AuthenticationException();
                 }
             }
 
-            await pipeline.Execute(_setNameCommand);
+            await pipeline.ExecuteAdmin(ClientSetName);
 
             return pipeline;
         }

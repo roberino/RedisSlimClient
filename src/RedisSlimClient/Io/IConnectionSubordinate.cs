@@ -13,6 +13,8 @@ namespace RedisSlimClient.Io
 
         ServerEndPointInfo EndPointInfo { get; }
 
+        IConnectionSubordinate Clone(ServerEndPointInfo newEndpointInfo);
+
         Task<ICommandPipeline> GetPipeline();
     }
 }

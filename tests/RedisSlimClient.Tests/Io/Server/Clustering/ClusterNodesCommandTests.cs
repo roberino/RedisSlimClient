@@ -1,4 +1,5 @@
-﻿using RedisSlimClient.Io.Server;
+﻿using RedisSlimClient.Configuration;
+using RedisSlimClient.Io.Server;
 using RedisSlimClient.Io.Server.Clustering;
 using RedisSlimClient.Types;
 using System.Threading.Tasks;
@@ -11,7 +12,7 @@ namespace RedisSlimClient.UnitTests.Io.Server.Clustering
         [Fact]
         public async Task Complete_ValidResponse_ReturnsClusterNodes()
         {
-            var cmd = new ClusterNodesCommand();
+            var cmd = new ClusterNodesCommand(new NetworkConfiguration());
 
             var str = new RedisString("ClusterNodesResponse.csv".OpenBinaryResourceBytes());
 

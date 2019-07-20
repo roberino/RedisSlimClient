@@ -19,8 +19,11 @@ namespace RedisSlimClient.Io
         readonly ITelemetryWriter _telemetryWriter;
         readonly CommandQueue _commandQueue;
         readonly CompletionHandler _completionHandler;
+        readonly IWorkScheduler _throttledScheduler;
 
         bool _disposed;
+
+        volatile PipelineStatus _status;
 
         public AsyncCommandPipeline(IDuplexPipeline pipeline, IWorkScheduler workScheduler, ITelemetryWriter telemetryWriter)
         {
@@ -28,35 +31,66 @@ namespace RedisSlimClient.Io
             _telemetryWriter = telemetryWriter ?? NullWriter.Instance;
             _commandQueue = new CommandQueue();
             _completionHandler = new CompletionHandler(_pipeline.Receiver, _commandQueue);
-            
+            _throttledScheduler = new TimeThrottledScheduler(workScheduler, TimeSpan.FromMilliseconds(500));
+
             _pipeline.Faulted += () =>
             {
-                Status = PipelineStatus.Broken;
+                _status = PipelineStatus.Broken;
 
                 telemetryWriter.Write(new TelemetryEvent()
                 {
-                     Name = $"{nameof(IDuplexPipeline)}.{nameof(IDuplexPipeline.Faulted)}"
+                    Name = $"{nameof(IDuplexPipeline)}.{nameof(IDuplexPipeline.Faulted)}"
                 });
-                
-                workScheduler.Schedule(Reconnect);
+
+                _throttledScheduler.Schedule(Reconnect);
             };
 
             workScheduler.Schedule(_pipeline.RunAsync);
 
-            Status = PipelineStatus.Uninitialized;
+            _status = PipelineStatus.Uninitialized;
+            Initialising = new AsyncEvent<ICommandPipeline>();
         }
 
-        public event Action<ICommandPipeline> Initialising;
-
-        public PipelineStatus Status { get; private set; }
+        public PipelineStatus Status => _status;
 
         public ConnectionMetrics Metrics => new ConnectionMetrics((int)_pendingWrites.Value, _commandQueue.QueueSize);
 
-        public async Task<T> Execute<T>(IRedisResult<T> command, CancellationToken cancellation = default)
+        public IAsyncEvent<ICommandPipeline> Initialising { get; }
+
+        public async Task KeepAlive()
+        {
+            if (Status == PipelineStatus.Broken)
+            {
+
+            }
+        }
+
+        public Task<T> Execute<T>(IRedisResult<T> command, CancellationToken cancellation = default) => ExecuteInternal(command, cancellation);
+
+        public Task<T> ExecuteAdmin<T>(IRedisResult<T> command, CancellationToken cancellation = default) => ExecuteInternal(command, cancellation, true);
+
+        public void Dispose()
+        {
+            if (!_disposed)
+            {
+                _pipeline.Dispose();
+            }
+
+            _disposed = true;
+        }
+
+        async Task<T> ExecuteInternal<T>(IRedisResult<T> command, CancellationToken cancellation = default, bool isAdmin = false)
         {
             if (_disposed)
             {
                 throw new ObjectDisposedException(nameof(AsyncCommandPipeline));
+            }
+
+            if (Status != PipelineStatus.Ok && !isAdmin)
+            {
+                command.Abandon(new ConnectionUnavailableException());
+
+                return await command;
             }
 
             command.Execute = async () =>
@@ -93,29 +127,35 @@ namespace RedisSlimClient.Io
 
             var result = await command;
 
-            Status = PipelineStatus.Ok;
+            _status = PipelineStatus.Ok;
 
             return result;
         }
 
-        public void Dispose()
+        async Task Reconnect()
         {
-            if (!_disposed)
+            if (_status == PipelineStatus.Reinitializing)
             {
-                _pipeline.Dispose();
+                return;
             }
 
-            _disposed = true;
-        }
+            _status = PipelineStatus.Reinitializing;
 
-        Task Reconnect()
-        {
-            return _commandQueue.Requeue(async () =>
+            try
             {
-                await _pipeline.Reset();
+                await _commandQueue.Requeue(async () =>
+                {
+                    await _pipeline.Reset();
 
-                Initialising?.Invoke(this);
-            });
+                    await ((AsyncEvent<ICommandPipeline>)Initialising).PublishAsync(this);
+                });
+
+                _status = PipelineStatus.Ok;
+            }
+            catch
+            {
+                _status = PipelineStatus.Broken;
+            }
         }
     }
 }

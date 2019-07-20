@@ -1,11 +1,12 @@
-﻿using RedisSlimClient.Io.Commands;
+﻿using RedisSlimClient.Configuration;
+using RedisSlimClient.Io.Commands;
 using System.Linq;
 
 namespace RedisSlimClient.Io.Server.Clustering
 {
     class ClusterNodeInfo : ServerEndPointInfo
     {
-        public ClusterNodeInfo(string host, int port, ServerRoleType role, SlotRange[] slots) : base(host, port, role)
+        public ClusterNodeInfo(string host, int port, int mappedPort, IDnsResolver dnsResolver, ServerRoleType role, SlotRange[] slots) : base(host, port, mappedPort, dnsResolver, role)
         {
             Slots = slots;
         }

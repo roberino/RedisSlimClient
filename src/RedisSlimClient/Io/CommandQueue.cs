@@ -36,11 +36,11 @@ namespace RedisSlimClient.Io
 
             try
             {
-                await synchronisedWork();
-
                 var salvagable = _commandQueue.ToArray();
 
                 Clear();
+
+                await synchronisedWork();
 
                 foreach (var command in salvagable)
                 {

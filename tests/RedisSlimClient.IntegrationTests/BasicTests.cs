@@ -25,8 +25,21 @@ namespace RedisSlimClient.IntegrationTests
         [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
         [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.SslBasic)]
         [InlineData(PipelineMode.Sync, ConfigurationScenario.SslBasic)]
-        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslReplicaSet)]
+        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslReplicaSetMaster)]
         public async Task PingAsync_VariousConfigurations_ReturnsTrue(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
+        {
+            using (var client = RedisClient.Create(Environments.GetConfiguration(configurationScenario, pipelineMode)))
+            {
+                var cancel = new CancellationTokenSource(10000);
+                var result = await client.PingAsync(cancel.Token);
+
+                Assert.True(result);
+            }
+        }
+
+        [Theory]
+        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslReplicaSetSlave1)]
+        public async Task PingAsync_Slave_ReturnsTrue(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
         {
             using (var client = RedisClient.Create(Environments.GetConfiguration(configurationScenario, pipelineMode)))
             {
@@ -87,9 +100,9 @@ namespace RedisSlimClient.IntegrationTests
             {
                 var data = Encoding.ASCII.GetBytes("abcdefg");
 
-                var result = await client.SetDataAsync("key1", data);
+                var result = await client.SetBytesAsync("key1", data);
 
-                var data2 = await client.GetDataAsync("key1");
+                var data2 = await client.GetBytesAsync("key1");
 
                 var dataString = Encoding.ASCII.GetString(data2);
 
@@ -104,11 +117,11 @@ namespace RedisSlimClient.IntegrationTests
             {
                 var data = Encoding.ASCII.GetBytes("abcdefg");
 
-                await client.SetDataAsync("key1", data);
+                await client.SetBytesAsync("key1", data);
 
-                var data2 = await client.GetDataAsync("key1");
-                var data3 = await client.GetDataAsync("key1");
-                var data4 = await client.GetDataAsync("key1");
+                var data2 = await client.GetBytesAsync("key1");
+                var data3 = await client.GetBytesAsync("key1");
+                var data4 = await client.GetBytesAsync("key1");
 
                 var dataString2 = Encoding.ASCII.GetString(data2);
                 var dataString3 = Encoding.ASCII.GetString(data3);
@@ -127,9 +140,9 @@ namespace RedisSlimClient.IntegrationTests
             {
                 var data = Encoding.ASCII.GetBytes("abcdefg");
 
-                await client.SetDataAsync("key1", data);
+                await client.SetBytesAsync("key1", data);
 
-                await client.GetDataAsync("key1")
+                await client.GetBytesAsync("key1")
 
                     .ContinueWith(t =>
                     {
@@ -145,7 +158,7 @@ namespace RedisSlimClient.IntegrationTests
                     });
 
                 var data2 =
-                    await client.GetDataAsync("key1");
+                    await client.GetBytesAsync("key1");
 
                 _output.WriteLine("Item2");
 

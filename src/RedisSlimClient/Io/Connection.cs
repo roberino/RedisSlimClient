@@ -34,7 +34,7 @@ namespace RedisSlimClient.Io
             var connections = await _subConnections.GetValue();
 
             var pipe = connections
-                .Where(c => c.Status != PipelineStatus.Broken && c.EndPointInfo.CanServe(command))
+                .Where(c => (c.Status == PipelineStatus.Ok || c.Status ==  PipelineStatus.Uninitialized) && c.EndPointInfo.CanServe(command))
                 .OrderBy(c => c.Metrics.Workload)
                 .FirstOrDefault();
 

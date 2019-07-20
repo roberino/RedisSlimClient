@@ -26,15 +26,15 @@ namespace RedisSlimClient.Io
         {
             ConnectionInitialiser connectionInit;
 
-            var endPointInfo = new ServerEndPointInfo(endPoint.Host, endPoint.Port);
+            var endPointInfo = new ServerEndPointInfo(endPoint.Host, endPoint.Port, configuration.NetworkConfiguration.PortMappings.Map(endPoint.Port), configuration.NetworkConfiguration.DnsResolver);
 
             if (configuration.PipelineMode == PipelineMode.AsyncPipeline || configuration.PipelineMode == PipelineMode.Default)
             {
-                connectionInit = new ConnectionInitialiser(endPointInfo, configuration, CreateAsyncPipe(configuration));
+                connectionInit = new ConnectionInitialiser(endPointInfo, configuration.NetworkConfiguration, configuration, CreateAsyncPipe(configuration));
             }
             else
             {
-                connectionInit = new ConnectionInitialiser(endPointInfo, configuration, CreateSyncPipe(configuration));
+                connectionInit = new ConnectionInitialiser(endPointInfo, configuration.NetworkConfiguration, configuration, CreateSyncPipe(configuration));
             }
 
             return new Connection(connectionInit, configuration.TelemetryWriter);

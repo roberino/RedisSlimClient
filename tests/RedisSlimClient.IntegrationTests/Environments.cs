@@ -1,32 +1,28 @@
 ﻿using RedisSlimClient.Configuration;
 using System;
-using System.Collections.Generic;
 
 namespace RedisSlimClient.IntegrationTests
 {
     static class Environments
     {
-        static readonly IDictionary<ConfigurationScenario, Uri> _configuredEnvironments;
-
-        static Environments()
-        {
-            _configuredEnvironments = new Dictionary<ConfigurationScenario, Uri>()
-            {
-                [ConfigurationScenario.NonSslBasic] = new Uri("redis://localhost:9096/"),
-                [ConfigurationScenario.SslBasic] = new Uri("redis://localhost:6380/"),
-                [ConfigurationScenario.NonSslReplicaSet] = new Uri("redis://localhost:9196/")
-            };
-        }
-        public static Uri DefaultEndpoint => _configuredEnvironments[ConfigurationScenario.NonSslBasic];
+        public static Uri DefaultEndpoint => new Uri($"redis://localhost:{(int)ConfigurationScenario.NonSslBasic}");
 
         public static ClientConfiguration GetConfiguration(ConfigurationScenario scenario, PipelineMode pipelineMode)
         {
-            var url = _configuredEnvironments[scenario];
-
-            var config = new ClientConfiguration(url.ToString())
+            var config = new ClientConfiguration($"redis://localhost:{(int)scenario}")
             {
                 PipelineMode = pipelineMode
             };
+
+            config.NetworkConfiguration.PortMappings
+                .Map(6379, (int)ConfigurationScenario.NonSslReplicaSetMaster)
+                .Map(6377, (int)ConfigurationScenario.NonSslReplicaSetSlave1)
+                .Map(6378, (int)ConfigurationScenario.NonSslReplicaSetSlave2);
+
+            config.NetworkConfiguration.DnsResolver
+                .Register("redis-master1", "127.0.0.1")
+                .Register("redis-slave1", "127.0.0.1")
+                .Register("redis-slave2", "127.0.0.1");
 
             if (!scenario.ToString().Contains("NonSsl"))
             {
@@ -40,8 +36,11 @@ namespace RedisSlimClient.IntegrationTests
 
     public enum ConfigurationScenario
     {
-        NonSslBasic,
-        SslBasic,
-        NonSslReplicaSet
+        NonSslBasic = 9096,
+        SslBasic = 6380,
+        NonSslReplicaSetMaster = 9196,
+        NonSslReplicaSetSlave1 = 9194,
+        NonSslReplicaSetSlave2 = 9195,
+        NonSslClusterSet = 7000
     }
 }

@@ -47,6 +47,21 @@ services:
   depends_on:
    - redis-master1
 
+ redis-cluster:
+  image: grokzen/redis-cluster
+  environment:
+    STANDALONE: 'true'
+    IP: 0.0.0.0
+  ports:
+   - "7000:7000"
+   - "7001:7001"
+   - "7002:7002"
+   - "7003:7003"
+   - "7004:7004"
+   - "7005:7005"
+  networks: 
+   - cluster-net
+
  redis-ssl1:
   container_name: redisssl-1
   build:
@@ -68,3 +83,4 @@ volumes:
  redis-drive:
 networks:
  net1:
+ cluster-net:

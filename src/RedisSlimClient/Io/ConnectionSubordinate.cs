@@ -18,7 +18,12 @@ namespace RedisSlimClient.Io
             EndPointInfo = endPointInfo;
         }
 
-        public ServerEndPointInfo EndPointInfo { get; }
+        public ServerEndPointInfo EndPointInfo { get; private set; }
+
+        public IConnectionSubordinate Clone(ServerEndPointInfo newEndpointInfo)
+        {
+            return new ConnectionSubordinate(newEndpointInfo, _pipeline);
+        }
 
         public ConnectionMetrics Metrics => _pipeline.TryGet(p => p.Metrics);
 

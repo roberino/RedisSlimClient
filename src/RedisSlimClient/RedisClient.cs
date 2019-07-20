@@ -36,9 +36,14 @@ namespace RedisSlimClient
             return (await GetIntResponse(new DeleteCommand(key), cancellation));
         }
 
-        public Task<bool> SetDataAsync(string key, byte[] data, CancellationToken cancellation = default)
+        public Task<bool> SetBytesAsync(string key, byte[] data, CancellationToken cancellation = default)
         {
             return GetResponse(new SetCommand(key, data), cancellation);
+        }
+
+        public Task<bool> SetStringAsync(string key, string data, CancellationToken cancellation = default)
+        {
+            return GetResponse(new SetCommand(key, _configuration.Encoding.GetBytes(data)), cancellation);
         }
 
         public async Task<bool> SetObjectAsync<T>(string key, T obj, CancellationToken cancellation = default)
@@ -61,7 +66,7 @@ namespace RedisSlimClient
             return result;
         }
 
-        public async Task<byte[]> GetDataAsync(string key, CancellationToken cancellation = default)
+        public async Task<byte[]> GetBytesAsync(string key, CancellationToken cancellation = default)
         {
             var cmd = new GetCommand(key);
 
@@ -70,6 +75,17 @@ namespace RedisSlimClient
             var rstr = (RedisString) await cmdPipe.Execute(cmd, cancellation);
 
             return rstr.Value;
+        }
+
+        public async Task<string> GetStringAsync(string key, CancellationToken cancellation = default)
+        {
+            var cmd = new GetCommand(key);
+
+            var cmdPipe = await _connection.RouteCommandAsync(cmd);
+
+            var rstr = (RedisString)await cmdPipe.Execute(cmd, cancellation);
+
+            return rstr.ToString(_configuration.Encoding);
         }
 
         public void Dispose()

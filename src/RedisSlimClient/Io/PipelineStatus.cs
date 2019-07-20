@@ -1,9 +1,10 @@
 ﻿namespace RedisSlimClient.Io
 {
-    enum PipelineStatus
+    enum PipelineStatus : byte
     {
         Uninitialized,
         Broken,
+        Reinitializing,
         Ok
     }
 }
