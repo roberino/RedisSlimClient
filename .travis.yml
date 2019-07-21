@@ -11,6 +11,6 @@ script:
   - dotnet restore RedisSlimClient.sln
   - dotnet build RedisSlimClient.sln
   - dotnet test tests/RedisSlimClient.Tests/RedisSlimClient.UnitTests.csproj --filter TestCategory!=BuildOmit
-  - dotnet test tests/RedisSlimClient.IntegrationTests/RedisSlimClient.IntegrationTests.csproj --filter TestCategory!=BuildOmit
+  - dotnet test tests/RedisSlimClient.IntegrationTests/RedisSlimClient.IntegrationTests.csproj --filter TestCategory!=BuildOmit --verbosity diag
 after_script:
   - docker-compose down
