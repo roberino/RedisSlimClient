@@ -10,21 +10,21 @@ Job=Core  Runtime=Core  InvocationCount=1
 UnrollFactor=1  
 
 ```
-|         Method |  PipelineMode | ConnectionPoolSize | DataCollectionSize | ParallelOps |      Mean |     Error |    StdDev |    Median | Rank |
-|--------------- |-------------- |------------------- |------------------- |------------ |----------:|----------:|----------:|----------:|-----:|
-| **SetAndGetAsync** | **AsyncPipeline** |                  **1** |                  **5** |           **1** |  **3.390 ms** | **0.1759 ms** | **0.5186 ms** |  **3.289 ms** |    **1** |
-| **SetAndGetAsync** | **AsyncPipeline** |                  **1** |                  **5** |           **4** |  **6.253 ms** | **0.3885 ms** | **1.1456 ms** |  **6.340 ms** |    **5** |
-| **SetAndGetAsync** | **AsyncPipeline** |                  **1** |                 **10** |           **1** |  **3.206 ms** | **0.1472 ms** | **0.4224 ms** |  **3.160 ms** |    **1** |
-| **SetAndGetAsync** | **AsyncPipeline** |                  **1** |                 **10** |           **4** |  **7.143 ms** | **0.3399 ms** | **1.0022 ms** |  **7.004 ms** |    **6** |
-| **SetAndGetAsync** | **AsyncPipeline** |                  **4** |                  **5** |           **1** |  **4.202 ms** | **0.2520 ms** | **0.7392 ms** |  **4.112 ms** |    **3** |
-| **SetAndGetAsync** | **AsyncPipeline** |                  **4** |                  **5** |           **4** |  **8.396 ms** | **0.4107 ms** | **1.1784 ms** |  **8.451 ms** |    **8** |
-| **SetAndGetAsync** | **AsyncPipeline** |                  **4** |                 **10** |           **1** |  **3.253 ms** | **0.1651 ms** | **0.4603 ms** |  **3.222 ms** |    **1** |
-| **SetAndGetAsync** | **AsyncPipeline** |                  **4** |                 **10** |           **4** |  **8.118 ms** | **0.3157 ms** | **0.9260 ms** |  **8.039 ms** |    **7** |
-| **SetAndGetAsync** |          **Sync** |                  **1** |                  **5** |           **1** |  **4.766 ms** | **0.3612 ms** | **1.0593 ms** |  **4.496 ms** |    **4** |
-| **SetAndGetAsync** |          **Sync** |                  **1** |                  **5** |           **4** | **16.264 ms** | **0.9552 ms** | **2.5496 ms** | **15.494 ms** |    **9** |
-| **SetAndGetAsync** |          **Sync** |                  **1** |                 **10** |           **1** |  **4.848 ms** | **0.3694 ms** | **1.0833 ms** |  **4.575 ms** |    **4** |
-| **SetAndGetAsync** |          **Sync** |                  **1** |                 **10** |           **4** | **18.770 ms** | **1.2845 ms** | **3.7874 ms** | **18.697 ms** |   **10** |
-| **SetAndGetAsync** |          **Sync** |                  **4** |                  **5** |           **1** |  **3.951 ms** | **0.1576 ms** | **0.4520 ms** |  **3.864 ms** |    **2** |
-| **SetAndGetAsync** |          **Sync** |                  **4** |                  **5** |           **4** | **18.084 ms** | **1.2282 ms** | **3.6020 ms** | **17.811 ms** |   **10** |
-| **SetAndGetAsync** |          **Sync** |                  **4** |                 **10** |           **1** |  **4.517 ms** | **0.2896 ms** | **0.8357 ms** |  **4.390 ms** |    **4** |
-| **SetAndGetAsync** |          **Sync** |                  **4** |                 **10** |           **4** | **17.852 ms** | **1.1610 ms** | **3.3498 ms** | **17.170 ms** |   **10** |
+|         Method |  PipelineMode | ConnectionPoolSize | DataCollectionSize | ParallelOps |       Mean |     Error |   StdDev | Rank |
+|--------------- |-------------- |------------------- |------------------- |------------ |-----------:|----------:|---------:|-----:|
+| **SetAndGetAsync** | **AsyncPipeline** |                  **1** |                  **5** |           **1** |   **969.6 us** |  **57.60 us** | **168.9 us** |    **1** |
+| **SetAndGetAsync** | **AsyncPipeline** |                  **1** |                  **5** |           **4** |   **938.9 us** |  **42.55 us** | **122.1 us** |    **1** |
+| **SetAndGetAsync** | **AsyncPipeline** |                  **1** |                 **10** |           **1** | **1,061.0 us** |  **58.22 us** | **167.0 us** |    **2** |
+| **SetAndGetAsync** | **AsyncPipeline** |                  **1** |                 **10** |           **4** | **1,139.3 us** |  **55.66 us** | **161.5 us** |    **2** |
+| **SetAndGetAsync** | **AsyncPipeline** |                  **4** |                  **5** |           **1** |   **901.1 us** |  **46.21 us** | **135.5 us** |    **1** |
+| **SetAndGetAsync** | **AsyncPipeline** |                  **4** |                  **5** |           **4** |   **985.6 us** |  **35.05 us** | **101.7 us** |    **1** |
+| **SetAndGetAsync** | **AsyncPipeline** |                  **4** |                 **10** |           **1** | **1,153.3 us** |  **69.92 us** | **206.2 us** |    **2** |
+| **SetAndGetAsync** | **AsyncPipeline** |                  **4** |                 **10** |           **4** | **1,202.8 us** |  **39.49 us** | **114.6 us** |    **3** |
+| **SetAndGetAsync** |          **Sync** |                  **1** |                  **5** |           **1** | **1,036.7 us** |  **53.31 us** | **156.3 us** |    **2** |
+| **SetAndGetAsync** |          **Sync** |                  **1** |                  **5** |           **4** | **3,793.7 us** | **177.36 us** | **514.6 us** |    **4** |
+| **SetAndGetAsync** |          **Sync** |                  **1** |                 **10** |           **1** | **1,238.9 us** |  **52.82 us** | **155.7 us** |    **3** |
+| **SetAndGetAsync** |          **Sync** |                  **1** |                 **10** |           **4** | **4,789.8 us** | **236.52 us** | **686.2 us** |    **6** |
+| **SetAndGetAsync** |          **Sync** |                  **4** |                  **5** |           **1** | **1,113.2 us** |  **58.50 us** | **171.6 us** |    **2** |
+| **SetAndGetAsync** |          **Sync** |                  **4** |                  **5** |           **4** | **4,089.8 us** | **234.60 us** | **676.9 us** |    **5** |
+| **SetAndGetAsync** |          **Sync** |                  **4** |                 **10** |           **1** | **1,227.5 us** |  **70.95 us** | **201.3 us** |    **3** |
+| **SetAndGetAsync** |          **Sync** |                  **4** |                 **10** |           **4** | **4,868.2 us** | **341.17 us** | **984.4 us** |    **6** |
