@@ -14,7 +14,7 @@ namespace RedisSlimClient.Benchmarks
     [RankColumn, MarkdownExporter]
     public class RedisClientBenchmarks : IDisposable
     {
-        const string ServerUri = "redis://localhost:9096/";
+        const string ServerUri = "redis://localhost:6379/";
 
         ConcurrentDictionary<string, IRedisClient> _clients;
         IRedisClient _currentClient;

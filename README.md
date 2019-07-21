@@ -20,7 +20,7 @@ The main aims of the client are:
 
 # Benchmarks
 
-[See](docs/benchmarks/RedisSlimClient.Benchmarks.RedisClientBenchmarks-report-github.md)
+[See benchmarks here](docs/benchmarks/RedisSlimClient.Benchmarks.RedisClientBenchmarks-report-github.md)
 
 # TODO
 

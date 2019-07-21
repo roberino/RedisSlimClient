@@ -57,14 +57,6 @@ namespace RedisSlimClient.Io
 
         public IAsyncEvent<ICommandPipeline> Initialising { get; }
 
-        public async Task KeepAlive()
-        {
-            if (Status == PipelineStatus.Broken)
-            {
-
-            }
-        }
-
         public Task<T> Execute<T>(IRedisResult<T> command, CancellationToken cancellation = default) => ExecuteInternal(command, cancellation);
 
         public Task<T> ExecuteAdmin<T>(IRedisResult<T> command, CancellationToken cancellation = default) => ExecuteInternal(command, cancellation, true);
