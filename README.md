@@ -18,6 +18,10 @@ The main aims of the client are:
 * Flexible thread management
 * Support for clusters and replica configurations
 
+# Benchmarks
+
+[See](docs/benchmarks/RedisSlimClient.Benchmarks.RedisClientBenchmarks-report-github.md)
+
 # TODO
 
 * Support for clustering / redirection

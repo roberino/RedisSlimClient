@@ -18,15 +18,14 @@ namespace RedisSlimClient.UnitTests.Io
         [Fact]
         public async Task Execute_StubSocket_ReturnsResult()
         {
-            var socket = new StubSocket();
-
+            using (var socket = new StubSocket())
             using (var socketPipe = new SocketPipeline(socket))
-            using (var pipeline = new AsyncCommandPipeline(socketPipe, ThreadPoolScheduler.Instance,  NullWriter.Instance))
+            using (var pipeline = new AsyncCommandPipeline(socketPipe, ThreadPoolScheduler.Instance, NullWriter.Instance))
             {
                 var command = Substitute.For<IRedisResult<IRedisObject>>();
                 var taskCompletion = new TaskCompletionSource<IRedisObject>();
 
-                command.GetArgs().Returns(new object[] { "GET", "X" });
+                command.GetArgs().Returns(new object[] { "GET", "X" }); // abcxefg\nPING\r\n
                 command.GetAwaiter().Returns(taskCompletion.Task.GetAwaiter());
                 command.When(cmd => cmd.Abandon(Arg.Any<Exception>())).Do(call =>
                 {

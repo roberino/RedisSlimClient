@@ -13,28 +13,30 @@ namespace RedisSlimClient.UnitTests.Io.Pipelines
         public async Task SendAsync_SomeData_FiresReceievedEvent()
         {
             var eventFired = false;
-            var socket = new StubSocket();
-            var waitHandle = new ManualResetEvent(false);
-            var cancellationTokenSource = new CancellationTokenSource();
-            var receiver = new SocketPipelineReceiver(socket, cancellationTokenSource.Token);
-
             ReadOnlySequence<byte> capturedData = default;
 
-            await socket.SendStringAsync("abcxefg");
-
-            receiver.RegisterHandler(s => s.PositionOf((byte)'x'), x =>
+            using (var socket = new StubSocket())
             {
-                eventFired = true;
-                capturedData = x;
-                waitHandle.Set();
-            });
+                var waitHandle = new ManualResetEvent(false);
+                var cancellationTokenSource = new CancellationTokenSource();
+                var receiver = new SocketPipelineReceiver(socket, cancellationTokenSource.Token);
 
-            var _ = receiver.ScheduleOnThreadpool();
-            
-            socket.WaitForDataRead();
-            waitHandle.WaitOne(3000);
+                await socket.SendStringAsync("abcxefg");
 
-            cancellationTokenSource.Cancel();
+                receiver.RegisterHandler(s => s.PositionOf((byte)'x'), x =>
+                {
+                    eventFired = true;
+                    capturedData = x;
+                    waitHandle.Set();
+                });
+
+                var _ = receiver.ScheduleOnThreadpool();
+
+                socket.WaitForDataRead();
+                waitHandle.WaitOne(3000);
+
+                cancellationTokenSource.Cancel();
+            }
 
             Assert.True(eventFired);
             Assert.Equal(4, capturedData.Length);
@@ -46,12 +48,11 @@ namespace RedisSlimClient.UnitTests.Io.Pipelines
         [Fact]
         public async Task Reset_EndSchedulerThread()
         {
-            var socket = new StubSocket();
-
+            using (var socket = new StubSocket())
             using (var waitHandle = new ManualResetEvent(false))
             {
                 var receiver = new SocketPipelineReceiver(socket, default);
-                
+
                 await socket.SendStringAsync("abcxefg");
 
                 receiver.RegisterHandler(s => s.PositionOf((byte)'x'), x =>

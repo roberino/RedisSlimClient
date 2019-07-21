@@ -33,7 +33,6 @@ namespace RedisSlimClient.Io.Net
                 RemoteEndPoint = _endPoint
             };
 
-
             _timeout = timeout;
 
             State = new SocketState(CheckConnected);
