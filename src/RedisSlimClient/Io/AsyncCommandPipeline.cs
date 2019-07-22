@@ -85,7 +85,7 @@ namespace RedisSlimClient.Io
                 return await command;
             }
 
-            command.Execute = async () =>
+            command.OnExecute = async (args) =>
             {
                 await _pipeline.Sender.SendAsync(m =>
                 {
@@ -93,7 +93,7 @@ namespace RedisSlimClient.Io
 
                     if (!cancellation.IsCancellationRequested)
                     {
-                        return formatter.Write(command.GetArgs());
+                        return formatter.Write(args);
                     }
 
                     return Task.CompletedTask;

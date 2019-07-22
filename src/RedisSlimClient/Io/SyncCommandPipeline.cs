@@ -93,13 +93,19 @@ namespace RedisSlimClient.Io
                 throw new ConnectionUnavailableException();
             }
 
+            command.OnExecute = args =>
+            {
+                _writeStream.Write(args);
+                return Task.CompletedTask;
+            };
+
             lock (_lockObj)
             {
                 _pendingWrites++;
 
                 try
                 {
-                    _writeStream.Write(command.GetArgs());
+                    command.Execute().GetAwaiter().GetResult();
                 }
                 finally
                 {

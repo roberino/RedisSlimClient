@@ -48,7 +48,7 @@ namespace RedisSlimClient.Benchmarks
                     ConnectionPoolSize = ConnectionPoolSize,
                     PipelineMode = PipelineMode,
                     ConnectTimeout = TimeSpan.FromMilliseconds(500),
-                    DefaultTimeout = TimeSpan.FromMilliseconds(500),
+                    DefaultOperationTimeout = TimeSpan.FromMilliseconds(500),
                     TelemetryWriter= new TextTelemetryWriter(Console.WriteLine, Severity.Error)
                 })
             );

@@ -1,4 +1,6 @@
-﻿using RedisSlimClient.Types;
+﻿using RedisSlimClient.Io.Server;
+using RedisSlimClient.Telemetry;
+using RedisSlimClient.Types;
 using System;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
@@ -19,6 +21,12 @@ namespace RedisSlimClient.Io.Commands
             CompletionSource = new TaskCompletionSource<T>();
         }
 
+        public IRedisEndpoint AssignedEndpoint { get; set; }
+
+        public Func<object[], Task> OnExecute { get; set; }
+
+        private TaskCompletionSource<T> CompletionSource { get; }
+
         public virtual RedisKey Key { get; }
 
         public bool RequireMaster { get; }
@@ -26,6 +34,14 @@ namespace RedisSlimClient.Io.Commands
         public bool CanBeCompleted => !(CompletionSource.Task.IsCanceled || CompletionSource.Task.IsCompleted || CompletionSource.Task.IsFaulted);
 
         public string CommandText { get; }
+
+        public Task Execute()
+        {
+            if (OnExecute != null)
+                return OnExecute(GetArgs());
+
+            return Task.CompletedTask;
+        }
 
         public virtual object[] GetArgs() => Key.IsNull ? new[] { CommandText } : new[] { CommandText, (object)Key.Bytes };
 
@@ -61,9 +77,6 @@ namespace RedisSlimClient.Io.Commands
 
             CompletionSource.TrySetException(ex);
         }
-        public Func<Task> Execute { get; set; }
-
-        public TaskCompletionSource<T> CompletionSource { get; }
 
         public TaskAwaiter<T> GetAwaiter() => CompletionSource.Task.GetAwaiter();
 

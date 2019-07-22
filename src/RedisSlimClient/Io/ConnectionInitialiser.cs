@@ -1,6 +1,7 @@
 ﻿using RedisSlimClient.Configuration;
 using RedisSlimClient.Io.Net;
 using RedisSlimClient.Io.Server.Clustering;
+using RedisSlimClient.Telemetry;
 using RedisSlimClient.Util;
 using System;
 using System.Collections.Generic;
@@ -14,19 +15,22 @@ namespace RedisSlimClient.Io.Server
     {
         readonly IDictionary<ServerEndPointInfo, IConnectionSubordinate> _connectionCache;
         readonly ServerEndPointInfo _initialEndPoint;
-        private readonly NetworkConfiguration _networkConfiguration;
+        readonly NetworkConfiguration _networkConfiguration;
         readonly IClientCredentials _clientCredentials;
         readonly Func<IServerEndpointFactory, Task<ICommandPipeline>> _pipelineFactory;
+        readonly ITelemetryWriter _telemetryWriter;
 
         public ConnectionInitialiser(
-            ServerEndPointInfo endPointInfo, NetworkConfiguration networkConfiguration, IClientCredentials clientCredentials,
-            Func<IServerEndpointFactory, Task<ICommandPipeline>> pipelineFactory)
+            ServerEndPointInfo endPointInfo, NetworkConfiguration networkConfiguration,
+            IClientCredentials clientCredentials,
+            Func<IServerEndpointFactory, Task<ICommandPipeline>> pipelineFactory,
+            ITelemetryWriter telemetryWriter)
         {
             _initialEndPoint = endPointInfo;
             _networkConfiguration = networkConfiguration;
             _clientCredentials = clientCredentials;
             _pipelineFactory = pipelineFactory;
-
+            _telemetryWriter = telemetryWriter;
             _connectionCache = new Dictionary<ServerEndPointInfo, IConnectionSubordinate>();
         }
 
@@ -109,13 +113,24 @@ namespace RedisSlimClient.Io.Server
                 {
                     try
                     {
-                        var subPipe = await _pipelineFactory(endPointInfo);
+                        var result = await _telemetryWriter.ExecuteAsync(async ctx =>
+                        {
+                            ctx.Dimensions[nameof(endPointInfo.Host)] = endPointInfo.Host;
+                            ctx.Dimensions[nameof(endPointInfo.Port)] = endPointInfo.Port;
+                            ctx.Dimensions[nameof(endPointInfo.MappedPort)] = endPointInfo.MappedPort;
 
-                        await Auth(subPipe);
+                            var subPipe = await _pipelineFactory(endPointInfo);
 
-                        subPipe.Initialising.Subscribe(Auth);
+                            await Auth(subPipe);
 
-                        return subPipe;
+                            ctx.Write(nameof(Auth));
+
+                            subPipe.Initialising.Subscribe(Auth);
+
+                            return subPipe;
+                        }, nameof(CreatePipelineConnection));
+
+                        return result;
                     }
                     catch (Exception ex)
                     {

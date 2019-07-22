@@ -30,10 +30,5 @@ namespace RedisSlimClient.Io.Commands
 
             throw new ArgumentException($"{result.Type}");
         }
-
-        public void Write(Stream commandWriter)
-        {
-            commandWriter.Write(GetArgs());
-        }
     }
 }

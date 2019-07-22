@@ -49,7 +49,11 @@ namespace RedisSlimClient.Io.Net
                 await InitSocketAndNotifyAsync();
             }
 
-            return new NetworkStream(_socket, FileAccess.ReadWrite);
+            return new NetworkStream(_socket, FileAccess.ReadWrite)
+            {
+                ReadTimeout = (int)_timeout.TotalMilliseconds,
+                WriteTimeout = (int)_timeout.TotalMilliseconds
+            };
         }
 
         public SocketState State { get; }

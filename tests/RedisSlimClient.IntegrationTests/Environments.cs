@@ -1,4 +1,5 @@
 ﻿using RedisSlimClient.Configuration;
+using RedisSlimClient.Telemetry;
 using System;
 
 namespace RedisSlimClient.IntegrationTests
@@ -7,12 +8,29 @@ namespace RedisSlimClient.IntegrationTests
     {
         public static Uri DefaultEndpoint => new Uri($"redis://localhost:{(int)ConfigurationScenario.NonSslBasic}");
 
-        public static ClientConfiguration GetConfiguration(ConfigurationScenario scenario, PipelineMode pipelineMode)
+        public static ClientConfiguration DefaultConfiguration(Action<string> output = null, Action < ClientConfiguration> onConfigure = null)
+        {
+            var conf = GetConfiguration(ConfigurationScenario.NonSslBasic, PipelineMode.Default, output);
+
+            onConfigure?.Invoke(conf);
+
+            return conf;
+        }
+
+        public static ClientConfiguration GetConfiguration(ConfigurationScenario scenario, PipelineMode pipelineMode, Action<string> output = null)
         {
             var config = new ClientConfiguration($"redis://localhost:{(int)scenario}")
             {
-                PipelineMode = pipelineMode
+                PipelineMode = pipelineMode,
+                DefaultOperationTimeout = TimeSpan.FromMilliseconds(500),
+                ConnectTimeout = TimeSpan.FromMilliseconds(500)
             };
+
+
+            if (output != null)
+            {
+                config.TelemetryWriter = new TextTelemetryWriter(output, Severity.Warn);
+            }
 
             config.NetworkConfiguration.PortMappings
                 .Map(6379, (int)ConfigurationScenario.NonSslReplicaSetMaster)
@@ -42,6 +60,7 @@ namespace RedisSlimClient.IntegrationTests
         NonSslReplicaSetSlave1 = 9194,
         NonSslReplicaSetSlave2 = 9195,
         NonSslClusterSet = 7000,
-        UncontactableServer = 9667
+        NonSslUncontactableServer = 9667,
+        SslUncontactableServer = 9666
     }
 }

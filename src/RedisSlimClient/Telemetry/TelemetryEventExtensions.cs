@@ -11,9 +11,12 @@ namespace RedisSlimClient.Telemetry
             var timer = new Stopwatch();
 
             var ev = TelemetryEvent.CreateStart(name);
-            var ctx = new TelemetricContext(writer, ev);
+
             var endEv = ev.CreateChild(name);
+
             endEv.Action = "End";
+
+            var ctx = new TelemetricContext(writer, ev, endEv.Dimensions);
 
             writer.Write(ev);
 

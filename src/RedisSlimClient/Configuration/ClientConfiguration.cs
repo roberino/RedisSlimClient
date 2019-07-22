@@ -19,6 +19,7 @@ namespace RedisSlimClient.Configuration
             SslConfiguration = new SslConfiguration();
             ClientName = $"RSC{Process.GetCurrentProcess().Id}-{Environment.MachineName}-{_idCounter}";
             NetworkConfiguration = networkConfiguration ?? new NetworkConfiguration();
+            TelemetryWriter = NullWriter.Instance;
 
             Parse(connectionOptions);
         }
@@ -37,7 +38,7 @@ namespace RedisSlimClient.Configuration
 
         public Uri[] ServerEndpoints { get; private set; }
 
-        public TimeSpan DefaultTimeout { get; set; } = TimeSpan.FromSeconds(5);
+        public TimeSpan DefaultOperationTimeout { get; set; } = TimeSpan.FromSeconds(5);
 
         public TimeSpan ConnectTimeout { get; set; } = TimeSpan.FromSeconds(5);
 
@@ -84,8 +85,8 @@ namespace RedisSlimClient.Configuration
                             case nameof(Encoding):
                                 Encoding = Encoding.GetEncoding(kv[1]);
                                 break;
-                            case nameof(DefaultTimeout):
-                                DefaultTimeout = TimeSpan.Parse(kv[1]);
+                            case nameof(DefaultOperationTimeout):
+                                DefaultOperationTimeout = TimeSpan.Parse(kv[1]);
                                 break;
                             case nameof(ConnectionPoolSize):
                                 ConnectionPoolSize = int.Parse(kv[1]);

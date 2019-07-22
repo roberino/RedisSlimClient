@@ -25,7 +25,7 @@ namespace RedisSlimClient.UnitTests.Io
                 var command = Substitute.For<IRedisResult<IRedisObject>>();
                 var taskCompletion = new TaskCompletionSource<IRedisObject>();
 
-                command.GetArgs().Returns(new object[] { "GET", "X" }); // abcxefg\nPING\r\n
+                command.When(c => c.Execute()).Do(call => command.OnExecute(new object[] { "GET", "X" }));
                 command.GetAwaiter().Returns(taskCompletion.Task.GetAwaiter());
                 command.When(cmd => cmd.Abandon(Arg.Any<Exception>())).Do(call =>
                 {

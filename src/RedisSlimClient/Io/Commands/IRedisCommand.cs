@@ -13,11 +13,11 @@ namespace RedisSlimClient.Io.Commands
     interface IRedisCommand : ICommandIdentity
     {
         bool CanBeCompleted { get; }
-        Func<Task> Execute { get; set; }
+        Func<object[], Task> OnExecute { get; set; }
+        Task Execute();
         void Complete(IRedisObject obj);
         void Cancel();
         void Abandon(Exception ex);
-        object[] GetArgs();
         TaskAwaiter GetAwaiter();
     }
 }

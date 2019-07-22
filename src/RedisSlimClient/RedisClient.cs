@@ -52,7 +52,7 @@ namespace RedisSlimClient
 
             var cmdPipe = await _connection.RouteCommandAsync(cmd);
 
-            return await cmdPipe.Execute(cmd, cancellation);
+            return await cmdPipe.Execute(cmd, CancellationPolicy(cancellation));
         }
 
         public async Task<T> GetObjectAsync<T>(string key, CancellationToken cancellation = default)
@@ -61,7 +61,7 @@ namespace RedisSlimClient
 
             var cmdPipe = await _connection.RouteCommandAsync(cmd);
 
-            var result = await cmdPipe.Execute(cmd, cancellation);
+            var result = await cmdPipe.Execute(cmd, CancellationPolicy(cancellation));
 
             return result;
         }
@@ -72,7 +72,7 @@ namespace RedisSlimClient
 
             var cmdPipe = await _connection.RouteCommandAsync(cmd);
 
-            var rstr = (RedisString) await cmdPipe.Execute(cmd, cancellation);
+            var rstr = (RedisString) await cmdPipe.Execute(cmd, CancellationPolicy(cancellation));
 
             return rstr.Value;
         }
@@ -83,7 +83,7 @@ namespace RedisSlimClient
 
             var cmdPipe = await _connection.RouteCommandAsync(cmd);
 
-            var rstr = (RedisString)await cmdPipe.Execute(cmd, cancellation);
+            var rstr = (RedisString)await cmdPipe.Execute(cmd, CancellationPolicy(cancellation));
 
             return rstr.ToString(_configuration.Encoding);
         }
@@ -97,14 +97,14 @@ namespace RedisSlimClient
         {
             var cmdPipe = await _connection.RouteCommandAsync(cmd);
 
-            return await cmdPipe.Execute(cmd, cancellation);
+            return await cmdPipe.Execute(cmd, CancellationPolicy(cancellation));
         }
 
         async Task<bool> CompareStringResponse<T>(IRedisResult<T> cmd, string expectedResponse, CancellationToken cancellation = default)
         {
             var cmdPipe = await _connection.RouteCommandAsync(cmd);
 
-            var result = await cmdPipe.Execute(cmd, cancellation);
+            var result = await cmdPipe.Execute(cmd, CancellationPolicy(cancellation));
 
             var msg = result.ToString();
 
@@ -115,11 +115,21 @@ namespace RedisSlimClient
         {
             var cmdPipe = await _connection.RouteCommandAsync(cmd);
 
-            var result = await cmdPipe.Execute(cmd, cancellation);
+            var result = await cmdPipe.Execute(cmd, CancellationPolicy(cancellation));
 
             var msg = (RedisInteger)result;
 
             return msg.Value;
+        }
+
+        CancellationToken CancellationPolicy(CancellationToken cancellation)
+        {
+            if (cancellation == default)
+            {
+                return new CancellationTokenSource(_configuration.DefaultOperationTimeout).Token;
+            }
+
+            return cancellation;
         }
     }
 }
