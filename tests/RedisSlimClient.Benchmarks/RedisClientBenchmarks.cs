@@ -41,7 +41,7 @@ namespace RedisSlimClient.Benchmarks
         public void TestSetup()
         {
             var key = $"{PipelineMode}/{ConnectionPoolSize}";
-
+            
             _currentClient = _clients.GetOrAdd(key, k =>
                 RedisClient.Create(new ClientConfiguration(ServerUri)
                 {

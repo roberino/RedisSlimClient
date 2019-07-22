@@ -25,6 +25,8 @@ namespace RedisSlimClient.IntegrationTests
         {
             using (var client = RedisClient.Create(Environments.GetConfiguration(configurationScenario, pipelineMode)))
             {
+                await client.PingAsync();
+
                 foreach (var n in Enumerable.Range(1, 100))
                 {
                     var data = ObjectGeneration.CreateObjectGraph(5);

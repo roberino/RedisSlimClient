@@ -1,5 +1,5 @@
 ﻿using RedisSlimClient.Configuration;
-using RedisSlimClient.Stubs;
+using RedisSlimClient.Io;
 using RedisSlimClient.Telemetry;
 using System;
 using System.Linq;
@@ -21,6 +21,29 @@ namespace RedisSlimClient.IntegrationTests
         }
 
         [Theory]
+        [InlineData(PipelineMode.Sync)]
+        [InlineData(PipelineMode.AsyncPipeline)]
+        public async Task PingAsync_UncontactableServer_ThrowsConnectionInitialisationException(PipelineMode pipelineMode)
+        {
+            using (var client = RedisClient.Create(Environments.GetConfiguration(ConfigurationScenario.UncontactableServer, pipelineMode)))
+            {
+                var cancel = new CancellationTokenSource(3000);
+                var wasThrown = false;
+
+                try
+                {
+                    var result = await client.PingAsync(cancel.Token);
+                }
+                catch (ConnectionInitialisationException)
+                {
+                    wasThrown = true;
+                }
+
+                Assert.True(wasThrown);
+            }
+        }
+
+        [Theory]
         [InlineData(PipelineMode.Sync, ConfigurationScenario.NonSslBasic)]
         [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
         [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.SslBasic)]
@@ -30,7 +53,7 @@ namespace RedisSlimClient.IntegrationTests
         {
             using (var client = RedisClient.Create(Environments.GetConfiguration(configurationScenario, pipelineMode)))
             {
-                var cancel = new CancellationTokenSource(10000);
+                var cancel = new CancellationTokenSource(3000);
                 var result = await client.PingAsync(cancel.Token);
 
                 Assert.True(result);

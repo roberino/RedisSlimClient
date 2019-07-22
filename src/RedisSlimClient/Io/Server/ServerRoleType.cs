@@ -1,6 +1,6 @@
 ﻿namespace RedisSlimClient.Io.Server
 {
-    enum ServerRoleType
+    public enum ServerRoleType
     {
         Unknown,
         Master,

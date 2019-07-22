@@ -41,6 +41,7 @@ namespace RedisSlimClient.IntegrationTests
         NonSslReplicaSetMaster = 9196,
         NonSslReplicaSetSlave1 = 9194,
         NonSslReplicaSetSlave2 = 9195,
-        NonSslClusterSet = 7000
+        NonSslClusterSet = 7000,
+        UncontactableServer = 9667
     }
 }

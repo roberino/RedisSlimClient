@@ -32,11 +32,20 @@ namespace RedisSlimClient.Io.Server
 
         public async Task<IReadOnlyCollection<IConnectionSubordinate>> InitialiseAsync()
         {
-            var pipelines = await InitialiseAsync(CreatePipelineConnection(_initialEndPoint));
+            try
+            {
+                var pipelines = await InitialiseAsync(CreatePipelineConnection(_initialEndPoint));
 
-            _connectionCache.Clear();
-
-            return pipelines;
+                return pipelines;
+            }
+            catch
+            {
+                throw;
+            }
+            finally
+            {
+                _connectionCache.Clear();
+            }
         }
 
         AuthCommand AuthCommand => new AuthCommand(_clientCredentials.Password);
@@ -48,7 +57,6 @@ namespace RedisSlimClient.Io.Server
         InfoCommand InfoCommand => new InfoCommand();
 
         ClusterNodesCommand ClusterCommand => new ClusterNodesCommand(_networkConfiguration);
-
 
         async Task<IReadOnlyCollection<IConnectionSubordinate>> InitialiseAsync(IConnectionSubordinate initialPipeline, int level = 0)
         {
@@ -99,13 +107,20 @@ namespace RedisSlimClient.Io.Server
             {
                 _connectionCache[endPointInfo] = connection = new ConnectionSubordinate(endPointInfo, new SyncronizedInstance<ICommandPipeline>(async () =>
                 {
-                    var subPipe = await _pipelineFactory(endPointInfo);
+                    try
+                    {
+                        var subPipe = await _pipelineFactory(endPointInfo);
 
-                    await Auth(subPipe);
+                        await Auth(subPipe);
 
-                    subPipe.Initialising.Subscribe(Auth);
+                        subPipe.Initialising.Subscribe(Auth);
 
-                    return subPipe;
+                        return subPipe;
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new ConnectionInitialisationException(endPointInfo, ex);
+                    }
                 }));
             }
 

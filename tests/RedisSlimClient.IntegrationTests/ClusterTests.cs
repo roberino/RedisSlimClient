@@ -22,7 +22,7 @@ namespace RedisSlimClient.IntegrationTests
         {
             using (var client = RedisClient.Create(Environments.GetConfiguration(configurationScenario, pipelineMode)))
             {
-                var cancel = new CancellationTokenSource(10000);
+                var cancel = new CancellationTokenSource(3000);
                 var result = await client.PingAsync(cancel.Token);
 
                 Assert.True(result);
@@ -35,7 +35,7 @@ namespace RedisSlimClient.IntegrationTests
         {
             using (var client = RedisClient.Create(Environments.GetConfiguration(configurationScenario, pipelineMode)))
             {
-                var cancel = new CancellationTokenSource(10000);
+                var cancel = new CancellationTokenSource(3000);
 
                 await client.SetStringAsync("key1", "abc");
                 var result = await client.GetStringAsync("key1");

@@ -1,6 +1,6 @@
 ﻿namespace RedisSlimClient.Io.Server
 {
-    public class Request
+    class Request
     {
         public Request(byte[] data, int bytesRead)
         {

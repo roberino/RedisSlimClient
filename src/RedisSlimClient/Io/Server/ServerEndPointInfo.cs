@@ -6,7 +6,7 @@ using System.Net;
 
 namespace RedisSlimClient.Io.Server
 {
-    class ServerEndPointInfo : IServerEndpointFactory, IEquatable<ServerEndPointInfo>
+    class ServerEndPointInfo : IServerEndpointFactory, IEquatable<ServerEndPointInfo>, IRedisEndpoint
     {
         public ServerEndPointInfo(string host, int port, int mappedPort, IDnsResolver dnsResolver, ServerRoleType role = ServerRoleType.Unknown)
         {
