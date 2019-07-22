@@ -22,8 +22,8 @@ namespace RedisSlimClient.IntegrationTests
             var config = new ClientConfiguration($"redis://localhost:{(int)scenario}")
             {
                 PipelineMode = pipelineMode,
-                DefaultOperationTimeout = TimeSpan.FromMilliseconds(500),
-                ConnectTimeout = TimeSpan.FromMilliseconds(500)
+                DefaultOperationTimeout = TimeSpan.FromMilliseconds(1500),
+                ConnectTimeout = TimeSpan.FromMilliseconds(1500)
             };
 
             if (output != null)

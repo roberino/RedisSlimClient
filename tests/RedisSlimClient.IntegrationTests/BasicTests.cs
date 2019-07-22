@@ -68,7 +68,7 @@ namespace RedisSlimClient.IntegrationTests
         {
             using (var client = RedisClient.Create(Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine)))
             {
-                var cancel = new CancellationTokenSource(10000);
+                var cancel = new CancellationTokenSource(3000);
                 var result = await client.PingAsync(cancel.Token);
 
                 Assert.True(result);
