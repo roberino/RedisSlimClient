@@ -26,10 +26,9 @@ namespace RedisSlimClient.IntegrationTests
                 ConnectTimeout = TimeSpan.FromMilliseconds(500)
             };
 
-
             if (output != null)
             {
-                config.TelemetryWriter = new TextTelemetryWriter(output, Severity.Warn);
+                config.TelemetryWriter = new TextTelemetryWriter(output, Severity.Info);
             }
 
             config.NetworkConfiguration.PortMappings
