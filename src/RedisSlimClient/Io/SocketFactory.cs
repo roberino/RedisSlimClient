@@ -9,7 +9,7 @@ namespace RedisSlimClient.Io
         {
             if (!configuration.SslConfiguration.UseSsl)
             {
-                return new SocketFacade(endPointFactory, configuration.ConnectTimeout);
+                return new SocketFacade(endPointFactory, configuration.DefaultOperationTimeout);
             }
 
             return new SslSocket(endPointFactory, configuration.ConnectTimeout, configuration.SslConfiguration, configuration);

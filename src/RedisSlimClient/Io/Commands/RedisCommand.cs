@@ -1,5 +1,6 @@
 ﻿using RedisSlimClient.Types;
 using System;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
@@ -7,6 +8,8 @@ namespace RedisSlimClient.Io.Commands
 {
     internal abstract class RedisCommand<T> : IRedisResult<T>
     {
+        static readonly Uri UnassignedEndpoint = new Uri("unknown://unassigned:1");
+
         protected RedisCommand(string commandText, RedisKey key = default) : this(commandText, true, key)
         {
         }
@@ -21,9 +24,28 @@ namespace RedisSlimClient.Io.Commands
 
         public Func<object[], Task> OnExecute { get; set; }
 
-        public Action<ICommandIdentity, CommandState> OnStateChanged { get; set; }
+        Action<CommandState> _stateChanged;
+        Stopwatch _sw;
 
-        public Uri AssignedEndpoint { get; set; }
+        void FireStateChange(CommandStatus status)
+        {
+            if (_stateChanged != null)
+            {
+                _stateChanged.Invoke(new CommandState(_sw.Elapsed, status, this));
+            }
+        }
+
+        public Action<CommandState> OnStateChanged
+        {
+            set
+            {
+                _stateChanged = value;
+                _sw = new Stopwatch();
+                _sw.Start();
+            }
+        }
+
+        public Uri AssignedEndpoint { get; set; } = UnassignedEndpoint;
 
         private TaskCompletionSource<T> CompletionSource { get; }
 
@@ -38,7 +60,10 @@ namespace RedisSlimClient.Io.Commands
         public Task Execute()
         {
             if (OnExecute != null)
+            {
+                FireStateChange(CommandStatus.Executing);
                 return OnExecute(GetArgs());
+            }
 
             return Task.CompletedTask;
         }
@@ -52,18 +77,18 @@ namespace RedisSlimClient.Io.Commands
                 if (redisObject is RedisError err)
                 {
                     if (CompletionSource.TrySetException(TranslateError(err)))
-                        OnStateChanged?.Invoke(this, CommandState.Faulted);
+                        FireStateChange(CommandStatus.Faulted);
 
                     return;
                 }
 
                 if (CompletionSource.TrySetResult(TranslateResult(redisObject)))
-                    OnStateChanged?.Invoke(this, CommandState.Completed);
+                    FireStateChange(CommandStatus.Completed);
             }
             catch (Exception ex)
             {
                 if (CompletionSource.TrySetException(ex))
-                    OnStateChanged?.Invoke(this, CommandState.Faulted);
+                    FireStateChange(CommandStatus.Faulted);
             }
         }
 
@@ -80,7 +105,7 @@ namespace RedisSlimClient.Io.Commands
             }
 
             if (CompletionSource.TrySetException(ex))
-                OnStateChanged?.Invoke(this, CommandState.Abandoned);
+                FireStateChange(CommandStatus.Abandoned);
         }
 
         public TaskAwaiter<T> GetAwaiter() => CompletionSource.Task.GetAwaiter();
@@ -90,7 +115,7 @@ namespace RedisSlimClient.Io.Commands
         public void Cancel()
         {
             if (CompletionSource.TrySetCanceled())
-                OnStateChanged?.Invoke(this, CommandState.Cancelled);
+                FireStateChange(CommandStatus.Cancelled);
         }
     }
 }

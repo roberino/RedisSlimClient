@@ -2,6 +2,7 @@
 using RedisSlimClient.Io;
 using RedisSlimClient.Io.Commands;
 using RedisSlimClient.Io.Server;
+using RedisSlimClient.Telemetry;
 using RedisSlimClient.Types;
 using System;
 using System.Threading;
@@ -128,7 +129,29 @@ namespace RedisSlimClient
 
             if (_configuration.TelemetryWriter.Enabled)
             {
+                var telemetryEvent = new TelemetryEvent()
+                {
+                    Name = nameof(cmd.Execute),
+                    Action = cmd.CommandText
+                };
 
+                _configuration.TelemetryWriter.Write(telemetryEvent);
+
+                cmd.OnStateChanged = s =>
+                {
+                    var childEvent = new TelemetryEvent()
+                    {
+                        Name = s.ToString(),
+                        Elapsed = s.Elapsed,
+                        OperationId = telemetryEvent.OperationId
+                    };
+
+                    childEvent.Dimensions[$"{nameof(Uri.Host)}"] = cmd.AssignedEndpoint.Host;
+                    childEvent.Dimensions[$"{nameof(Uri.Port)}"] = cmd.AssignedEndpoint.Port;
+                    childEvent.Dimensions["Role"] = cmd.AssignedEndpoint.Scheme;
+
+                    _configuration.TelemetryWriter.Write(childEvent);
+                };
             }
 
             return cmdPipe;

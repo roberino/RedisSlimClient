@@ -18,7 +18,7 @@ namespace RedisSlimClient.Telemetry
 
         public string Action { get; set; }
 
-        public string OperationId { get; set; } = Guid.NewGuid().ToString("N").Substring(8);
+        public string OperationId { get; set; } = Guid.NewGuid().ToString("N").Substring(0, 8).ToUpper();
 
         public string Data { get; set; }
 

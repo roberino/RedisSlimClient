@@ -5,10 +5,24 @@ using System.Threading.Tasks;
 
 namespace RedisSlimClient.Io.Commands
 {
-    enum CommandState
+    readonly struct CommandState
+    {
+        public CommandState(TimeSpan elapsed, CommandStatus status, ICommandIdentity identity)
+        {
+            Elapsed = elapsed;
+            Status = status;
+            Identity = identity;
+        }
+
+        public TimeSpan Elapsed { get; }
+        public CommandStatus Status { get; }
+        public ICommandIdentity Identity { get; }
+    }
+
+    enum CommandStatus
     {
         Uninitialised,
-        Executed,
+        Executing,
         Abandoned,
         Completed,
         Cancelled,
@@ -22,8 +36,8 @@ namespace RedisSlimClient.Io.Commands
 
     interface IRedisCommand : ICommandIdentity
     {
-        Action<ICommandIdentity, CommandState> OnStateChanged { get; set; }
-        Func<object[], Task> OnExecute { get; set; }
+        Action<CommandState> OnStateChanged { set; }
+        Func<object[], Task> OnExecute { set; }
         bool CanBeCompleted { get; }
         Task Execute();
         void Complete(IRedisObject obj);

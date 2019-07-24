@@ -19,7 +19,7 @@ namespace RedisSlimClient.Telemetry
         {
             if (_severity.HasFlag(telemetryEvent.Severity))
             {
-                _writeMethod($"{telemetryEvent.Timestamp}: {telemetryEvent.OperationId} {telemetryEvent.Name} {telemetryEvent.Action} [{telemetryEvent.Elapsed}] data={telemetryEvent.Data}");
+                _writeMethod($"{telemetryEvent.Timestamp}: {telemetryEvent.OperationId} {telemetryEvent.Name} {telemetryEvent.Action} [{telemetryEvent.Elapsed}] {telemetryEvent.Data}");
 
                 if (telemetryEvent.Exception != null)
                 {
