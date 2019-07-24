@@ -37,7 +37,7 @@ namespace RedisSlimClient.Io
                 connectionInit = new ConnectionInitialiser(endPointInfo, configuration.NetworkConfiguration, configuration, CreateSyncPipe(configuration), configuration.TelemetryWriter);
             }
 
-            return new Connection(connectionInit, configuration.TelemetryWriter);
+            return new Connection(connectionInit);
         }
 
         static Func<IServerEndpointFactory, Task<ICommandPipeline>> CreateSyncPipe(ClientConfiguration configuration)
@@ -56,7 +56,7 @@ namespace RedisSlimClient.Io
                 var socket = SocketFactory.CreateSocket(configuration, ep);
                 await socket.ConnectAsync();
                 var socketPipeline = new SocketPipeline(socket, configuration);
-                return new AsyncCommandPipeline(socketPipeline, configuration.Scheduler, configuration.TelemetryWriter);
+                return new AsyncCommandPipeline(socketPipeline, socket, configuration.Scheduler, configuration.TelemetryWriter);
             };
         }
     }

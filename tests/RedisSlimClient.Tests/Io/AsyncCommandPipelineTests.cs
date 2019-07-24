@@ -16,11 +16,11 @@ namespace RedisSlimClient.UnitTests.Io
     public class AsyncCommandPipelineTests
     {
         [Fact]
-        public async Task Execute_StubSocket_ReturnsResult()
+        public async Task Execute_SomeCommand_ReturnsResult()
         {
             using (var socket = new StubSocket())
             using (var socketPipe = new SocketPipeline(socket))
-            using (var pipeline = new AsyncCommandPipeline(socketPipe, ThreadPoolScheduler.Instance, NullWriter.Instance))
+            using (var pipeline = new AsyncCommandPipeline(socketPipe, socket, ThreadPoolScheduler.Instance, NullWriter.Instance))
             {
                 var command = Substitute.For<IRedisResult<IRedisObject>>();
                 var taskCompletion = new TaskCompletionSource<IRedisObject>();
@@ -40,6 +40,35 @@ namespace RedisSlimClient.UnitTests.Io
 
                 var init = await pipeline.ExecuteAdmin(new PingCommand());
                 var result = await pipeline.Execute(command);
+            }
+        }
+
+        [Fact]
+        public async Task Execute_SocketFailure_Reconnects()
+        {
+            using (var socket = new StubSocket())
+            using (var socketPipe = new SocketPipeline(socket))
+            using (var pipeline = new AsyncCommandPipeline(socketPipe, socket, ThreadPoolScheduler.Instance, NullWriter.Instance))
+            {
+                Assert.Equal(0, socket.CallsToConnect);
+
+                await pipeline.ExecuteAdmin(new PingCommand());
+
+                socket.RaiseError();
+
+                var timeoutCount = 0;
+
+                while (socket.CallsToConnect == 0)
+                {
+                    await Task.Delay(5);
+
+                    if (timeoutCount++ > 100)
+                    {
+                        break;
+                    }
+                }
+
+                Assert.Equal(1, socket.CallsToConnect);
             }
         }
     }

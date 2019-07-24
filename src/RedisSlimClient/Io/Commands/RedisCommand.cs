@@ -1,6 +1,4 @@
-﻿using RedisSlimClient.Io.Server;
-using RedisSlimClient.Telemetry;
-using RedisSlimClient.Types;
+﻿using RedisSlimClient.Types;
 using System;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
@@ -21,9 +19,11 @@ namespace RedisSlimClient.Io.Commands
             CompletionSource = new TaskCompletionSource<T>();
         }
 
-        public IRedisEndpoint AssignedEndpoint { get; set; }
-
         public Func<object[], Task> OnExecute { get; set; }
+
+        public Action<ICommandIdentity, CommandState> OnStateChanged { get; set; }
+
+        public Uri AssignedEndpoint { get; set; }
 
         private TaskCompletionSource<T> CompletionSource { get; }
 
@@ -51,15 +51,19 @@ namespace RedisSlimClient.Io.Commands
             {
                 if (redisObject is RedisError err)
                 {
-                    CompletionSource.TrySetException(TranslateError(err));
+                    if (CompletionSource.TrySetException(TranslateError(err)))
+                        OnStateChanged?.Invoke(this, CommandState.Faulted);
+
                     return;
                 }
 
-                CompletionSource.TrySetResult(TranslateResult(redisObject));
+                if (CompletionSource.TrySetResult(TranslateResult(redisObject)))
+                    OnStateChanged?.Invoke(this, CommandState.Completed);
             }
             catch (Exception ex)
             {
-                CompletionSource.TrySetException(ex);
+                if (CompletionSource.TrySetException(ex))
+                    OnStateChanged?.Invoke(this, CommandState.Faulted);
             }
         }
 
@@ -75,7 +79,8 @@ namespace RedisSlimClient.Io.Commands
                 return;
             }
 
-            CompletionSource.TrySetException(ex);
+            if (CompletionSource.TrySetException(ex))
+                OnStateChanged?.Invoke(this, CommandState.Abandoned);
         }
 
         public TaskAwaiter<T> GetAwaiter() => CompletionSource.Task.GetAwaiter();
@@ -84,7 +89,8 @@ namespace RedisSlimClient.Io.Commands
 
         public void Cancel()
         {
-            CompletionSource.TrySetCanceled();
+            if (CompletionSource.TrySetCanceled())
+                OnStateChanged?.Invoke(this, CommandState.Cancelled);
         }
     }
 }

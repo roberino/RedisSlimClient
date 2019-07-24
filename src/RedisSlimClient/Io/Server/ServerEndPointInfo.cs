@@ -17,6 +17,8 @@ namespace RedisSlimClient.Io.Server
             DnsResolver = dnsResolver;
         }
 
+        public Uri EndpointIdentifier => new Uri($"{RoleType.ToString()}://{Host}:{MappedPort}");
+
         public IDnsResolver DnsResolver { get; }
 
         public string Host { get; }

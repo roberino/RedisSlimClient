@@ -50,7 +50,7 @@ namespace RedisSlimClient
         {
             var cmd = new ObjectSetCommand<T>(key, _configuration, obj);
 
-            var cmdPipe = await _connection.RouteCommandAsync(cmd);
+            var cmdPipe = await RouteCommandAsync(cmd);
 
             return await cmdPipe.Execute(cmd, CancellationPolicy(cancellation));
         }
@@ -59,7 +59,7 @@ namespace RedisSlimClient
         {
             var cmd = new ObjectGetCommand<T>(key, _configuration);
 
-            var cmdPipe = await _connection.RouteCommandAsync(cmd);
+            var cmdPipe = await RouteCommandAsync(cmd);
 
             var result = await cmdPipe.Execute(cmd, CancellationPolicy(cancellation));
 
@@ -70,7 +70,7 @@ namespace RedisSlimClient
         {
             var cmd = new GetCommand(key);
 
-            var cmdPipe = await _connection.RouteCommandAsync(cmd);
+            var cmdPipe = await RouteCommandAsync(cmd);
 
             var rstr = (RedisString) await cmdPipe.Execute(cmd, CancellationPolicy(cancellation));
 
@@ -81,7 +81,7 @@ namespace RedisSlimClient
         {
             var cmd = new GetCommand(key);
 
-            var cmdPipe = await _connection.RouteCommandAsync(cmd);
+            var cmdPipe = await RouteCommandAsync(cmd);
 
             var rstr = (RedisString)await cmdPipe.Execute(cmd, CancellationPolicy(cancellation));
 
@@ -95,14 +95,14 @@ namespace RedisSlimClient
 
         async Task<T> GetResponse<T>(IRedisResult<T> cmd, CancellationToken cancellation = default)
         {
-            var cmdPipe = await _connection.RouteCommandAsync(cmd);
+            var cmdPipe = await RouteCommandAsync(cmd);
 
             return await cmdPipe.Execute(cmd, CancellationPolicy(cancellation));
         }
 
         async Task<bool> CompareStringResponse<T>(IRedisResult<T> cmd, string expectedResponse, CancellationToken cancellation = default)
         {
-            var cmdPipe = await _connection.RouteCommandAsync(cmd);
+            var cmdPipe = await RouteCommandAsync(cmd);
 
             var result = await cmdPipe.Execute(cmd, CancellationPolicy(cancellation));
 
@@ -113,13 +113,25 @@ namespace RedisSlimClient
 
         async Task<long> GetIntResponse(IRedisResult<IRedisObject> cmd, CancellationToken cancellation = default)
         {
-            var cmdPipe = await _connection.RouteCommandAsync(cmd);
+            var cmdPipe = await RouteCommandAsync(cmd);
 
             var result = await cmdPipe.Execute(cmd, CancellationPolicy(cancellation));
 
             var msg = (RedisInteger)result;
 
             return msg.Value;
+        }
+
+        async Task<ICommandPipeline> RouteCommandAsync(IRedisCommand cmd)
+        {
+            var cmdPipe = await _connection.RouteCommandAsync(cmd);
+
+            if (_configuration.TelemetryWriter.Enabled)
+            {
+
+            }
+
+            return cmdPipe;
         }
 
         CancellationToken CancellationPolicy(CancellationToken cancellation)

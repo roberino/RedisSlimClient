@@ -1,5 +1,4 @@
 ﻿using RedisSlimClient.Io.Net;
-using RedisSlimClient.Io.Pipelines;
 using System;
 using System.Buffers;
 using System.Collections.Concurrent;
@@ -23,8 +22,16 @@ namespace RedisSlimClient.UnitTests.Io.Pipelines
             State = new SocketState(() => true);
         }
 
+        public void RaiseError(Exception ex = null)
+        {
+            State.ReadError(ex ?? new TimeoutException());
+        }
+
+        public int CallsToConnect { get; private set; }
+
         public Task ConnectAsync()
         {
+            CallsToConnect++;
             return State.DoConnect(() => Task.CompletedTask);
         }
 
@@ -78,6 +85,8 @@ namespace RedisSlimClient.UnitTests.Io.Pipelines
         public ConcurrentQueue<ReadOnlySequence<byte>> Received { get; }
 
         public SocketState State { get; }
+
+        public Uri EndpointIdentifier => new Uri("master://localhost:8679");
 
         int ReadReceivedQueue(Memory<byte> memory)
         {

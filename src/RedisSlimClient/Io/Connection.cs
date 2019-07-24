@@ -13,15 +13,12 @@ namespace RedisSlimClient.Io
         static readonly SyncedCounter IdGenerator = new SyncedCounter();
 
         readonly IServerNodeInitialiser _serverNodeInitialiser;
-        readonly ITelemetryWriter _telemetryWriter;
         readonly SyncronizedInstance<IReadOnlyCollection<IConnectionSubordinate>> _subConnections;
 
         public Connection(
-            IServerNodeInitialiser serverNodeInitialiser,
-            ITelemetryWriter telemetryWriter = null)
+            IServerNodeInitialiser serverNodeInitialiser)
         {
             _serverNodeInitialiser = serverNodeInitialiser;
-            _telemetryWriter = telemetryWriter ?? NullWriter.Instance;
             _subConnections = new SyncronizedInstance<IReadOnlyCollection<IConnectionSubordinate>>(_serverNodeInitialiser.InitialiseAsync);
 
             Id = IdGenerator.Increment().ToString();

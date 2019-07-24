@@ -5,6 +5,16 @@ using System.Threading.Tasks;
 
 namespace RedisSlimClient.Io.Commands
 {
+    enum CommandState
+    {
+        Uninitialised,
+        Executed,
+        Abandoned,
+        Completed,
+        Cancelled,
+        Faulted
+    }
+
     interface IRedisResult<T> : IRedisCommand
     {
         new TaskAwaiter<T> GetAwaiter();
@@ -12,8 +22,9 @@ namespace RedisSlimClient.Io.Commands
 
     interface IRedisCommand : ICommandIdentity
     {
-        bool CanBeCompleted { get; }
+        Action<ICommandIdentity, CommandState> OnStateChanged { get; set; }
         Func<object[], Task> OnExecute { get; set; }
+        bool CanBeCompleted { get; }
         Task Execute();
         void Complete(IRedisObject obj);
         void Cancel();

@@ -6,6 +6,7 @@ namespace RedisSlimClient.Io.Net
 {
     interface ISocket : IDisposable
     {
+        Uri EndpointIdentifier { get; }
         SocketState State { get; }
         Task ConnectAsync();
         ValueTask<int> ReceiveAsync(Memory<byte> memory);

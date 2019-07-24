@@ -16,6 +16,7 @@ namespace RedisSlimClient.Io.Net
         readonly AwaitableSocketAsyncEventArgs _readEventArgs;
         readonly AwaitableSocketAsyncEventArgs _writeEventArgs;
         readonly EndPoint _endPoint;
+        readonly IServerEndpointFactory _endPointFactory;
         readonly TimeSpan _timeout;
 
         public SocketFacade(IServerEndpointFactory endPointFactory, TimeSpan timeout)
@@ -32,13 +33,15 @@ namespace RedisSlimClient.Io.Net
             {
                 RemoteEndPoint = _endPoint
             };
-
+            _endPointFactory = endPointFactory;
             _timeout = timeout;
 
             State = new SocketState(CheckConnected);
         }
 
         protected CancellationToken CancellationToken => _cancellationTokenSource.Token;
+
+        public Uri EndpointIdentifier => _endPointFactory.EndpointIdentifier;
 
         public Socket Socket => _socket;
 

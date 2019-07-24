@@ -19,7 +19,6 @@ namespace RedisSlimClient.Configuration
             SslConfiguration = new SslConfiguration();
             ClientName = $"RSC{Process.GetCurrentProcess().Id}-{Environment.MachineName}-{_idCounter}";
             NetworkConfiguration = networkConfiguration ?? new NetworkConfiguration();
-            TelemetryWriter = NullWriter.Instance;
 
             Parse(connectionOptions);
         }
@@ -32,7 +31,16 @@ namespace RedisSlimClient.Configuration
 
         public string Password { get; private set; }
 
-        public IWorkScheduler Scheduler { get; set; } = ThreadPoolScheduler.Instance;
+
+        readonly NonNullable<IWorkScheduler> _scheduler = ThreadPoolScheduler.Instance;
+        public IWorkScheduler Scheduler { get => _scheduler.Value; set => _scheduler.Value = value; }
+
+
+        readonly NonNullable<IObjectSerializerFactory> _serializerFactory = Serialization.SerializerFactory.Instance;
+        public IObjectSerializerFactory SerializerFactory { get => _serializerFactory.Value; set => _serializerFactory.Value = value; }
+
+        readonly NonNullable<ITelemetryWriter> _telemetryWriter = new NonNullable<ITelemetryWriter>(NullWriter.Instance);
+        public ITelemetryWriter TelemetryWriter { get => _telemetryWriter.Value; set => _telemetryWriter.Value = value; }
 
         public SslConfiguration SslConfiguration { get; }
 
@@ -51,10 +59,6 @@ namespace RedisSlimClient.Configuration
         public int ReadBufferSize { get; set; } = 1024;
 
         public int WriteBufferSize { get; set; } = 1024;
-
-        public IObjectSerializerFactory SerializerFactory { get; set; } = Serialization.SerializerFactory.Instance;
-
-        public ITelemetryWriter TelemetryWriter { get; set; }
 
         void Parse(string connectionOptions)
         {

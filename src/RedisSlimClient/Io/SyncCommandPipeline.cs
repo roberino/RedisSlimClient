@@ -2,6 +2,7 @@
 using RedisSlimClient.Io.Monitoring;
 using RedisSlimClient.Io.Net;
 using RedisSlimClient.Io.Scheduling;
+using RedisSlimClient.Io.Server;
 using RedisSlimClient.Serialization;
 using RedisSlimClient.Serialization.Protocol;
 using RedisSlimClient.Types;
@@ -27,7 +28,6 @@ namespace RedisSlimClient.Io
         int _pendingReads;
 
         Stream _writeStream;
-
         volatile PipelineStatus _status;
 
         SyncCommandPipeline(Stream networkStream, IManagedSocket socket, IWorkScheduler scheduler = null)
@@ -92,6 +92,8 @@ namespace RedisSlimClient.Io
             {
                 throw new ConnectionUnavailableException();
             }
+
+            command.AssignedEndpoint = _socket.EndpointIdentifier;
 
             command.OnExecute = args =>
             {

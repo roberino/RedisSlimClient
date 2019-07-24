@@ -13,6 +13,8 @@ namespace RedisSlimClient.Telemetry
             _severity = severity;
         }
 
+        public bool Enabled => true;
+
         public void Write(TelemetryEvent telemetryEvent)
         {
             if (_severity.HasFlag(telemetryEvent.Severity))

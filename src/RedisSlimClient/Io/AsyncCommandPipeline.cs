@@ -1,7 +1,9 @@
 ﻿using RedisSlimClient.Io.Commands;
 using RedisSlimClient.Io.Monitoring;
+using RedisSlimClient.Io.Net;
 using RedisSlimClient.Io.Pipelines;
 using RedisSlimClient.Io.Scheduling;
+using RedisSlimClient.Io.Server;
 using RedisSlimClient.Serialization.Protocol;
 using RedisSlimClient.Telemetry;
 using RedisSlimClient.Util;
@@ -16,6 +18,8 @@ namespace RedisSlimClient.Io
         readonly SyncedCounter _pendingWrites = new SyncedCounter();
 
         readonly IDuplexPipeline _pipeline;
+        readonly ISocket _socket;
+        readonly IRedisEndpoint _endpoint;
         readonly ITelemetryWriter _telemetryWriter;
         readonly CommandQueue _commandQueue;
         readonly CompletionHandler _completionHandler;
@@ -25,9 +29,10 @@ namespace RedisSlimClient.Io
 
         volatile PipelineStatus _status;
 
-        public AsyncCommandPipeline(IDuplexPipeline pipeline, IWorkScheduler workScheduler, ITelemetryWriter telemetryWriter)
+        public AsyncCommandPipeline(IDuplexPipeline pipeline, ISocket socket, IWorkScheduler workScheduler, ITelemetryWriter telemetryWriter)
         {
             _pipeline = pipeline;
+            _socket = socket;
             _telemetryWriter = telemetryWriter ?? NullWriter.Instance;
             _commandQueue = new CommandQueue();
             _completionHandler = new CompletionHandler(_pipeline.Receiver, _commandQueue);
@@ -37,12 +42,10 @@ namespace RedisSlimClient.Io
             {
                 _status = PipelineStatus.Broken;
 
-                telemetryWriter.Write(new TelemetryEvent()
+                telemetryWriter.Execute(ctx =>
                 {
-                    Name = $"{nameof(IDuplexPipeline)}.{nameof(IDuplexPipeline.Faulted)}"
-                });
-
-                _throttledScheduler.Schedule(Reconnect);
+                    _throttledScheduler.Schedule(Reconnect);
+                }, nameof(IDuplexPipeline.Faulted));
             };
 
             workScheduler.Schedule(_pipeline.RunAsync);
@@ -84,6 +87,8 @@ namespace RedisSlimClient.Io
 
                 return await command;
             }
+
+            command.AssignedEndpoint = _socket.EndpointIdentifier;
 
             command.OnExecute = async (args) =>
             {
