@@ -14,6 +14,8 @@ namespace RedisSlimClient.UnitTests.Io.Pipelines
         readonly ManualResetEvent _sendWaitHandle;
         readonly ManualResetEvent _receiveWaitHandle;
 
+        Exception _reconnectError;
+
         public StubSocket()
         {
             _sendWaitHandle = new ManualResetEvent(false);
@@ -27,12 +29,26 @@ namespace RedisSlimClient.UnitTests.Io.Pipelines
             State.ReadError(ex ?? new TimeoutException());
         }
 
+        public void BreakReconnection(Exception ex = null)
+        {
+            _reconnectError = ex ?? new TimeoutException();
+        }
+
         public int CallsToConnect { get; private set; }
 
         public Task ConnectAsync()
         {
             CallsToConnect++;
-            return State.DoConnect(() => Task.CompletedTask);
+
+            return State.DoConnect(() =>
+            {
+                if (_reconnectError != null)
+                {
+                    throw _reconnectError;
+                }
+
+                return Task.CompletedTask;
+            });
         }
 
         public void Dispose()

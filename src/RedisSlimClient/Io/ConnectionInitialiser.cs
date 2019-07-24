@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Authentication;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace RedisSlimClient.Io.Server
@@ -52,6 +53,8 @@ namespace RedisSlimClient.Io.Server
             }
         }
 
+        CancellationToken DefaultCancellation => new CancellationTokenSource(1000).Token;
+
         AuthCommand AuthCommand => new AuthCommand(_clientCredentials.Password);
 
         ClientSetNameCommand ClientSetName => new ClientSetNameCommand(_clientCredentials.ClientName);
@@ -71,17 +74,17 @@ namespace RedisSlimClient.Io.Server
 
             var pipeline = await initialPipeline.GetPipeline();
 
-            var roles = await pipeline.ExecuteAdmin(RoleCommand);
+            var roles = await pipeline.ExecuteAdmin(RoleCommand, DefaultCancellation);
 
             initialPipeline.EndPointInfo.UpdateRole(roles.RoleType);
 
             if (roles.RoleType == ServerRoleType.Master)
             {
-                var info = await pipeline.ExecuteAdmin(InfoCommand);
+                var info = await pipeline.ExecuteAdmin(InfoCommand, DefaultCancellation);
 
                 if (info.TryGetValue("cluster", out var cluster) && cluster.TryGetValue("cluster_enabled", out var ce) && (long)ce == 1)
                 {
-                    var clusterNodes = await pipeline.ExecuteAdmin(ClusterCommand);
+                    var clusterNodes = await pipeline.ExecuteAdmin(ClusterCommand, DefaultCancellation);
                     var me = clusterNodes.FirstOrDefault(n => n.IsMyself);
 
                     var updatedPipe = initialPipeline;
@@ -146,13 +149,13 @@ namespace RedisSlimClient.Io.Server
         {
             if (_clientCredentials.Password != null)
             {
-                if (!await pipeline.ExecuteAdmin(AuthCommand))
+                if (!await pipeline.ExecuteAdmin(AuthCommand, DefaultCancellation))
                 {
                     throw new AuthenticationException();
                 }
             }
 
-            await pipeline.ExecuteAdmin(ClientSetName);
+            await pipeline.ExecuteAdmin(ClientSetName, DefaultCancellation);
 
             return pipeline;
         }

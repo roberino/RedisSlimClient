@@ -71,5 +71,35 @@ namespace RedisSlimClient.UnitTests.Io
                 Assert.Equal(1, socket.CallsToConnect);
             }
         }
+
+        [Fact]
+        public async Task Execute_SocketFailureAndConnectFailure_Dies()
+        {
+            using (var socket = new StubSocket())
+            using (var socketPipe = new SocketPipeline(socket))
+            using (var pipeline = new AsyncCommandPipeline(socketPipe, socket, ThreadPoolScheduler.Instance, NullWriter.Instance))
+            {
+                Assert.Equal(0, socket.CallsToConnect);
+
+                await pipeline.ExecuteAdmin(new PingCommand());
+
+                socket.BreakReconnection();
+                socket.RaiseError();
+
+                var timeoutCount = 0;
+
+                while (socket.CallsToConnect == 0)
+                {
+                    await Task.Delay(5);
+
+                    if (timeoutCount++ > 100)
+                    {
+                        break;
+                    }
+                }
+
+                Assert.Equal(1, socket.CallsToConnect);
+            }
+        }
     }
 }

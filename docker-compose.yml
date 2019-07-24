@@ -47,6 +47,7 @@ services:
   depends_on:
    - redis-master1
 
+ # See https://github.com/Grokzen/docker-redis-cluster
  redis-cluster:
   image: grokzen/redis-cluster
   environment:

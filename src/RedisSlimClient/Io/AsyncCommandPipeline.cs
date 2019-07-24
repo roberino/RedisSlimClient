@@ -28,6 +28,7 @@ namespace RedisSlimClient.Io
         bool _disposed;
 
         volatile PipelineStatus _status;
+        volatile int _reconnectAttempts = 0;
 
         public AsyncCommandPipeline(IDuplexPipeline pipeline, ISocket socket, IWorkScheduler workScheduler, ITelemetryWriter telemetryWriter)
         {
@@ -131,12 +132,13 @@ namespace RedisSlimClient.Io
 
         async Task Reconnect()
         {
-            if (_status == PipelineStatus.Reinitializing)
+            if (_status == PipelineStatus.Reinitializing || _disposed || _reconnectAttempts > 10)
             {
                 return;
             }
 
             _status = PipelineStatus.Reinitializing;
+            _reconnectAttempts++;
 
             try
             {
@@ -147,6 +149,7 @@ namespace RedisSlimClient.Io
                     await ((AsyncEvent<ICommandPipeline>)Initialising).PublishAsync(this);
                 });
 
+                _reconnectAttempts = 0;
                 _status = PipelineStatus.Ok;
             }
             catch

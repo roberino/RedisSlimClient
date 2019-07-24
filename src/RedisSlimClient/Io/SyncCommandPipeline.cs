@@ -28,7 +28,9 @@ namespace RedisSlimClient.Io
         int _pendingReads;
 
         Stream _writeStream;
+
         volatile PipelineStatus _status;
+        volatile int _reconnectAttempts;
 
         SyncCommandPipeline(Stream networkStream, IManagedSocket socket, IWorkScheduler scheduler = null)
         {
@@ -140,12 +142,13 @@ namespace RedisSlimClient.Io
 
         async Task Reconnect()
         {
-            if (_status == PipelineStatus.Reinitializing)
+            if (_status == PipelineStatus.Reinitializing || _disposed || _reconnectAttempts > 10)
             {
                 return;
             }
 
             _status = PipelineStatus.Reinitializing;
+            _reconnectAttempts++;
 
             var currentStream = _writeStream;
 
