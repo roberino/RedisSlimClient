@@ -17,17 +17,17 @@ namespace RedisSlimClient.IntegrationTests
         }
 
         [Theory]
-        [InlineData(PipelineMode.Sync, ConfigurationScenario.NonSslBasic)]
-        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
-        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.SslBasic)]
-        [InlineData(PipelineMode.Sync, ConfigurationScenario.SslBasic)]
-        public async Task MultipleOperations_MultipleIterations_ExecutesSuccessfully(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
+        [InlineData(PipelineMode.Sync, ConfigurationScenario.NonSslBasic, 50)]
+        [InlineData(PipelineMode.Sync, ConfigurationScenario.SslBasic, 50)]
+        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic, 10)]
+        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.SslBasic, 10)]
+        public async Task MultipleOperations_MultipleIterations_ExecutesSuccessfully(PipelineMode pipelineMode, ConfigurationScenario configurationScenario, int iterations)
         {
             using (var client = RedisClient.Create(Environments.GetConfiguration(configurationScenario, pipelineMode)))
             {
                 await client.PingAsync();
 
-                foreach (var n in Enumerable.Range(1, 100))
+                foreach (var n in Enumerable.Range(1, iterations))
                 {
                     var data = ObjectGeneration.CreateObjectGraph(5);
 

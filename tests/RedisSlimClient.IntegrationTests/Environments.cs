@@ -32,7 +32,7 @@ namespace RedisSlimClient.IntegrationTests
             }
 
             config.NetworkConfiguration.PortMappings
-                .Map(6379, (int)ConfigurationScenario.NonSslReplicaSetMaster)
+                .Map(6376, (int)ConfigurationScenario.NonSslReplicaSetMaster)
                 .Map(6377, (int)ConfigurationScenario.NonSslReplicaSetSlave1)
                 .Map(6378, (int)ConfigurationScenario.NonSslReplicaSetSlave2);
 

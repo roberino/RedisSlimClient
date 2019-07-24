@@ -1,7 +1,5 @@
 ﻿using RedisSlimClient.Configuration;
 using RedisSlimClient.Io;
-using RedisSlimClient.Telemetry;
-using System;
 using System.Linq;
 using System.Text;
 using System.Threading;
