@@ -30,11 +30,11 @@ namespace RedisSlimClient.Io
 
             if (configuration.PipelineMode == PipelineMode.AsyncPipeline || configuration.PipelineMode == PipelineMode.Default)
             {
-                connectionInit = new ConnectionInitialiser(endPointInfo, configuration.NetworkConfiguration, configuration, CreateAsyncPipe(configuration), configuration.TelemetryWriter);
+                connectionInit = new ConnectionInitialiser(endPointInfo, configuration.NetworkConfiguration, configuration, CreateAsyncPipe(configuration), configuration.TelemetryWriter, configuration.ConnectTimeout);
             }
             else
             {
-                connectionInit = new ConnectionInitialiser(endPointInfo, configuration.NetworkConfiguration, configuration, CreateSyncPipe(configuration), configuration.TelemetryWriter);
+                connectionInit = new ConnectionInitialiser(endPointInfo, configuration.NetworkConfiguration, configuration, CreateSyncPipe(configuration), configuration.TelemetryWriter, configuration.ConnectTimeout);
             }
 
             return new Connection(connectionInit);

@@ -20,18 +20,20 @@ namespace RedisSlimClient.Io.Server
         readonly IClientCredentials _clientCredentials;
         readonly Func<IServerEndpointFactory, Task<ICommandPipeline>> _pipelineFactory;
         readonly ITelemetryWriter _telemetryWriter;
+        readonly TimeSpan _timeout;
 
         public ConnectionInitialiser(
             ServerEndPointInfo endPointInfo, NetworkConfiguration networkConfiguration,
             IClientCredentials clientCredentials,
             Func<IServerEndpointFactory, Task<ICommandPipeline>> pipelineFactory,
-            ITelemetryWriter telemetryWriter)
+            ITelemetryWriter telemetryWriter, TimeSpan timeout)
         {
             _initialEndPoint = endPointInfo;
             _networkConfiguration = networkConfiguration;
             _clientCredentials = clientCredentials;
             _pipelineFactory = pipelineFactory;
             _telemetryWriter = telemetryWriter;
+            _timeout = timeout;
             _connectionCache = new Dictionary<ServerEndPointInfo, IConnectionSubordinate>();
         }
 
@@ -53,7 +55,7 @@ namespace RedisSlimClient.Io.Server
             }
         }
 
-        CancellationToken DefaultCancellation => new CancellationTokenSource(1000).Token;
+        CancellationToken DefaultCancellation => new CancellationTokenSource(_timeout).Token;
 
         AuthCommand AuthCommand => new AuthCommand(_clientCredentials.Password);
 

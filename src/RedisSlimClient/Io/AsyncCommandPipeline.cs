@@ -3,7 +3,6 @@ using RedisSlimClient.Io.Monitoring;
 using RedisSlimClient.Io.Net;
 using RedisSlimClient.Io.Pipelines;
 using RedisSlimClient.Io.Scheduling;
-using RedisSlimClient.Io.Server;
 using RedisSlimClient.Serialization.Protocol;
 using RedisSlimClient.Telemetry;
 using RedisSlimClient.Util;
@@ -19,7 +18,6 @@ namespace RedisSlimClient.Io
 
         readonly IDuplexPipeline _pipeline;
         readonly ISocket _socket;
-        readonly IRedisEndpoint _endpoint;
         readonly ITelemetryWriter _telemetryWriter;
         readonly CommandQueue _commandQueue;
         readonly CompletionHandler _completionHandler;

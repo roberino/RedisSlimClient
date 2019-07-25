@@ -23,7 +23,7 @@ namespace RedisSlimClient.IntegrationTests
             {
                 PipelineMode = pipelineMode,
                 DefaultOperationTimeout = TimeSpan.FromMilliseconds(2500),
-                ConnectTimeout = TimeSpan.FromMilliseconds(2500)
+                ConnectTimeout = TimeSpan.FromMilliseconds(3500)
             };
 
             if (output != null)
