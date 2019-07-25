@@ -61,6 +61,28 @@ namespace RedisSlimClient.IntegrationTests
         }
 
         [Theory]
+        [InlineData(PipelineMode.Sync, ConfigurationScenario.NonSslBasic)]
+        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
+        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.SslBasic)]
+        [InlineData(PipelineMode.Sync, ConfigurationScenario.SslBasic)]
+        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslReplicaSetMaster)]
+        public async Task PingAllAsync_VariousConfigurations_ReturnsTrue(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
+        {
+            using (var client = RedisClient.Create(Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine)))
+            {
+                var cancel = new CancellationTokenSource(3000);
+                var results = await client.PingAllAsync(cancel.Token);
+
+                foreach (var result in results)
+                {
+                    _output.WriteLine($"{result.Endpoint} {result.Ok} {result.Error}");
+                }
+
+                Assert.True(results.All(r => r.Ok));
+            }
+        }
+
+        [Theory]
         [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslReplicaSetSlave1)]
         public async Task PingAsync_Slave_ReturnsTrue(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
         {
@@ -76,12 +98,14 @@ namespace RedisSlimClient.IntegrationTests
         [Theory]
         [InlineData(1, 100)]
         [InlineData(4, 50)]
-        public void PingAsync_MutlipleThreads_ReturnsTrue(int maxThreads, int iterations)
+        public async Task PingAsync_MutlipleThreads_ReturnsTrue(int maxThreads, int iterations)
         {
             using (var client = RedisClient.Create(Environments.DefaultConfiguration(_output.WriteLine)))
             {
                 var success = false;
                 var ev = new ManualResetEvent(false);
+
+                await client.PingAsync();
 
                 ThreadPool.QueueUserWorkItem(_ =>
                 {

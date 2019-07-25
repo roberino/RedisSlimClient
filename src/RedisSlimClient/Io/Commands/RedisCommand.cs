@@ -10,6 +10,9 @@ namespace RedisSlimClient.Io.Commands
     {
         static readonly Uri UnassignedEndpoint = new Uri("unknown://unassigned:1");
 
+        Action<CommandState> _stateChanged;
+        Stopwatch _sw;
+
         protected RedisCommand(string commandText, RedisKey key = default) : this(commandText, true, key)
         {
         }
@@ -22,16 +25,22 @@ namespace RedisSlimClient.Io.Commands
             CompletionSource = new TaskCompletionSource<T>();
         }
 
-        public Func<object[], Task> OnExecute { get; set; }
+        protected void BeginTimer()
+        {
+            if (_sw != null)
+            {
+                _sw = new Stopwatch();
+                _sw.Start();
+            }
+        }
 
-        Action<CommandState> _stateChanged;
-        Stopwatch _sw;
+        public Func<object[], Task> OnExecute { get; set; }
 
         void FireStateChange(CommandStatus status)
         {
             if (_stateChanged != null)
             {
-                _stateChanged.Invoke(new CommandState(_sw.Elapsed, status, this));
+                _stateChanged.Invoke(new CommandState(Elapsed, status, this));
             }
         }
 
@@ -40,10 +49,11 @@ namespace RedisSlimClient.Io.Commands
             set
             {
                 _stateChanged = value;
-                _sw = new Stopwatch();
-                _sw.Start();
+                BeginTimer();
             }
         }
+
+        public TimeSpan Elapsed => _sw == null ? TimeSpan.Zero : _sw.Elapsed;
 
         public Uri AssignedEndpoint { get; set; } = UnassignedEndpoint;
 

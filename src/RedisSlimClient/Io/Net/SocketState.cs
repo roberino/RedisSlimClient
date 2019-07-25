@@ -51,6 +51,8 @@ namespace RedisSlimClient.Io.Net
             Changed = null;
         }
 
+        public bool IsFaulted => Status == SocketStatus.ConnectFault || Status == SocketStatus.ReadFault || Status == SocketStatus.WriteFault;
+
         public bool IsAvailable => Status == SocketStatus.Connected || Status == SocketStatus.Disconnected;
 
         public bool IsConnected => Status == SocketStatus.Connected;

@@ -8,7 +8,7 @@ namespace RedisSlimClient.Io.Server
     {
         public const string SuccessResponse = "PONG";
 
-        public PingCommand() : base("PING")
+        public PingCommand() : base("PING", false, default)
         {
         }
 

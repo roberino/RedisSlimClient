@@ -1,18 +1,21 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 
 namespace RedisSlimClient.Configuration
 {
-    public sealed class DnsResolver : IDnsResolver
+    public sealed class HostAddressResolver : IHostAddressResolver
     {
         readonly IDictionary<string, IPHostEntry> _hostLookup;
+        readonly IList<(IpSubnet subnet, IPAddress address)> _ipMapping;
 
-        public DnsResolver()
+        public HostAddressResolver()
         {
             _hostLookup = new Dictionary<string, IPHostEntry>();
+            _ipMapping = new List<(IpSubnet subnet, IPAddress address)>();
         }
 
-        public IDnsResolver Register(IPHostEntry ip)
+        public IHostAddressResolver Register(IPHostEntry ip)
         {
             _hostLookup[ip.HostName] = ip;
 
@@ -27,7 +30,7 @@ namespace RedisSlimClient.Configuration
             return this;
         }
 
-        public IDnsResolver Register(string host, string ip)
+        public IHostAddressResolver Register(string host, string ip)
         {
             return Register(new IPHostEntry()
             {
@@ -35,6 +38,22 @@ namespace RedisSlimClient.Configuration
                 Aliases = new string[0],
                 AddressList = new[] { IPAddress.Parse(ip) }
             });
+        }
+
+        public IHostAddressResolver Map(string cidrOrIpAddress, string targetIp)
+        {
+            var subnet = new IpSubnet(cidrOrIpAddress);
+
+            _ipMapping.Add((subnet, IPAddress.Parse(targetIp)));
+
+            return this;
+        }
+
+        public IPAddress Resolve(IPAddress ipAddress)
+        {
+            var match = _ipMapping.FirstOrDefault(m => m.subnet.IsAddressOnSubnet(ipAddress)).address;
+
+            return match ?? ipAddress;
         }
 
         public IPHostEntry Resolve(string host)

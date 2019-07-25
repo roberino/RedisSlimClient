@@ -5,6 +5,8 @@ using RedisSlimClient.Io.Server;
 using RedisSlimClient.Telemetry;
 using RedisSlimClient.Types;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -30,6 +32,11 @@ namespace RedisSlimClient
         public Task<bool> PingAsync(CancellationToken cancellation = default)
         {
             return GetResponse(new PingCommand(), cancellation);
+        }
+
+        public Task<PingResponse[]> PingAllAsync(CancellationToken cancellation = default)
+        {
+            return GetResponses(() => new PingCommand(), (x, u) => new PingResponse(u, x), (e, u) => new PingResponse(u, e), ConnectionTarget.AllNodes);
         }
 
         public async Task<long> DeleteAsync(string key, CancellationToken cancellation = default)
@@ -101,6 +108,31 @@ namespace RedisSlimClient
             return await cmdPipe.Execute(cmd, CancellationPolicy(cancellation));
         }
 
+        async Task<TResult[]> GetResponses<TCmd, TResult>(Func<IRedisResult<TCmd>> cmdFactory, Func<TCmd, Uri, TResult> translator, Func<Exception, Uri, TResult> errorTranslator,  ConnectionTarget target, CancellationToken cancellation = default)
+        {
+            var cmd0 = cmdFactory();
+
+            var cmdPipes = await _connection.RouteCommandAsync(cmd0, target);
+
+            return await Task.WhenAll(cmdPipes.Select(async c =>
+            {
+                var cmdx = cmdFactory();
+
+                try
+                {
+                    AttachTelemetry(cmdx);
+
+                    var result = await c.Execute(cmdx);
+
+                    return translator(result, cmdx.AssignedEndpoint);
+                }
+                catch (Exception ex)
+                {
+                    return errorTranslator(ex, cmdx.AssignedEndpoint);
+                }
+            }));
+        }
+
         async Task<bool> CompareStringResponse<T>(IRedisResult<T> cmd, string expectedResponse, CancellationToken cancellation = default)
         {
             var cmdPipe = await RouteCommandAsync(cmd);
@@ -123,10 +155,17 @@ namespace RedisSlimClient
             return msg.Value;
         }
 
-        async Task<ICommandPipeline> RouteCommandAsync(IRedisCommand cmd)
+        async Task<ICommandExecutor> RouteCommandAsync(IRedisCommand cmd)
         {
             var cmdPipe = await _connection.RouteCommandAsync(cmd);
 
+            AttachTelemetry(cmd);
+
+            return cmdPipe;
+        }
+
+        void AttachTelemetry(IRedisCommand cmd)
+        {
             if (_configuration.TelemetryWriter.Enabled)
             {
                 var telemetryEvent = new TelemetryEvent()
@@ -141,7 +180,7 @@ namespace RedisSlimClient
                 {
                     var childEvent = new TelemetryEvent()
                     {
-                        Name = s.ToString(),
+                        Name = s.Status.ToString(),
                         Elapsed = s.Elapsed,
                         OperationId = telemetryEvent.OperationId
                     };
@@ -153,8 +192,6 @@ namespace RedisSlimClient
                     _configuration.TelemetryWriter.Write(childEvent);
                 };
             }
-
-            return cmdPipe;
         }
 
         CancellationToken CancellationPolicy(CancellationToken cancellation)

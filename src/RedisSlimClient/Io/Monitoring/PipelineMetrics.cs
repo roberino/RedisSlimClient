@@ -1,8 +1,8 @@
 ﻿namespace RedisSlimClient.Io.Monitoring
 {
-    readonly struct ConnectionMetrics
+    readonly struct PipelineMetrics
     {
-        public ConnectionMetrics(int pendingWrites, int pendingReads)
+        public PipelineMetrics(int pendingWrites, int pendingReads)
         {
             PendingWrites = pendingWrites;
             PendingReads = pendingReads;

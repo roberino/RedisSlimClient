@@ -1,13 +1,13 @@
 ﻿using RedisSlimClient.Io.Commands;
-using RedisSlimClient.Io.Server;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace RedisSlimClient.Io
 {
     internal interface IConnection : IDisposable
     {
-        string Id { get; }
-        Task<ICommandPipeline> RouteCommandAsync(ICommandIdentity command);
+        Task<IEnumerable<ICommandExecutor>> RouteCommandAsync(ICommandIdentity command, ConnectionTarget target);
+        Task<ICommandExecutor> RouteCommandAsync(ICommandIdentity command);
     }
 }

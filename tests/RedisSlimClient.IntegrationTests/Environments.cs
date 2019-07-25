@@ -22,8 +22,8 @@ namespace RedisSlimClient.IntegrationTests
             var config = new ClientConfiguration($"redis://localhost:{(int)scenario}")
             {
                 PipelineMode = pipelineMode,
-                DefaultOperationTimeout = TimeSpan.FromMilliseconds(1500),
-                ConnectTimeout = TimeSpan.FromMilliseconds(1500)
+                DefaultOperationTimeout = TimeSpan.FromMilliseconds(2500),
+                ConnectTimeout = TimeSpan.FromMilliseconds(2500)
             };
 
             if (output != null)
@@ -39,7 +39,8 @@ namespace RedisSlimClient.IntegrationTests
             config.NetworkConfiguration.DnsResolver
                 .Register("redis-master1", "127.0.0.1")
                 .Register("redis-slave1", "127.0.0.1")
-                .Register("redis-slave2", "127.0.0.1");
+                .Register("redis-slave2", "127.0.0.1")
+                .Map("192.168.0.0/16", "127.0.0.1");
 
             if (!scenario.ToString().Contains("NonSsl"))
             {

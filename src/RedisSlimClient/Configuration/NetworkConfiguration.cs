@@ -2,14 +2,14 @@
 {
     public sealed class NetworkConfiguration
     {
-        public NetworkConfiguration(IDnsResolver dnsResolver = null)
+        public NetworkConfiguration(IHostAddressResolver dnsResolver = null)
         {
-            DnsResolver = dnsResolver ?? new DnsResolver();
+            DnsResolver = dnsResolver ?? new HostAddressResolver();
             PortMappings = new PortMap();
         }
 
         public PortMap PortMappings { get; }
 
-        public IDnsResolver DnsResolver { get; }
+        public IHostAddressResolver DnsResolver { get; }
     }
 }

@@ -9,7 +9,7 @@ namespace RedisSlimClient.Io
     {
         PipelineStatus Status { get; }
 
-        ConnectionMetrics Metrics { get; }
+        PipelineMetrics Metrics { get; }
 
         ServerEndPointInfo EndPointInfo { get; }
 

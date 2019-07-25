@@ -7,15 +7,18 @@ using System.Threading.Tasks;
 
 namespace RedisSlimClient.Io
 {
-    internal interface ICommandPipeline : IDisposable
+    interface ICommandExecutor
+    {
+        PipelineMetrics Metrics { get; }
+
+        Task<T> Execute<T>(IRedisResult<T> command, CancellationToken cancellation = default);
+    }
+
+    interface ICommandPipeline : ICommandExecutor, IDisposable
     {
         IAsyncEvent<ICommandPipeline> Initialising { get; }
 
         PipelineStatus Status { get; }
-
-        ConnectionMetrics Metrics { get; }
-
-        Task<T> Execute<T>(IRedisResult<T> command, CancellationToken cancellation = default);
 
         Task<T> ExecuteAdmin<T>(IRedisResult<T> command, CancellationToken cancellation = default);
     }

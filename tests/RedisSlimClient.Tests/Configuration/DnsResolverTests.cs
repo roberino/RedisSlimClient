@@ -9,7 +9,7 @@ namespace RedisSlimClient.UnitTests.Configuration
         [Fact]
         public void Register_TwoAddresses_CanBeResolved()
         {
-            var resolver = new DnsResolver();
+            var resolver = new HostAddressResolver();
 
             resolver
                 .Register("test-host1", "192.168.0.5")

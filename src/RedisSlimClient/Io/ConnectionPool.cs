@@ -1,7 +1,6 @@
 ﻿using RedisSlimClient.Io.Commands;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace RedisSlimClient.Io
@@ -13,13 +12,21 @@ namespace RedisSlimClient.Io
         public ConnectionPool(IReadOnlyCollection<IConnection> connections)
         {
             _connections = connections;
-
-            Id = _connections.Aggregate(new StringBuilder(), (s, c) => s.Append(c.Id).Append('.')).ToString();
         }
 
-        public string Id { get; }
+        public async Task<IEnumerable<ICommandExecutor>> RouteCommandAsync(ICommandIdentity command, ConnectionTarget target)
+        {
+            var availablePipelines = (await Task.WhenAll(_connections.Select(c => c.RouteCommandAsync(command, target)))).SelectMany(x => x);
 
-        public async Task<ICommandPipeline> RouteCommandAsync(ICommandIdentity command)
+            if (target == ConnectionTarget.FirstAvailable)
+            {
+                return availablePipelines.Take(1);
+            }
+
+            return availablePipelines;
+        }
+
+        public async Task<ICommandExecutor> RouteCommandAsync(ICommandIdentity command)
         {
             var availablePipelines = await Task.WhenAll(_connections.Select(c => c.RouteCommandAsync(command)));
 

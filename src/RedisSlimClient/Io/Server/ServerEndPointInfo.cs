@@ -8,7 +8,7 @@ namespace RedisSlimClient.Io.Server
 {
     class ServerEndPointInfo : IServerEndpointFactory, IEquatable<ServerEndPointInfo>, IRedisEndpoint
     {
-        public ServerEndPointInfo(string host, int port, int mappedPort, IDnsResolver dnsResolver, ServerRoleType role = ServerRoleType.Unknown)
+        public ServerEndPointInfo(string host, int port, int mappedPort, IHostAddressResolver dnsResolver, ServerRoleType role = ServerRoleType.Unknown)
         {
             Host = host;
             Port = port;
@@ -19,7 +19,7 @@ namespace RedisSlimClient.Io.Server
 
         public Uri EndpointIdentifier => new Uri($"{RoleType.ToString()}://{Host}:{MappedPort}");
 
-        public IDnsResolver DnsResolver { get; }
+        public IHostAddressResolver DnsResolver { get; }
 
         public string Host { get; }
 

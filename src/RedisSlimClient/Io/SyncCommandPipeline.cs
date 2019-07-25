@@ -62,7 +62,7 @@ namespace RedisSlimClient.Io
         }
 
 
-        public ConnectionMetrics Metrics => new ConnectionMetrics(_pendingWrites, _pendingReads);
+        public PipelineMetrics Metrics => new PipelineMetrics(_pendingWrites, _pendingReads);
 
         public PipelineStatus Status => _status;
 

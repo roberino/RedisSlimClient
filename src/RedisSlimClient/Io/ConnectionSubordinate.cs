@@ -25,7 +25,7 @@ namespace RedisSlimClient.Io
             return new ConnectionSubordinate(newEndpointInfo, _pipeline);
         }
 
-        public ConnectionMetrics Metrics => _pipeline.TryGet(p => p.Metrics);
+        public PipelineMetrics Metrics => _pipeline.TryGet(p => p.Metrics);
 
         public Task<ICommandPipeline> GetPipeline() => _pipeline.GetValue();
 

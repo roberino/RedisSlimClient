@@ -57,7 +57,7 @@ namespace RedisSlimClient.Io
 
         public PipelineStatus Status => _status;
 
-        public ConnectionMetrics Metrics => new ConnectionMetrics((int)_pendingWrites.Value, _commandQueue.QueueSize);
+        public PipelineMetrics Metrics => new PipelineMetrics((int)_pendingWrites.Value, _commandQueue.QueueSize);
 
         public IAsyncEvent<ICommandPipeline> Initialising { get; }
 

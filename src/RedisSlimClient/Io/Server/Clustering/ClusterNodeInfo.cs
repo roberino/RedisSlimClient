@@ -6,7 +6,7 @@ namespace RedisSlimClient.Io.Server.Clustering
 {
     class ClusterNodeInfo : ServerEndPointInfo
     {
-        public ClusterNodeInfo(string host, int port, int mappedPort, IDnsResolver dnsResolver, ServerRoleType role, SlotRange[] slots) : base(host, port, mappedPort, dnsResolver, role)
+        public ClusterNodeInfo(string host, int port, int mappedPort, IHostAddressResolver dnsResolver, ServerRoleType role, SlotRange[] slots) : base(host, port, mappedPort, dnsResolver, role)
         {
             Slots = slots;
         }
