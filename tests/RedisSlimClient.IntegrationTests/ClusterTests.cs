@@ -20,7 +20,7 @@ namespace RedisSlimClient.IntegrationTests
         [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslClusterSet)]
         public async Task PingAsync_DifferentPipelineModes_ReturnsTrue(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
         {
-            using (var client = RedisClient.Create(Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine)))
+            using (var client = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine).CreateClient())
             {
                 var cancel = new CancellationTokenSource(3000);
                 var result = await client.PingAsync(cancel.Token);
@@ -33,7 +33,7 @@ namespace RedisSlimClient.IntegrationTests
         [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslClusterSet)]
         public async Task GetAndSetString(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
         {
-            using (var client = RedisClient.Create(Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine)))
+            using (var client = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine).CreateClient())
             {
                 var cancel = new CancellationTokenSource(3000);
 

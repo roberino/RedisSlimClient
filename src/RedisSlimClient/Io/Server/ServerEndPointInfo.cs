@@ -8,6 +8,8 @@ namespace RedisSlimClient.Io.Server
 {
     class ServerEndPointInfo : IServerEndpointFactory, IEquatable<ServerEndPointInfo>, IRedisEndpoint
     {
+        Uri _uri;
+
         public ServerEndPointInfo(string host, int port, int mappedPort, IHostAddressResolver dnsResolver, ServerRoleType role = ServerRoleType.Unknown)
         {
             Host = host;
@@ -17,7 +19,52 @@ namespace RedisSlimClient.Io.Server
             DnsResolver = dnsResolver;
         }
 
-        public Uri EndpointIdentifier => new Uri($"{RoleType.ToString()}://{Host}:{MappedPort}");
+        public Uri EndpointIdentifier
+        {
+            get
+            {
+                var u = _uri;
+
+                if (u != null)
+                {
+                    return u;
+                }
+
+                var endpoint = DnsResolver.CreateEndpoint(Host, MappedPort);
+
+                string resolvedHost;
+
+                try
+                {
+                    resolvedHost = endpoint.Address.MapToIPv4().ToString();
+                }
+                catch
+                {
+                    resolvedHost = Host;
+                }
+
+                var uri = new UriBuilder($"{RoleType.ToString()}://{resolvedHost}:{MappedPort}");
+
+                if (Port != MappedPort)
+                {
+                    uri.Query += $"original-port={Port}";
+                }
+
+                if (!string.Equals(resolvedHost, Host))
+                {
+                    if (uri.Query.Length > 0)
+                    {
+                        uri.Query += "&";
+                    }
+
+                    uri.Query += $"original-host={Host}";
+                }
+
+                _uri = uri.Uri;
+
+                return uri.Uri;
+            }
+        }
 
         public IHostAddressResolver DnsResolver { get; }
 
@@ -36,7 +83,11 @@ namespace RedisSlimClient.Io.Server
 
         public virtual bool CanServe(ICommandIdentity command) => !command.RequireMaster || RoleType == ServerRoleType.Master;
 
-        public EndPoint CreateEndpoint() => DnsResolver.CreateEndpoint(Host, MappedPort);
+        public EndPoint CreateEndpoint()
+        {
+            _uri = null;
+            return DnsResolver.CreateEndpoint(Host, MappedPort);
+        }
 
         public bool Equals(ServerEndPointInfo other)
         {

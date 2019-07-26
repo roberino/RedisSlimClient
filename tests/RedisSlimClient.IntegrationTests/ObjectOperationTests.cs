@@ -23,7 +23,9 @@ namespace RedisSlimClient.IntegrationTests
         [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.SslBasic, 10)]
         public async Task MultipleOperations_MultipleIterations_ExecutesSuccessfully(PipelineMode pipelineMode, ConfigurationScenario configurationScenario, int iterations)
         {
-            using (var client = RedisClient.Create(Environments.GetConfiguration(configurationScenario, pipelineMode)))
+            var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine);
+
+            using (var client = config.CreateClient())
             {
                 await client.PingAsync();
 

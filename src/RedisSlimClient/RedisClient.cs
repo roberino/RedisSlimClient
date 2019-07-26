@@ -2,10 +2,8 @@
 using RedisSlimClient.Io;
 using RedisSlimClient.Io.Commands;
 using RedisSlimClient.Io.Server;
-using RedisSlimClient.Telemetry;
 using RedisSlimClient.Types;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,7 +15,7 @@ namespace RedisSlimClient
         readonly ClientConfiguration _configuration;
         readonly IConnection _connection;
 
-        internal RedisClient(ClientConfiguration configuration) : this(configuration, e => new ConnectionFactory().Create(e))
+        RedisClient(ClientConfiguration configuration) : this(configuration, e => new ConnectionFactory().Create(e))
         {
         }
 
@@ -27,7 +25,7 @@ namespace RedisSlimClient
             _connection = connectionFactory(_configuration);
         }
 
-        public static IRedisClient Create(ClientConfiguration configuration) => new RedisClient(configuration);
+        internal static IRedisClient Create(ClientConfiguration configuration) => new RedisClient(configuration);
 
         public Task<bool> PingAsync(CancellationToken cancellation = default)
         {
@@ -120,7 +118,7 @@ namespace RedisSlimClient
 
                 try
                 {
-                    AttachTelemetry(cmdx);
+                    cmdx.AttachTelemetry(_configuration.TelemetryWriter);
 
                     var result = await c.Execute(cmdx);
 
@@ -159,39 +157,9 @@ namespace RedisSlimClient
         {
             var cmdPipe = await _connection.RouteCommandAsync(cmd);
 
-            AttachTelemetry(cmd);
+            cmd.AttachTelemetry(_configuration.TelemetryWriter);
 
             return cmdPipe;
-        }
-
-        void AttachTelemetry(IRedisCommand cmd)
-        {
-            if (_configuration.TelemetryWriter.Enabled)
-            {
-                var telemetryEvent = new TelemetryEvent()
-                {
-                    Name = nameof(cmd.Execute),
-                    Action = cmd.CommandText
-                };
-
-                _configuration.TelemetryWriter.Write(telemetryEvent);
-
-                cmd.OnStateChanged = s =>
-                {
-                    var childEvent = new TelemetryEvent()
-                    {
-                        Name = s.Status.ToString(),
-                        Elapsed = s.Elapsed,
-                        OperationId = telemetryEvent.OperationId
-                    };
-
-                    childEvent.Dimensions[$"{nameof(Uri.Host)}"] = cmd.AssignedEndpoint.Host;
-                    childEvent.Dimensions[$"{nameof(Uri.Port)}"] = cmd.AssignedEndpoint.Port;
-                    childEvent.Dimensions["Role"] = cmd.AssignedEndpoint.Scheme;
-
-                    _configuration.TelemetryWriter.Write(childEvent);
-                };
-            }
         }
 
         CancellationToken CancellationPolicy(CancellationToken cancellation)

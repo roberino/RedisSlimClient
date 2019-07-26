@@ -41,16 +41,16 @@ namespace RedisSlimClient.Benchmarks
         public void TestSetup()
         {
             var key = $"{PipelineMode}/{ConnectionPoolSize}";
-            
+
             _currentClient = _clients.GetOrAdd(key, k =>
-                RedisClient.Create(new ClientConfiguration(ServerUri)
+                new ClientConfiguration(ServerUri)
                 {
                     ConnectionPoolSize = ConnectionPoolSize,
                     PipelineMode = PipelineMode,
                     ConnectTimeout = TimeSpan.FromMilliseconds(500),
                     DefaultOperationTimeout = TimeSpan.FromMilliseconds(500),
-                    TelemetryWriter= new TextTelemetryWriter(Console.WriteLine, Severity.Error)
-                })
+                    TelemetryWriter = new TextTelemetryWriter(Console.WriteLine, Severity.Error)
+                }.CreateClient()
             );
         }
 
