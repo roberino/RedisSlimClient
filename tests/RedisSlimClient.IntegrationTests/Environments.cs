@@ -40,7 +40,8 @@ namespace RedisSlimClient.IntegrationTests
                 .Register("redis-master1", "127.0.0.1")
                 .Register("redis-slave1", "127.0.0.1")
                 .Register("redis-slave2", "127.0.0.1")
-                .Map("192.168.0.0/16", "127.0.0.1");
+                .Map("192.168.0.0/16", "127.0.0.1")
+				.Map("172.16.0.0/12", "127.0.0.1");
 
             if (!scenario.ToString().Contains("NonSsl"))
             {
