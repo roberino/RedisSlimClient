@@ -107,6 +107,28 @@ namespace RedisSlimClient.UnitTests.Io
             }
         }
 
+        [Fact(Skip = "WIP")]
+        public async Task RouteMultiKeyCommandAsync_KeysSplitOverConnections_ReturnsConnectionLookupWithCorrectKey()
+        {
+            using (var connection = CreateConnection())
+            {
+                var key1 = (RedisKey)"a";
+                var key2 = (RedisKey)"b";
+
+                WhenConnectionMatchesKey(_sub1.sub, key1);
+                WhenConnectionMatchesKey(_sub2.sub, key2);
+
+                var cmd = Substitute.For<IMultiKeyCommandIdentity>();
+
+                cmd.Keys.Returns(new[] { key1, key2 });
+
+                var pipelines = await connection.RouteMultiKeyCommandAsync(cmd);
+
+                Assert.Equal(key1, pipelines[_sub1.pip].Single());
+                Assert.Equal(key2, pipelines[_sub2.pip].Single());
+            }
+        }
+
         [Fact]
         public void RouteCommandAsync_AllConnectionsBroken_ThrowsNoAvailableConnectionException()
         {
@@ -148,6 +170,11 @@ namespace RedisSlimClient.UnitTests.Io
             ((TestServerInfo)_sub1.sub.EndPointInfo).Enabled = false;
         }
 
+        void WhenConnectionMatchesKey(IConnectionSubordinate sub, RedisKey key)
+        {
+            ((TestServerInfo)sub.EndPointInfo).KeyMatch = key;
+        }
+
         class TestServerInfo : ServerEndPointInfo
         {
             public TestServerInfo(int id) : base($"localhost{id}", 1234, 2345, null, ServerRoleType.Master)
@@ -156,9 +183,11 @@ namespace RedisSlimClient.UnitTests.Io
 
             public bool Enabled { get; set; } = true;
 
+            public RedisKey KeyMatch { get; set; }
+
             public override bool CanServe(ICommandIdentity command, RedisKey key = default)
             {
-                return Enabled;
+                return Enabled && (KeyMatch.IsNull || KeyMatch.Equals(key));
             }
         }
     }
