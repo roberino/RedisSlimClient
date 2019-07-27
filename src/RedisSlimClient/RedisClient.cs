@@ -4,6 +4,7 @@ using RedisSlimClient.Io.Commands;
 using RedisSlimClient.Io.Server;
 using RedisSlimClient.Types;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,13 +14,13 @@ namespace RedisSlimClient
     public class RedisClient : IRedisClient
     {
         readonly ClientConfiguration _configuration;
-        readonly IConnection _connection;
+        readonly ICommandRouter _connection;
 
         RedisClient(ClientConfiguration configuration) : this(configuration, e => new ConnectionFactory().Create(e))
         {
         }
 
-        internal RedisClient(ClientConfiguration configuration, Func<ClientConfiguration, IConnection> connectionFactory)
+        internal RedisClient(ClientConfiguration configuration, Func<ClientConfiguration, ICommandRouter> connectionFactory)
         {
             _configuration = configuration;
             _connection = connectionFactory(_configuration);
@@ -92,6 +93,17 @@ namespace RedisSlimClient
             var rstr = (RedisString)await cmdPipe.Execute(cmd, CancellationPolicy(cancellation));
 
             return rstr.ToString(_configuration.Encoding);
+        }
+
+        public async Task<IEnumerable<string>> GetStringsAsync(IReadOnlyCollection<string> keys, CancellationToken cancellation = default)
+        {
+            var cmd = new MGetCommand(RedisKeys.FromStrings(keys), keys.First());
+
+            var cmdPipe = await RouteCommandAsync(cmd);
+
+            var results = await cmdPipe.Execute(cmd, CancellationPolicy(cancellation));
+
+            return results.Select(s => s.ToString(_configuration.Encoding));
         }
 
         public void Dispose()

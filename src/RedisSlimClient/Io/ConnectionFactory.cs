@@ -10,7 +10,7 @@ namespace RedisSlimClient.Io
 {
     class ConnectionFactory
     {
-        public IConnection Create(ClientConfiguration configuration)
+        public ICommandRouter Create(ClientConfiguration configuration)
         {
             var eps = Enumerable.Range(1, configuration.ConnectionPoolSize).SelectMany(n => configuration.ServerEndpoints).ToArray();
 
@@ -22,7 +22,7 @@ namespace RedisSlimClient.Io
             return new ConnectionPool(eps.Select(e => CreateImpl(configuration, e)).ToArray());
         }
 
-        static IConnection CreateImpl(ClientConfiguration configuration, Uri endPoint)
+        static ICommandRouter CreateImpl(ClientConfiguration configuration, Uri endPoint)
         {
             ConnectionInitialiser connectionInit;
 
@@ -37,7 +37,7 @@ namespace RedisSlimClient.Io
                 connectionInit = new ConnectionInitialiser(endPointInfo, configuration.NetworkConfiguration, configuration, CreateSyncPipe(configuration), configuration.TelemetryWriter, configuration.ConnectTimeout);
             }
 
-            return new Connection(connectionInit);
+            return new CommandRouter(connectionInit);
         }
 
         static Func<IServerEndpointFactory, Task<ICommandPipeline>> CreateSyncPipe(ClientConfiguration configuration)

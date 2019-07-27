@@ -1,8 +1,10 @@
-﻿using System.Text;
+﻿using System;
+using System.Collections;
+using System.Text;
 
 namespace RedisSlimClient.Types
 {
-    readonly struct RedisKey
+    readonly struct RedisKey : IEquatable<RedisKey>
     {
         private RedisKey(byte[] bytes)
         {
@@ -17,8 +19,38 @@ namespace RedisSlimClient.Types
 
         public static implicit operator RedisKey(byte[] x) => new RedisKey(x);
 
-        public static implicit operator byte[](RedisKey x) => x.Bytes;
+        public static implicit operator byte[] (RedisKey x) => x.Bytes;
 
         public override string ToString() => Encoding.UTF8.GetString(Bytes);
+
+        public bool Equals(RedisKey other)
+        {
+            if (other.Bytes == null || Bytes == null)
+            {
+                return false;
+            }
+
+            if (other.Bytes.Length != Bytes.Length)
+            {
+                return false;
+            }
+
+            return StructuralComparisons.StructuralEqualityComparer.Equals(Bytes, other.Bytes);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is RedisKey)
+            {
+                return base.Equals((RedisKey)obj);
+            }
+
+            return false;
+        }
+
+        public override int GetHashCode()
+        {
+            return Bytes == null ? 0 : StructuralComparisons.StructuralEqualityComparer.GetHashCode(Bytes);
+        }
     }
 }

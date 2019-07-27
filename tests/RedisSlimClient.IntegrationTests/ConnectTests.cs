@@ -103,48 +103,6 @@ namespace RedisSlimClient.IntegrationTests
             }
         }
 
-        [Theory]
-        [InlineData(1, 100)]
-        [InlineData(4, 50)]
-        public async Task PingAsync_MutlipleThreads_ReturnsTrue(int maxThreads, int iterations)
-        {
-            var config = Environments.DefaultConfiguration(_output.WriteLine);
-
-            using (var client = config.CreateClient())
-            {
-                var success = false;
-                var ev = new ManualResetEvent(false);
-
-                await client.PingAsync();
-
-                ThreadPool.QueueUserWorkItem(_ =>
-                {
-                    foreach (var i in Enumerable.Range(1, iterations))
-                    {
-                        var tasks = Enumerable.Range(1, maxThreads)
-                            .Select(async n =>
-                            {
-                                var result = await client.PingAsync();
-
-                                Assert.True(result);
-                            }).ToList();
-
-                        Task.WhenAll(tasks).Wait();
-                    }
-
-                    success = true;
-
-                    ev.Set();
-                });
-
-                ev.WaitOne(2500);
-
-                ev.Dispose();
-
-                Assert.True(success);
-            }
-        }
-
         [Fact]
         public async Task ConnectAsync_RemoteServer_CanSetAndGet()
         {

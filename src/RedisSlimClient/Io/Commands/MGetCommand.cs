@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace RedisSlimClient.Io.Commands
 {
-    internal class MGetCommand : RedisPrimativeCommand
+    internal class MGetCommand : RedisCommand<IEnumerable<RedisString>>
     {
         private readonly object[] _args;
 
@@ -19,6 +19,13 @@ namespace RedisSlimClient.Io.Commands
             {
                 _args[i++] = item.Bytes;
             }
+        }
+
+        protected override IEnumerable<RedisString> TranslateResult(IRedisObject redisObject)
+        {
+            var arr = (RedisArray)redisObject;
+
+            return arr.Cast<RedisString>();
         }
 
         public override object[] GetArgs() => _args;

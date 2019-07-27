@@ -17,8 +17,8 @@ namespace RedisSlimClient.IntegrationTests
         }
 
         [Theory]
-        [InlineData(PipelineMode.Sync, ConfigurationScenario.NonSslBasic, 50)]
-        [InlineData(PipelineMode.Sync, ConfigurationScenario.SslBasic, 50)]
+        [InlineData(PipelineMode.Sync, ConfigurationScenario.NonSslBasic, 5)]
+        [InlineData(PipelineMode.Sync, ConfigurationScenario.SslBasic, 5)]
         [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic, 10)]
         [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.SslBasic, 10)]
         public async Task MultipleOperations_MultipleIterations_ExecutesSuccessfully(PipelineMode pipelineMode, ConfigurationScenario configurationScenario, int iterations)

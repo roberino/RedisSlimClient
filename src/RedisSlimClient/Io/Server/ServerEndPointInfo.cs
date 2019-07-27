@@ -1,6 +1,7 @@
 ﻿using RedisSlimClient.Configuration;
 using RedisSlimClient.Io.Commands;
 using RedisSlimClient.Io.Net;
+using RedisSlimClient.Types;
 using System;
 using System.Net;
 
@@ -81,7 +82,7 @@ namespace RedisSlimClient.Io.Server
             RoleType = role;
         }
 
-        public virtual bool CanServe(ICommandIdentity command) => !command.RequireMaster || RoleType == ServerRoleType.Master;
+        public virtual bool CanServe(ICommandIdentity command, RedisKey key = default) => !command.RequireMaster || RoleType == ServerRoleType.Master;
 
         public EndPoint CreateEndpoint()
         {

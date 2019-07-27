@@ -45,11 +45,11 @@ namespace RedisSlimClient.UnitTests.Io
             Assert.Equal(5, BitConverter.ToInt32(((RedisString)result2).Value));
         }
 
-        IConnection[] CreateConnections()
+        ICommandRouter[] CreateConnections()
         {
             return Enumerable.Range(1, 10).Select(n =>
             {
-                var con = Substitute.For<IConnection>();
+                var con = Substitute.For<ICommandRouter>();
                 var pipelne = Substitute.For<ICommandPipeline>();
 
                 pipelne.Metrics.Returns(new PipelineMetrics(100 - n, 100 - n));
