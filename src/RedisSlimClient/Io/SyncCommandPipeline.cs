@@ -116,11 +116,17 @@ namespace RedisSlimClient.Io
                     _pendingWrites--;
                 }
 
+                cancellation.ThrowIfCancellationRequested();
+
                 _pendingReads++;
 
                 try
                 {
-                    command.Complete(_reader.ToObjects().First());
+                    var redisResult = _reader.ToObjects().First();
+
+                    cancellation.ThrowIfCancellationRequested();
+
+                    command.Complete(redisResult);
                 }
                 catch
                 {

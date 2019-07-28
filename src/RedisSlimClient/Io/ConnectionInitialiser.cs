@@ -55,8 +55,6 @@ namespace RedisSlimClient.Io.Server
             }
         }
 
-        CancellationToken DefaultCancellation => new CancellationTokenSource(_timeout).Token;
-
         AuthCommand AuthCommand => new AuthCommand(_clientCredentials.Password);
 
         ClientSetNameCommand ClientSetName => new ClientSetNameCommand(_clientCredentials.ClientName);
@@ -76,17 +74,17 @@ namespace RedisSlimClient.Io.Server
 
             var pipeline = await initialPipeline.GetPipeline();
 
-            var roles = await pipeline.ExecuteAdmin(RoleCommand, DefaultCancellation);
+            var roles = await pipeline.ExecuteAdminWithTimeout(RoleCommand, _timeout);
 
             initialPipeline.EndPointInfo.UpdateRole(roles.RoleType);
 
             if (roles.RoleType == ServerRoleType.Master)
             {
-                var info = await pipeline.ExecuteAdmin(InfoCommand, DefaultCancellation);
+                var info = await pipeline.ExecuteAdminWithTimeout(InfoCommand, _timeout);
 
                 if (info.TryGetValue("cluster", out var cluster) && cluster.TryGetValue("cluster_enabled", out var ce) && (long)ce == 1)
                 {
-                    var clusterNodes = await pipeline.ExecuteAdmin(ClusterCommand, DefaultCancellation);
+                    var clusterNodes = await pipeline.ExecuteAdminWithTimeout(ClusterCommand, _timeout);
                     var me = clusterNodes.FirstOrDefault(n => n.IsMyself);
 
                     var updatedPipe = initialPipeline;
@@ -151,13 +149,13 @@ namespace RedisSlimClient.Io.Server
         {
             if (_clientCredentials.Password != null)
             {
-                if (!await pipeline.ExecuteAdmin(AuthCommand, DefaultCancellation))
+                if (!await pipeline.ExecuteAdminWithTimeout(AuthCommand, _timeout))
                 {
                     throw new AuthenticationException();
                 }
             }
 
-            await pipeline.ExecuteAdmin(ClientSetName, DefaultCancellation);
+            await pipeline.ExecuteAdminWithTimeout(ClientSetName, _timeout);
 
             return pipeline;
         }

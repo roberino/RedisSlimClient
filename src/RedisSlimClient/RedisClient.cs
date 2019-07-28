@@ -59,7 +59,7 @@ namespace RedisSlimClient
 
             var cmdPipe = await RouteCommandAsync(cmd);
 
-            return await cmdPipe.Execute(cmd, CancellationPolicy(cancellation));
+            return await cmdPipe.ExecuteWithCancellation(cmd, cancellation, _configuration.DefaultOperationTimeout);
         }
 
         public async Task<T> GetObjectAsync<T>(string key, CancellationToken cancellation = default)
@@ -68,7 +68,7 @@ namespace RedisSlimClient
 
             var cmdPipe = await RouteCommandAsync(cmd);
 
-            var result = await cmdPipe.Execute(cmd, CancellationPolicy(cancellation));
+            var result = await cmdPipe.ExecuteWithCancellation(cmd, cancellation, _configuration.DefaultOperationTimeout);
 
             return result;
         }
@@ -79,7 +79,7 @@ namespace RedisSlimClient
 
             var cmdPipe = await RouteCommandAsync(cmd);
 
-            var rstr = (RedisString) await cmdPipe.Execute(cmd, CancellationPolicy(cancellation));
+            var rstr = (RedisString) await cmdPipe.ExecuteWithCancellation(cmd, cancellation, _configuration.DefaultOperationTimeout);
 
             return rstr.Value;
         }
@@ -90,7 +90,7 @@ namespace RedisSlimClient
 
             var cmdPipe = await RouteCommandAsync(cmd);
 
-            var rstr = (RedisString)await cmdPipe.Execute(cmd, CancellationPolicy(cancellation));
+            var rstr = (RedisString)await cmdPipe.ExecuteWithCancellation(cmd, cancellation, _configuration.DefaultOperationTimeout);
 
             return rstr.ToString(_configuration.Encoding);
         }
@@ -101,7 +101,7 @@ namespace RedisSlimClient
 
             var cmdPipe = await RouteCommandAsync(cmd);
 
-            var results = await cmdPipe.Execute(cmd, CancellationPolicy(cancellation));
+            var results = await cmdPipe.ExecuteWithCancellation(cmd, cancellation, _configuration.DefaultOperationTimeout);
 
             return results.Select(s => s.ToString(_configuration.Encoding));
         }
@@ -115,7 +115,7 @@ namespace RedisSlimClient
         {
             var cmdPipe = await RouteCommandAsync(cmd);
 
-            return await cmdPipe.Execute(cmd, CancellationPolicy(cancellation));
+            return await cmdPipe.ExecuteWithCancellation(cmd, cancellation, _configuration.DefaultOperationTimeout);
         }
 
         async Task<TResult[]> GetResponses<TCmd, TResult>(Func<IRedisResult<TCmd>> cmdFactory, Func<TCmd, Uri, TResult> translator, Func<Exception, Uri, TResult> errorTranslator,  ConnectionTarget target, CancellationToken cancellation = default)
@@ -147,7 +147,7 @@ namespace RedisSlimClient
         {
             var cmdPipe = await RouteCommandAsync(cmd);
 
-            var result = await cmdPipe.Execute(cmd, CancellationPolicy(cancellation));
+            var result = await cmdPipe.ExecuteWithCancellation(cmd, cancellation, _configuration.DefaultOperationTimeout);
 
             var msg = result.ToString();
 
@@ -158,7 +158,7 @@ namespace RedisSlimClient
         {
             var cmdPipe = await RouteCommandAsync(cmd);
 
-            var result = await cmdPipe.Execute(cmd, CancellationPolicy(cancellation));
+            var result = await cmdPipe.ExecuteWithCancellation(cmd, cancellation, _configuration.DefaultOperationTimeout);
 
             var msg = (RedisInteger)result;
 
@@ -172,16 +172,6 @@ namespace RedisSlimClient
             cmd.AttachTelemetry(_configuration.TelemetryWriter);
 
             return cmdPipe;
-        }
-
-        CancellationToken CancellationPolicy(CancellationToken cancellation)
-        {
-            if (cancellation == default)
-            {
-                return new CancellationTokenSource(_configuration.DefaultOperationTimeout).Token;
-            }
-
-            return cancellation;
         }
     }
 }
