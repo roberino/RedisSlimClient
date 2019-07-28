@@ -80,6 +80,7 @@ namespace RedisSlimClient.Io.Server
         public void UpdateRole(ServerRoleType role)
         {
             RoleType = role;
+            _uri = null;
         }
 
         public virtual bool CanServe(ICommandIdentity command, RedisKey key = default) => !command.RequireMaster || RoleType == ServerRoleType.Master;

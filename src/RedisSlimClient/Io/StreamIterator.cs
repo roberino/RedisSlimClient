@@ -143,6 +143,8 @@ namespace RedisSlimClient.Io
             _cancellationToken.Cancel();
 
             _overflow?.Dispose();
+
+            _cancellationToken.Dispose();
         }
     }
 }

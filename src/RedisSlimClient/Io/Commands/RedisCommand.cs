@@ -27,7 +27,7 @@ namespace RedisSlimClient.Io.Commands
 
         protected void BeginTimer()
         {
-            if (_sw != null)
+            if (_sw == null)
             {
                 _sw = new Stopwatch();
                 _sw.Start();

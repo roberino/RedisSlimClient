@@ -132,6 +132,8 @@ namespace RedisSlimClient.Io.Net
 
                 ShutdownSocket();
 
+                _cancellationTokenSource.Dispose();
+
                 OnDisposing();
             }
         }
