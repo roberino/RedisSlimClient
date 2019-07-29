@@ -110,6 +110,7 @@ namespace RedisSlimClient.Io.Pipelines
             {
                 _pipe.Reader.Complete();
                 _pipe.Writer.Complete();
+                _pipe.Reset();
             }
             catch { }
         }

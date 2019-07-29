@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace RedisSlimClient.Io.Net
 {
-    class SocketState
+    class SocketState : IDisposable
     {
         readonly Func<bool> _connectedState;
 
@@ -80,6 +80,12 @@ namespace RedisSlimClient.Io.Net
             _knownStatus = status;
             Changed?.Invoke(status);
         }
+
+        public void Dispose()
+        {
+            Changed = null;
+            _knownStatus = SocketStatus.Disposed;
+        }
     }
 
     enum SocketStatus
@@ -90,6 +96,7 @@ namespace RedisSlimClient.Io.Net
         ConnectFault,
         ReadFault,
         WriteFault,
-        Terminated
+        Terminated,
+        Disposed
     }
 }

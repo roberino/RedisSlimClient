@@ -53,6 +53,11 @@ namespace RedisSlimClient.Util
 
         public async Task<T> GetValue()
         {
+            if (_instance != null)
+            {
+                return _instance;
+            }
+
             await _semaphore.WaitAsync(_timeout);
 
             try
