@@ -48,6 +48,11 @@ namespace RedisSlimClient.Io.Net
             }
 
             Interlocked.Exchange(ref _onCompleted, continuation);
+
+            if (_isCompleted)
+            {
+                Continue();
+            }
         }
 
         public void UnsafeOnCompleted(Action continuation)
