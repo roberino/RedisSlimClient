@@ -34,7 +34,7 @@ namespace RedisSlimClient.Io
             _socket = socket;
             _telemetryWriter = telemetryWriter ?? NullWriter.Instance;
             _commandQueue = new CommandQueue();
-            _completionHandler = new CompletionHandler(_pipeline.Receiver, _commandQueue);
+            _completionHandler = new CompletionHandler(_pipeline.Receiver, _commandQueue, workScheduler);
             _throttledScheduler = new TimeThrottledScheduler(workScheduler, TimeSpan.FromMilliseconds(500));
 
             _pipeline.Faulted += () =>
@@ -95,12 +95,7 @@ namespace RedisSlimClient.Io
                 {
                     var formatter = new RedisByteFormatter(m);
 
-                    if (!cancellation.IsCancellationRequested)
-                    {
-                        return formatter.Write(args);
-                    }
-
-                    return Task.CompletedTask;
+                    return formatter.Write(args);
                 });
             };
 

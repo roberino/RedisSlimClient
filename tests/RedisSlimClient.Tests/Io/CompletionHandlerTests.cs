@@ -2,6 +2,7 @@
 using RedisSlimClient.Io;
 using RedisSlimClient.Io.Commands;
 using RedisSlimClient.Io.Pipelines;
+using RedisSlimClient.Io.Scheduling;
 using RedisSlimClient.Io.Server;
 using RedisSlimClient.Types;
 using System;
@@ -37,9 +38,9 @@ namespace RedisSlimClient.UnitTests.Io
 
             var queue = new CommandQueue();
 
-            await queue.Enqueue(() => Task.FromResult((IRedisCommand)cmd));
+            await queue.Enqueue((IRedisCommand)cmd);
 
-            var handler = new CompletionHandler(receiver, queue);
+            var handler = new CompletionHandler(receiver, queue, ThreadPoolScheduler.Instance);
 
             handlerAction?.Invoke(data[0]);
             handlerAction?.Invoke(data[1]);

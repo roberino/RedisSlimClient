@@ -47,6 +47,8 @@ namespace RedisSlimClient.Io.Pipelines
 
             if (_reset)
             {
+                _pipe.Reader.CancelPendingRead();
+                _pipe.Writer.CancelPendingFlush();
                 _pipe.Reset();
             }
         }

@@ -60,24 +60,6 @@ namespace RedisSlimClient.Io
             }
         }
 
-        public async Task Enqueue(Func<Task<IRedisCommand>> commandFactory, CancellationToken cancellation = default)
-        {
-            IRedisCommand cmd;
-
-            await _semaphore.WaitAsync(cancellation);
-
-            try
-            {
-                cmd = await commandFactory();
-
-                _commandQueue.Enqueue(cmd);
-            }
-            finally
-            {
-                _semaphore.Release();
-            }
-        }
-
         public async Task Enqueue(IRedisCommand command, CancellationToken cancellation = default)
         {
             await _semaphore.WaitAsync(cancellation);

@@ -1,8 +1,9 @@
 ﻿using RedisSlimClient.Io.Pipelines;
+using RedisSlimClient.Io.Scheduling;
 using RedisSlimClient.Serialization.Protocol;
 using System;
 using System.Buffers;
-using System.Threading;
+using System.Threading.Tasks;
 
 namespace RedisSlimClient.Io
 {
@@ -11,12 +12,14 @@ namespace RedisSlimClient.Io
         readonly RedisObjectBuilder _redisObjectBuilder;
         readonly IPipelineReceiver _receiver;
         readonly CommandQueue _commandQueue;
+        readonly IWorkScheduler _workScheduler;
         readonly RedisByteSequenceDelimitter _delimitter;
 
-        public CompletionHandler(IPipelineReceiver receiver, CommandQueue commandQueue)
+        public CompletionHandler(IPipelineReceiver receiver, CommandQueue commandQueue, IWorkScheduler workScheduler)
         {
             _receiver = receiver;
             _commandQueue = commandQueue;
+            _workScheduler = workScheduler;
             _redisObjectBuilder = new RedisObjectBuilder();
             _delimitter = new RedisByteSequenceDelimitter();
 
@@ -28,7 +31,11 @@ namespace RedisSlimClient.Io
         {
             _commandQueue.ProcessNextCommand(cmd =>
             {
-                ThreadPool.QueueUserWorkItem(_ => cmd.Abandon(ex));
+                _workScheduler.Schedule(() =>
+                {
+                    cmd.Abandon(ex);
+                    return Task.CompletedTask;
+                });
             });
         }
 
@@ -42,7 +49,11 @@ namespace RedisSlimClient.Io
             {
                 _commandQueue.ProcessNextCommand(cmd =>
                 {
-                    ThreadPool.QueueUserWorkItem(_ => cmd.Complete(item));
+                    _workScheduler.Schedule(() =>
+                    {
+                        cmd.Complete(item);
+                        return Task.CompletedTask;
+                    });
                 });
             }
         }
