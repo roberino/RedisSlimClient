@@ -23,6 +23,7 @@ namespace RedisSlimClient.Io.Commands
     {
         Uninitialised,
         Executing,
+        Executed,
         Abandoned,
         Completed,
         Cancelled,

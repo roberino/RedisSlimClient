@@ -67,15 +67,14 @@ namespace RedisSlimClient.Io.Commands
 
         public string CommandText { get; }
 
-        public Task Execute()
+        public async Task Execute()
         {
             if (OnExecute != null)
             {
                 FireStateChange(CommandStatus.Executing);
-                return OnExecute(GetArgs());
+                await OnExecute(GetArgs());
+                FireStateChange(CommandStatus.Executed);
             }
-
-            return Task.CompletedTask;
         }
 
         public virtual object[] GetArgs() => Key.IsNull ? new[] { CommandText } : new[] { CommandText, (object)Key.Bytes };
