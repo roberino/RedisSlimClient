@@ -56,6 +56,9 @@ namespace RedisSlimClient.Io
                 var socket = SocketFactory.CreateSocket(configuration, ep);
                 await socket.ConnectAsync();
                 var socketPipeline = new SocketPipeline(socket, configuration);
+
+                socketPipeline.AttachTelemetry(configuration.TelemetryWriter);
+
                 return new AsyncCommandPipeline(socketPipeline, socket, configuration.Scheduler, configuration.TelemetryWriter);
             };
         }

@@ -86,7 +86,7 @@ namespace RedisSlimClient.Io.Net
             var len = (int)buffer.Length;
 
             buffer.CopyTo(_writeBuffer);
-
+            
             await _sslStream.WriteAsync(_writeBuffer, 0, len);
 
             return len;

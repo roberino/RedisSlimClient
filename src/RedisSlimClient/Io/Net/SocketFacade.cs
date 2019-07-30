@@ -33,6 +33,7 @@ namespace RedisSlimClient.Io.Net
             {
                 RemoteEndPoint = _endPoint
             };
+
             _endPointFactory = endPointFactory;
             _timeout = timeout;
 
@@ -147,6 +148,11 @@ namespace RedisSlimClient.Io.Net
         async Task<int> SendToSocket(ReadOnlyMemory<byte> buffer)
         {
             if (_cancellationTokenSource.IsCancellationRequested)
+            {
+                return 0;
+            }
+
+            if (buffer.IsEmpty)
             {
                 return 0;
             }

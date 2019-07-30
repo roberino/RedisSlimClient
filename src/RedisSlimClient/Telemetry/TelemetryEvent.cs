@@ -7,6 +7,8 @@ namespace RedisSlimClient.Telemetry
     {
         Exception _exception;
 
+        public static string CreateId() => Guid.NewGuid().ToString("N").Substring(0, 8).ToUpper();
+
         public static TelemetryEvent CreateStart(string name) => new TelemetryEvent() { Name = name, Action = "Start" };
         public static TelemetryEvent CreateEnd(string name) => new TelemetryEvent() { Name = name, Action = "End" };
 
@@ -18,7 +20,7 @@ namespace RedisSlimClient.Telemetry
 
         public string Action { get; set; }
 
-        public string OperationId { get; set; } = Guid.NewGuid().ToString("N").Substring(0, 8).ToUpper();
+        public string OperationId { get; set; } = CreateId();
 
         public string Data { get; set; }
 

@@ -28,7 +28,9 @@ namespace RedisSlimClient.Io.Pipelines
             _pipe = new Pipe();
         }
 
+        public Uri EndpointIdentifier => _socket.EndpointIdentifier;
         public event Action<Exception> Error;
+        public event Action<PipelineStatus> StateChanged;
 
         public void RegisterHandler(Func<ReadOnlySequence<byte>, SequencePosition?> delimitter, Action<ReadOnlySequence<byte>> handler)
         {
@@ -86,10 +88,14 @@ namespace RedisSlimClient.Io.Pipelines
 
                 try
                 {
+                    StateChanged?.Invoke(PipelineStatus.ReceivingFromSocket);
+
                     var bytesRead = await _socket.ReceiveAsync(memory);
 
                     if (IsRunning)
                     {
+                        StateChanged?.Invoke(PipelineStatus.Advancing);
+
                         writer.Advance(bytesRead);
                     }
                 }
@@ -111,7 +117,10 @@ namespace RedisSlimClient.Io.Pipelines
             writer.Complete();
 
             if (error != null)
+            {
+                StateChanged?.Invoke(PipelineStatus.Faulted);
                 Error?.Invoke(error);
+            }
         }
 
         async Task ReadPipeAsync()

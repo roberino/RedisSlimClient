@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace RedisSlimClient.Io.Pipelines
 {
-    interface IPipelineSender : IDisposable
+    interface IPipelineSender : IPipelineComponent
     {
         Task SendAsync(byte[] data);
 

@@ -15,17 +15,18 @@ namespace RedisSlimClient.UnitTests.Io.Net
             var tasks = Enumerable.Range(1, 100)
                 .Select(async n =>
                 {
-                    var args = new AwaitableSocketAsyncEventArgs();
+                    using (var args = new AwaitableSocketAsyncEventArgs(true))
+                    {
+                        args.Reset(new ReadOnlyMemory<byte>(new byte[8]));
 
-                    args.Reset(new ReadOnlyMemory<byte>(new byte[8]));
+                        ThreadPool.QueueUserWorkItem(_ => args.Complete(), null);
 
-                    ThreadPool.QueueUserWorkItem(_ => args.Complete(), null);
+                        var result = await args;
 
-                    var result = await args;
+                        result++;
 
-                    result++;
-
-                    return result;
+                        return result;
+                    }
                 });
 
             var results = await Task.WhenAll(tasks);
