@@ -24,14 +24,18 @@ namespace RedisSlimClient.Io.Net
             _cancellationTokenSource = new CancellationTokenSource();
             _endPoint = endPointFactory.CreateEndpoint();
 
+            var scheduler = Scheduling.ThreadPoolScheduler.Instance;
+
             _readEventArgs = new AwaitableSocketAsyncEventArgs()
             {
-                RemoteEndPoint = _endPoint
+                RemoteEndPoint = _endPoint,
+                CompletionHandler = w => scheduler.Schedule(() => { w(); return Task.CompletedTask; })
             };
 
             _writeEventArgs = new AwaitableSocketAsyncEventArgs()
             {
-                RemoteEndPoint = _endPoint
+                RemoteEndPoint = _endPoint,
+                CompletionHandler = w => scheduler.Schedule(() => { w(); return Task.CompletedTask; })
             };
 
             _endPointFactory = endPointFactory;
