@@ -1,13 +1,12 @@
-﻿using RedisSlimClient.Io.Commands;
-using System;
+﻿using System;
 using System.Collections.Concurrent;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using RedisSlimClient.Io.Commands;
 
 namespace RedisSlimClient.Io
 {
-    internal class CommandQueue
+    class CommandQueue
     {
         readonly SemaphoreSlim _semaphore;
         readonly ConcurrentQueue<IRedisCommand> _commandQueue;

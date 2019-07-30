@@ -3,19 +3,35 @@ using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace RedisSlimClient.Io.Net
 {
+    /// <summary>
+    /// Based on https://github.com/aspnet/AspNetCore/blob/master/src/Servers/Kestrel/Transport.Sockets/src/Internal/SocketAwaitableEventArgs.cs
+    /// </summary>
     class AwaitableSocketAsyncEventArgs : SocketAsyncEventArgs, ICriticalNotifyCompletion
     {
         static readonly Memory<byte> NullMemory = new Memory<byte>();
 
+        static readonly Action _callbackCompleted = () => { };
+
         Action _onCompleted;
-        volatile bool _isCompleted;
 
         public AwaitableSocketAsyncEventArgs()
         {
             Reset(NullMemory);
+        }
+
+        public void Reset(Memory<byte> buffer)
+        {
+#if NET_CORE
+            SetBuffer(buffer);
+#else
+            var seg = GetArray(buffer);
+            SetBuffer(seg.Array, seg.Offset, seg.Count);
+#endif
+            CompletionHandler = x => x();
         }
 
         public void Reset(ReadOnlyMemory<byte> buffer)
@@ -23,7 +39,6 @@ namespace RedisSlimClient.Io.Net
             var seg = GetArray(buffer);
             SetBuffer(seg.Array, seg.Offset, seg.Count);
             CompletionHandler = x => x();
-            _isCompleted = false;
         }
 
         public CancellationToken Cancellation { get; set; }
@@ -32,26 +47,31 @@ namespace RedisSlimClient.Io.Net
 
         public Action<Action> CompletionHandler { get; set; }
 
-        public bool IsCompleted => _isCompleted || Cancellation.IsCancellationRequested;
+        public bool IsCompleted => ReferenceEquals(_onCompleted, _callbackCompleted) || Cancellation.IsCancellationRequested;
 
         public int GetResult()
         {
+            _onCompleted = null;
+
+            if (SocketError != SocketError.Success)
+            {
+                throw new SocketException((int)SocketError);
+            }
+
+            if (Cancellation.IsCancellationRequested)
+            {
+                throw new TaskCanceledException();
+            }
+
             return BytesTransferred;
         }
 
         public void OnCompleted(Action continuation)
         {
-            if (_isCompleted)
+            if (ReferenceEquals(_onCompleted, _callbackCompleted) ||
+                ReferenceEquals(Interlocked.CompareExchange(ref _onCompleted, continuation, null), _callbackCompleted))
             {
-                CompletionHandler?.Invoke(continuation);
-                return;
-            }
-
-            Interlocked.Exchange(ref _onCompleted, continuation);
-
-            if (_isCompleted && _onCompleted != null)
-            {
-                Continue();
+                Task.Run(continuation);
             }
         }
 
@@ -62,9 +82,7 @@ namespace RedisSlimClient.Io.Net
 
         public void Complete()
         {
-            _isCompleted = true;
-
-            Continue();
+            OnCompleted(this);
         }
 
         public void Abandon()
@@ -76,10 +94,20 @@ namespace RedisSlimClient.Io.Net
         {
             base.OnCompleted(e);
 
-            Complete();
+            Continue();
         }
 
-        ArraySegment<byte> GetArray(ReadOnlyMemory<byte> memory)
+        void Continue()
+        {
+            var continuation = Interlocked.Exchange(ref _onCompleted, _callbackCompleted);
+
+            if (continuation != null)
+            {
+                CompletionHandler?.Invoke(continuation);
+            }
+        }
+
+        static ArraySegment<byte> GetArray(ReadOnlyMemory<byte> memory)
         {
             if (MemoryMarshal.TryGetArray(memory, out var seg))
             {
@@ -87,16 +115,6 @@ namespace RedisSlimClient.Io.Net
             }
 
             return new ArraySegment<byte>(memory.ToArray());
-        }
-
-        void Continue()
-        {
-            var completion = Interlocked.Exchange(ref _onCompleted, null);
-
-            if (completion != null)
-            {
-                CompletionHandler?.Invoke(completion);
-            }
         }
     }
 }
