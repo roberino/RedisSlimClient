@@ -221,7 +221,7 @@ namespace RedisSlimClient.Io.Net
             {
                 ReceiveTimeout = (int)_timeout.TotalMilliseconds,
                 SendTimeout = (int)_timeout.TotalMilliseconds,
-                NoDelay = true
+                NoDelay = false
             };
 
             socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
