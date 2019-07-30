@@ -15,7 +15,7 @@ namespace RedisSlimClient.UnitTests.Io.Net
             var tasks = Enumerable.Range(1, 100)
                 .Select(async n =>
                 {
-                    using (var args = new AwaitableSocketAsyncEventArgs(true))
+                    using (var args = new AwaitableSocketAsyncEventArgs())
                     {
                         args.Reset(new ReadOnlyMemory<byte>(new byte[8]));
 
