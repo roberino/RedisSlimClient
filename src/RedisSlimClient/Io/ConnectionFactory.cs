@@ -16,13 +16,13 @@ namespace RedisSlimClient.Io
 
             if (eps.Length == 1)
             {
-                return CreateImpl(configuration, eps[0]);
+                return CreateSingleRouter(configuration, eps[0]);
             }
 
-            return new ConnectionPool(eps.Select(e => CreateImpl(configuration, e)).ToArray());
+            return new ConnectionPool(eps.Select(e => CreateSingleRouter(configuration, e)).ToArray());
         }
 
-        static ICommandRouter CreateImpl(ClientConfiguration configuration, Uri endPoint)
+        static ICommandRouter CreateSingleRouter(ClientConfiguration configuration, Uri endPoint)
         {
             ConnectionInitialiser connectionInit;
 

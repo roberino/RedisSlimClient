@@ -111,13 +111,6 @@ namespace RedisSlimClient.Io.Net
                 return 0;
             }
 
-            //if (_socket.Available == 0 && !memory.IsEmpty)
-            //{
-            //    OnReceiving(ReceiveStatus.CheckAvailable);
-
-            //    await ReceiveAsync(default);
-            //}
-
             _readEventArgs.Reset(memory);
 
             var bytesRead = 0;

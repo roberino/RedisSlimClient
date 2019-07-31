@@ -36,8 +36,12 @@ namespace RedisSlimClient.Io.Net
 
         public void Reset(ReadOnlyMemory<byte> buffer)
         {
+#if NET_CORE
+            SetBuffer(MemoryMarshal.AsMemory(buffer));
+#else
             var seg = GetArray(buffer);
             SetBuffer(seg.Array, seg.Offset, seg.Count);
+#endif
             CompletionHandler = x => x();
         }
 
