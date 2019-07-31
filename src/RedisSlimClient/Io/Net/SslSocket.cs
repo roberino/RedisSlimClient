@@ -1,9 +1,7 @@
 ﻿using RedisSlimClient.Configuration;
-using RedisSlimClient.Io.Pipelines;
 using System;
 using System.Buffers;
 using System.IO;
-using System.Net;
 using System.Net.Security;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
@@ -41,39 +39,39 @@ namespace RedisSlimClient.Io.Net
             _sslStream = await CreateStream();
         }
 
-        public override
-#if !NET_CORE             
-            async
-#endif
-             ValueTask<int> ReceiveAsync(Memory<byte> memory)
+        public override async ValueTask<int> ReceiveAsync(Memory<byte> memory)
         {
             if (_sslStream == null)
             {
                 throw new InvalidOperationException();
             }
 
+            var read = 0;
+
+            OnReceiving(ReceiveStatus.Awaiting);
+
 #if NET_CORE
-            return _sslStream.ReadAsync(memory, CancellationToken);
+            read = await _sslStream.ReadAsync(memory, CancellationToken);
 #else
 
             if (MemoryMarshal.TryGetArray((ReadOnlyMemory<byte>)memory, out var seg))
             {
-                var read = await _sslStream.ReadAsync(seg.Array, seg.Offset, seg.Count);
-
-                return read;
+                read = await _sslStream.ReadAsync(seg.Array, seg.Offset, seg.Count);
             }
             else
             {
-                var read = await _sslStream.ReadAsync(_readBuffer, 0, memory.Length);
+                read = await _sslStream.ReadAsync(_readBuffer, 0, memory.Length);
 
                 for (var i = 0; i < read; i++)
                 {
                     memory.Span[i] = _readBuffer[i];
                 }
-
-                return read;
             }
 #endif
+
+            OnReceiving(ReceiveStatus.Completed);
+
+            return read;
         }
 
         public override async ValueTask<int> SendAsync(ReadOnlySequence<byte> buffer)
@@ -86,7 +84,7 @@ namespace RedisSlimClient.Io.Net
             var len = (int)buffer.Length;
 
             buffer.CopyTo(_writeBuffer);
-            
+
             await _sslStream.WriteAsync(_writeBuffer, 0, len);
 
             return len;

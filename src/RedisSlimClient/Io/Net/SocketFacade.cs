@@ -66,6 +66,8 @@ namespace RedisSlimClient.Io.Net
 
         public SocketState State { get; }
 
+        public event Action<ReceiveStatus> Receiving;
+
         public virtual Task ConnectAsync()
         {
             return InitSocketAndNotifyAsync();
@@ -113,10 +115,19 @@ namespace RedisSlimClient.Io.Net
                 if (!_socket.ReceiveAsync(_readEventArgs))
                 {
                     _readEventArgs.Complete();
+
+                    OnReceiving(ReceiveStatus.ReceivedSynchronously);
                 }
+                else
+                {
+                    OnReceiving(ReceiveStatus.ReceivedAsynchronously);
+                }
+
             }
             catch (Exception ex)
             {
+                OnReceiving(ReceiveStatus.Faulted);
+
                 State.ReadError(ex);
 
                 _readEventArgs.Abandon();
@@ -124,7 +135,13 @@ namespace RedisSlimClient.Io.Net
                 throw;
             }
 
-            return await _readEventArgs;
+            OnReceiving(ReceiveStatus.Awaiting);
+
+            var result = await _readEventArgs;
+
+            OnReceiving(ReceiveStatus.Completed);
+
+            return result;
         }
 
         public void Dispose()
@@ -143,6 +160,11 @@ namespace RedisSlimClient.Io.Net
 
                 OnDisposing();
             }
+        }
+
+        protected void OnReceiving(ReceiveStatus status)
+        {
+            Receiving?.Invoke(status);
         }
 
         protected virtual void OnDisposing()
@@ -221,7 +243,10 @@ namespace RedisSlimClient.Io.Net
             {
                 ReceiveTimeout = (int)_timeout.TotalMilliseconds,
                 SendTimeout = (int)_timeout.TotalMilliseconds,
-                NoDelay = false
+                ReceiveBufferSize = 8192,
+                SendBufferSize = 8192,
+                NoDelay = true,
+                ExclusiveAddressUse = true
             };
 
             socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);

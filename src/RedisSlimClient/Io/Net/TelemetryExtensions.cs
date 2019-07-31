@@ -2,17 +2,11 @@
 using System;
 using System.Diagnostics;
 
-namespace RedisSlimClient.Io.Pipelines
+namespace RedisSlimClient.Io.Net
 {
     static class TelemetryExtensions
     {
-        public static void AttachTelemetry(this IDuplexPipeline component, ITelemetryWriter writer)
-        {
-            component.Receiver.AttachTelemetry(writer);
-            component.Sender.AttachTelemetry(writer);
-        }
-
-        public static void AttachTelemetry(this IPipelineComponent component, ITelemetryWriter writer)
+        public static void AttachTelemetry(this ISocket component, ITelemetryWriter writer)
         {
             if (writer.Enabled)
             {
@@ -21,7 +15,7 @@ namespace RedisSlimClient.Io.Pipelines
 
                 sw.Start();
 
-                component.StateChanged += s =>
+                component.Receiving += s =>
                 {
                     var childEvent = new TelemetryEvent()
                     {
@@ -29,7 +23,7 @@ namespace RedisSlimClient.Io.Pipelines
                         Elapsed = sw.Elapsed,
                         OperationId = opId,
                         Data = component.EndpointIdentifier.ToString(),
-                        Severity = s == PipelineStatus.Faulted ? Severity.Error : Severity.Diagnostic
+                        Severity = s == ReceiveStatus.Faulted ? Severity.Error : Severity.Diagnostic
                     };
 
                     childEvent.Dimensions[$"{nameof(Uri.Host)}"] = component.EndpointIdentifier.Host;

@@ -1,6 +1,6 @@
 ﻿namespace RedisSlimClient.Io.Pipelines
 {
-    enum PipelineStatus
+    enum PipelineStatus : byte
     {
         None,
         ReceivingFromSocket,

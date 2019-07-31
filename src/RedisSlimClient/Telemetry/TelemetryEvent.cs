@@ -46,6 +46,8 @@ namespace RedisSlimClient.Telemetry
     {
         Info = 1,
         Warn = 2,
-        Error = 4
+        Error = 4,
+        Diagnostic = 8,
+        All = Info | Warn | Error | Diagnostic
     }
 }

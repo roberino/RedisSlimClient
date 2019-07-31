@@ -16,6 +16,8 @@ namespace RedisSlimClient.UnitTests.Io.Pipelines
 
         Exception _reconnectError;
 
+        public event Action<ReceiveStatus> Receiving;
+
         public StubSocket()
         {
             _sendWaitHandle = new ManualResetEvent(false);

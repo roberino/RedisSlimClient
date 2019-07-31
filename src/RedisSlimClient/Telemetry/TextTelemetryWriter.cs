@@ -7,7 +7,7 @@ namespace RedisSlimClient.Telemetry
         readonly Action<string> _writeMethod;
         readonly Severity _severity;
 
-        public TextTelemetryWriter(Action<string> writeMethod, Severity severity = Severity.Info)
+        public TextTelemetryWriter(Action<string> writeMethod, Severity severity = Severity.Warn | Severity.Error)
         {
             _writeMethod = writeMethod;
             _severity = severity;
