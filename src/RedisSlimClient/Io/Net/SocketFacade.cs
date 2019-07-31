@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace RedisSlimClient.Io.Net
 {
-    class SocketFacade : ISocket, IManagedSocket
+    class SocketFacade : IManagedSocket
     {
         Socket _socket;
 
@@ -71,6 +71,14 @@ namespace RedisSlimClient.Io.Net
         public virtual Task ConnectAsync()
         {
             return InitSocketAndNotifyAsync();
+        }
+        
+        public async Task AwaitAvailableSocket(CancellationToken cancellation)
+        {
+            while (!State.IsAvailable && !cancellation.IsCancellationRequested)
+            {
+                await Task.Delay(5, cancellation);
+            }
         }
 
         public virtual async ValueTask<int> SendAsync(ReadOnlySequence<byte> buffer)
@@ -150,6 +158,8 @@ namespace RedisSlimClient.Io.Net
         {
             if (!_cancellationTokenSource.IsCancellationRequested)
             {
+                Receiving = null;
+
                 State.Terminated();
 
                 _cancellationTokenSource.Cancel();

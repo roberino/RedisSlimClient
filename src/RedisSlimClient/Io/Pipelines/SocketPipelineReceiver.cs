@@ -16,7 +16,7 @@ namespace RedisSlimClient.Io.Pipelines
         readonly CancellationToken _cancellationToken;
 
         volatile bool _reset;
-        Func<ReadOnlySequence<byte>, SequencePosition?> _delimitter;
+        Func<ReadOnlySequence<byte>, SequencePosition?> _delimiter;
         Action<ReadOnlySequence<byte>> _handler;
 
         public SocketPipelineReceiver(ISocket socket, CancellationToken cancellationToken, int minBufferSize = 1024)
@@ -32,9 +32,9 @@ namespace RedisSlimClient.Io.Pipelines
         public event Action<Exception> Error;
         public event Action<PipelineStatus> StateChanged;
 
-        public void RegisterHandler(Func<ReadOnlySequence<byte>, SequencePosition?> delimitter, Action<ReadOnlySequence<byte>> handler)
+        public void RegisterHandler(Func<ReadOnlySequence<byte>, SequencePosition?> delimiter, Action<ReadOnlySequence<byte>> handler)
         {
-            _delimitter = delimitter;
+            _delimiter = delimiter;
             _handler = handler;
         }
 
@@ -64,9 +64,11 @@ namespace RedisSlimClient.Io.Pipelines
         public void Dispose()
         {
             Error = null;
+            StateChanged = null;
 
             _pipe.Reader.Complete();
             _pipe.Writer.Complete();
+
             try
             {
                 _pipe.Reset();
@@ -84,10 +86,12 @@ namespace RedisSlimClient.Io.Pipelines
 
             while (IsRunning)
             {
-                var memory = writer.GetMemory(_minBufferSize);
-
                 try
                 {
+                    await _socket.AwaitAvailableSocket(_cancellationToken);
+
+                    var memory = writer.GetMemory(_minBufferSize);
+
                     StateChanged?.Invoke(PipelineStatus.ReceivingFromSocket);
 
                     var bytesRead = await _socket.ReceiveAsync(memory);
@@ -136,6 +140,8 @@ namespace RedisSlimClient.Io.Pipelines
             {
                 try
                 {
+                    await _socket.AwaitAvailableSocket(_cancellationToken);
+
                     var result = await _pipe.Reader.ReadAsync(_cancellationToken);
 
                     var buffer = result.Buffer;
@@ -192,7 +198,7 @@ namespace RedisSlimClient.Io.Pipelines
         {
             try
             {
-                return _delimitter.Invoke(buffer);
+                return _delimiter.Invoke(buffer);
             }
             catch (Exception ex)
             {

@@ -53,6 +53,11 @@ namespace RedisSlimClient.UnitTests.Io.Pipelines
             });
         }
 
+        public Task AwaitAvailableSocket(CancellationToken cancellation)
+        {
+            return Task.CompletedTask;
+        }
+
         public void Dispose()
         {
             State.Terminated();

@@ -12,30 +12,28 @@ using System.Threading.Tasks;
 
 namespace RedisSlimClient.Io
 {
-    internal class AsyncCommandPipeline : ICommandPipeline
+    class AsyncCommandPipeline : ICommandPipeline
     {
         readonly SyncedCounter _pendingWrites = new SyncedCounter();
 
         readonly IDuplexPipeline _pipeline;
         readonly ISocket _socket;
-        readonly ITelemetryWriter _telemetryWriter;
         readonly CommandQueue _commandQueue;
-        readonly CompletionHandler _completionHandler;
-        readonly IWorkScheduler _throttledScheduler;
 
         bool _disposed;
 
         volatile PipelineStatus _status;
-        volatile int _reconnectAttempts = 0;
+        volatile int _reconnectAttempts;
 
         public AsyncCommandPipeline(IDuplexPipeline pipeline, ISocket socket, IWorkScheduler workScheduler, ITelemetryWriter telemetryWriter)
         {
             _pipeline = pipeline;
             _socket = socket;
-            _telemetryWriter = telemetryWriter ?? NullWriter.Instance;
             _commandQueue = new CommandQueue();
-            _completionHandler = new CompletionHandler(_pipeline.Receiver, _commandQueue, workScheduler);
-            _throttledScheduler = new TimeThrottledScheduler(workScheduler, TimeSpan.FromMilliseconds(500));
+
+            var _ = new CompletionHandler(_pipeline.Receiver, _commandQueue, workScheduler);
+
+            var throttledScheduler = new TimeThrottledScheduler(workScheduler, TimeSpan.FromMilliseconds(500));
 
             _pipeline.Faulted += () =>
             {
@@ -43,7 +41,7 @@ namespace RedisSlimClient.Io
 
                 telemetryWriter.Execute(ctx =>
                 {
-                    _throttledScheduler.Schedule(Reconnect);
+                    throttledScheduler.Schedule(Reconnect);
                 }, nameof(IDuplexPipeline.Faulted));
             };
 

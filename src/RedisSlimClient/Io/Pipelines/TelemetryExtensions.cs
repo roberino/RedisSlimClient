@@ -16,6 +16,7 @@ namespace RedisSlimClient.Io.Pipelines
         {
             if (writer.Enabled)
             {
+                var baseName = component.GetType().Name;
                 var opId = TelemetryEvent.CreateId();
                 var sw = new Stopwatch();
 
@@ -25,7 +26,7 @@ namespace RedisSlimClient.Io.Pipelines
                 {
                     var childEvent = new TelemetryEvent()
                     {
-                        Name = s.ToString(),                        
+                        Name = $"{baseName}/{s}",                        
                         Elapsed = sw.Elapsed,
                         OperationId = opId,
                         Data = component.EndpointIdentifier.ToString(),

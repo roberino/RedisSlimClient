@@ -5,6 +5,6 @@ namespace RedisSlimClient.Io.Pipelines
 {
     interface IPipelineReceiver : IPipelineComponent
     {
-        void RegisterHandler(Func<ReadOnlySequence<byte>, SequencePosition?> delimitter, Action<ReadOnlySequence<byte>> handler);
+        void RegisterHandler(Func<ReadOnlySequence<byte>, SequencePosition?> delimiter, Action<ReadOnlySequence<byte>> handler);
     }
 }

@@ -2,7 +2,7 @@
 {
     enum PipelineStatus : byte
     {
-        None,
+        None = 0,
         ReceivingFromSocket,
         ReadingFromPipe,
         SendingToSocket,

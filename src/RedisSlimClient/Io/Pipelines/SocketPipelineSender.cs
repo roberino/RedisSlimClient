@@ -118,6 +118,7 @@ namespace RedisSlimClient.Io.Pipelines
         public void Dispose()
         {
             Error = null;
+            StateChanged = null;
 
             try
             {

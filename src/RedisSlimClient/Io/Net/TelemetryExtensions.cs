@@ -12,6 +12,7 @@ namespace RedisSlimClient.Io.Net
             {
                 var opId = TelemetryEvent.CreateId();
                 var sw = new Stopwatch();
+                var baseName = component.GetType().Name;
 
                 sw.Start();
 
@@ -19,7 +20,7 @@ namespace RedisSlimClient.Io.Net
                 {
                     var childEvent = new TelemetryEvent()
                     {
-                        Name = s.ToString(),                        
+                        Name = $"{baseName}/{s}",
                         Elapsed = sw.Elapsed,
                         OperationId = opId,
                         Data = component.EndpointIdentifier.ToString(),
