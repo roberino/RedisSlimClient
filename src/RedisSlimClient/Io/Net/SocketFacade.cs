@@ -120,38 +120,53 @@ namespace RedisSlimClient.Io.Net
 
             _readEventArgs.Reset(memory);
 
-            try
-            {  
-                if (!_socket.ReceiveAsync(_readEventArgs))
-                {
-                    _readEventArgs.Complete();
+            var bytesRead = 0;
 
-                    OnReceiving(ReceiveStatus.ReceivedSynchronously);
-                }
-                else
-                {
-                    OnReceiving(ReceiveStatus.ReceivedAsynchronously);
-                }
-
-            }
-            catch (Exception ex)
+            while (bytesRead == 0)
             {
-                OnReceiving(ReceiveStatus.Faulted);
+                try
+                {
+                    if (!_socket.ReceiveAsync(_readEventArgs))
+                    {
+                        _readEventArgs.Complete();
 
-                State.ReadError(ex);
+                        OnReceiving(ReceiveStatus.ReceivedSynchronously);
+                    }
+                    else
+                    {
+                        OnReceiving(ReceiveStatus.ReceivedAsynchronously);
+                    }
 
-                _readEventArgs.Abandon();
+                }
+                catch (Exception ex)
+                {
+                    OnReceiving(ReceiveStatus.Faulted);
 
-                throw;
+                    State.ReadError(ex);
+
+                    _readEventArgs.Abandon();
+
+                    throw;
+                }
+
+                OnReceiving(ReceiveStatus.Awaiting);
+
+                bytesRead = await _readEventArgs;
+
+                if (memory.IsEmpty)
+                {
+                    break;
+                }
+
+                if (bytesRead == 0)
+                {
+                    await Task.Delay(1);
+                }
             }
-
-            OnReceiving(ReceiveStatus.Awaiting);
-
-            var result = await _readEventArgs;
 
             OnReceiving(ReceiveStatus.Completed);
 
-            return result;
+            return bytesRead;
         }
 
         public void Dispose()
