@@ -32,13 +32,35 @@ namespace RedisSlimClient.Io.Pipelines
                         Severity = s == PipelineStatus.Faulted ? Severity.Error : Severity.Diagnostic
                     };
 
-                    childEvent.Dimensions[$"{nameof(Uri.Host)}"] = component.EndpointIdentifier.Host;
-                    childEvent.Dimensions[$"{nameof(Uri.Port)}"] = component.EndpointIdentifier.Port;
-                    childEvent.Dimensions["Role"] = component.EndpointIdentifier.Scheme;
+                    childEvent.AddComponentInf(component);
+
+                    writer.Write(childEvent);
+                };
+
+                component.Error += e =>
+                {
+                    var childEvent = new TelemetryEvent()
+                    {
+                        Name = nameof(component.Error),
+                        Elapsed = sw.Elapsed,
+                        OperationId = opId,
+                        Data = component.EndpointIdentifier.ToString(),
+                        Severity = Severity.Error,
+                        Exception = e
+                    };
+
+                    childEvent.AddComponentInf(component);
 
                     writer.Write(childEvent);
                 };
             }
+        }
+
+        static void AddComponentInf(this TelemetryEvent childEvent, IPipelineComponent component)
+        {
+            childEvent.Dimensions[$"{nameof(Uri.Host)}"] = component.EndpointIdentifier.Host;
+            childEvent.Dimensions[$"{nameof(Uri.Port)}"] = component.EndpointIdentifier.Port;
+            childEvent.Dimensions["Role"] = component.EndpointIdentifier.Scheme;
         }
     }
 }

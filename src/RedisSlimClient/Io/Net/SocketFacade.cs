@@ -105,6 +105,8 @@ namespace RedisSlimClient.Io.Net
 
             if (_socket.Available == 0 && !memory.IsEmpty)
             {
+                OnReceiving(ReceiveStatus.CheckAvailable);
+
                 await ReceiveAsync(default);
             }
 

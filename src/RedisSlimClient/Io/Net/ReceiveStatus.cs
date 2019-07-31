@@ -3,6 +3,7 @@
     enum ReceiveStatus : byte
     {
         None,
+        CheckAvailable,
         Awaiting,
         ReceivedSynchronously,
         ReceivedAsynchronously,
