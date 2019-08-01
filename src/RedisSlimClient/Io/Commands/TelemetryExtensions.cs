@@ -19,20 +19,25 @@ namespace RedisSlimClient.Io.Commands
 
                 cmd.OnStateChanged = s =>
                 {
-                    var childEvent = new TelemetryEvent()
+                    var level = s.Status == CommandStatus.Faulted ? Severity.Error : Severity.Info;
+
+                    if (writer.Severity.HasFlag(level))
                     {
-                        Name = s.Status.ToString(),
-                        Elapsed = s.Elapsed,
-                        OperationId = telemetryEvent.OperationId,
-                        Data = cmd.AssignedEndpoint.ToString(),
-                        Severity = s.Status == CommandStatus.Faulted ? Severity.Error : Severity.Info
-                    };
+                        var childEvent = new TelemetryEvent()
+                        {
+                            Name = s.Status.ToString(),
+                            Elapsed = s.Elapsed,
+                            OperationId = telemetryEvent.OperationId,
+                            Data = cmd.AssignedEndpoint.ToString(),
+                            Severity = level
+                        };
 
-                    childEvent.Dimensions[$"{nameof(Uri.Host)}"] = cmd.AssignedEndpoint.Host;
-                    childEvent.Dimensions[$"{nameof(Uri.Port)}"] = cmd.AssignedEndpoint.Port;
-                    childEvent.Dimensions["Role"] = cmd.AssignedEndpoint.Scheme;
+                        childEvent.Dimensions[$"{nameof(Uri.Host)}"] = cmd.AssignedEndpoint.Host;
+                        childEvent.Dimensions[$"{nameof(Uri.Port)}"] = cmd.AssignedEndpoint.Port;
+                        childEvent.Dimensions["Role"] = cmd.AssignedEndpoint.Scheme;
 
-                    writer.Write(childEvent);
+                        writer.Write(childEvent);
+                    }
                 };
             }
         }

@@ -8,6 +8,8 @@
 
         public bool Enabled => false;
 
+        public Severity Severity => Severity.None;
+
         public void Write(TelemetryEvent telemetryEvent)
         {
         }

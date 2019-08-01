@@ -71,6 +71,8 @@ namespace RedisSlimClient.Io.Net
 
             OnReceiving(ReceiveStatus.Completed);
 
+            OnTrace(() => (nameof(ReceiveAsync), memory.Slice(0, read).ToArray()));
+
             return read;
         }
 
@@ -86,6 +88,8 @@ namespace RedisSlimClient.Io.Net
             buffer.CopyTo(_writeBuffer);
 
             await _sslStream.WriteAsync(_writeBuffer, 0, len);
+
+            OnTrace(() => (nameof(SendAsync), buffer.Slice(0, len).ToArray()));
 
             return len;
         }

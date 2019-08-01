@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace RedisSlimClient.Io.Net
 {
-    class SocketFacade : IManagedSocket
+    class SocketFacade : IManagedSocket, ITraceable
     {
         Socket _socket;
 
@@ -67,6 +67,8 @@ namespace RedisSlimClient.Io.Net
         public SocketState State { get; }
 
         public event Action<ReceiveStatus> Receiving;
+
+        public event Action<(string Action, byte[] Data)> Trace;
 
         public virtual Task ConnectAsync()
         {
@@ -159,6 +161,13 @@ namespace RedisSlimClient.Io.Net
 
             OnReceiving(ReceiveStatus.Completed);
 
+            var trc = Trace;
+
+            if (trc != null)
+            {
+                trc.Invoke((nameof(ReceiveAsync), memory.Slice(0, bytesRead).ToArray()));
+            }
+
             return bytesRead;
         }
 
@@ -185,6 +194,16 @@ namespace RedisSlimClient.Io.Net
         protected void OnReceiving(ReceiveStatus status)
         {
             Receiving?.Invoke(status);
+        }
+
+        protected void OnTrace(Func<(string name, byte[] data)> traceAction)
+        {
+            var trc = Trace;
+
+            if (trc != null)
+            {
+                trc.Invoke(traceAction());
+            }
         }
 
         protected virtual void OnDisposing()
@@ -221,7 +240,16 @@ namespace RedisSlimClient.Io.Net
                 throw;
             }
 
-            return await _writeEventArgs;
+            var result = await _writeEventArgs;
+
+            var trc = Trace;
+
+            if (trc != null)
+            {
+                trc.Invoke((nameof(SendToSocket), buffer.Slice(0, result).ToArray()));
+            }
+
+            return result;
         }
 
         bool CheckConnected() => (_socket?.Connected).GetValueOrDefault();

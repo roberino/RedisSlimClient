@@ -44,6 +44,7 @@ namespace RedisSlimClient.Telemetry
     [Flags]
     public enum Severity : byte
     {
+        None = 0,
         Info = 1,
         Warn = 2,
         Error = 4,

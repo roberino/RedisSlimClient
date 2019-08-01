@@ -13,17 +13,22 @@ namespace RedisSlimClient.Telemetry
             _severity = severity;
         }
 
-        public bool Enabled => true;
+        public bool Enabled => _severity != Severity.None;
+
+        public Severity Severity => _severity;
 
         public void Write(TelemetryEvent telemetryEvent)
         {
-            if (_severity.HasFlag(telemetryEvent.Severity))
+            if (Enabled)
             {
-                _writeMethod($"{telemetryEvent.Timestamp:s}: {telemetryEvent.OperationId} {telemetryEvent.Name} {telemetryEvent.Action} [{telemetryEvent.Elapsed}] {telemetryEvent.Data}");
-
-                if (telemetryEvent.Exception != null)
+                if (_severity.HasFlag(telemetryEvent.Severity))
                 {
-                    _writeMethod(telemetryEvent.Exception.Message);
+                    _writeMethod($"{telemetryEvent.Timestamp:s}: {telemetryEvent.OperationId} {telemetryEvent.Name} {telemetryEvent.Action} [{telemetryEvent.Elapsed}] {telemetryEvent.Data}");
+
+                    if (telemetryEvent.Exception != null)
+                    {
+                        _writeMethod(telemetryEvent.Exception.Message);
+                    }
                 }
             }
         }
