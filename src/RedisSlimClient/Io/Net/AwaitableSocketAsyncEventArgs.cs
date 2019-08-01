@@ -32,6 +32,7 @@ namespace RedisSlimClient.Io.Net
             SetBuffer(seg.Array, seg.Offset, seg.Count);
 #endif
             CompletionHandler = x => x();
+            _onCompleted = null;
         }
 
         public void Reset(ReadOnlyMemory<byte> buffer)
@@ -43,6 +44,7 @@ namespace RedisSlimClient.Io.Net
             SetBuffer(seg.Array, seg.Offset, seg.Count);
 #endif
             CompletionHandler = x => x();
+            _onCompleted = null;
         }
 
         public CancellationToken Cancellation { get; set; }
@@ -119,6 +121,16 @@ namespace RedisSlimClient.Io.Net
             }
 
             return new ArraySegment<byte>(memory.ToArray());
+        }
+
+        static ArraySegment<byte> GetArray(Memory<byte> memory)
+        {
+            if (MemoryMarshal.TryGetArray((ReadOnlyMemory<byte>)memory, out var seg))
+            {
+                return seg;
+            }
+
+            throw new InvalidOperationException();
         }
     }
 }

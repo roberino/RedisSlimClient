@@ -148,15 +148,12 @@ namespace RedisSlimClient.Io.Net
 
                 bytesRead = await _readEventArgs;
 
-                if (memory.IsEmpty)
+                if (memory.IsEmpty || bytesRead > 0)
                 {
                     break;
                 }
 
-                if (bytesRead == 0)
-                {
-                    await Task.Delay(1);
-                }
+                await Task.Delay(1);
             }
 
             OnReceiving(ReceiveStatus.Completed);
