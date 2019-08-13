@@ -107,7 +107,7 @@ namespace RedisSlimClient.UnitTests.Io
             }
         }
 
-        [Fact(Skip = "WIP")]
+        [Fact]
         public async Task RouteMultiKeyCommandAsync_KeysSplitOverConnections_ReturnsConnectionLookupWithCorrectKey()
         {
             using (var connection = CreateConnection())

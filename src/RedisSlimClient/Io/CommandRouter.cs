@@ -34,7 +34,7 @@ namespace RedisSlimClient.Io
                 {
                     var conn = subConnections.FirstOrDefault(s => s.EndPointInfo.CanServe(command, key));
 
-                    if(conn == null)
+                    if (conn == null)
                     {
                         continue;
                     }
@@ -45,7 +45,16 @@ namespace RedisSlimClient.Io
                 match.Add(key);
             }
 
-            return selected.ToDictionary(c => (ICommandExecutor)c.Key, v => v.Value);
+            var executors = new Dictionary<ICommandExecutor, IList<RedisKey>>();
+
+            foreach(var conn in selected)
+            {
+                var x = await conn.Key.GetPipeline();
+
+                executors[x] = conn.Value;
+            }
+
+            return executors;
         }
 
         public async Task<IEnumerable<ICommandExecutor>> RouteCommandAsync(ICommandIdentity command, ConnectionTarget target)
