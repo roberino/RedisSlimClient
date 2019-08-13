@@ -8,7 +8,7 @@ using RedisSlimClient.Io.Net;
 
 namespace RedisSlimClient.Io.Pipelines
 {
-    class SocketPipelineSender : IPipelineSender, IRunnable
+    class SocketPipelineSender : IPipelineSender, ISchedulable
     {
         readonly ISocket _socket;
         readonly Pipe _pipe;
@@ -30,6 +30,12 @@ namespace RedisSlimClient.Io.Pipelines
         public Uri EndpointIdentifier => _socket.EndpointIdentifier;
         public event Action<Exception> Error;
         public event Action<PipelineStatus> StateChanged;
+        public event Action<(string Action, byte[] Data)> Trace;
+
+        public void Schedule(IWorkScheduler scheduler)
+        {
+            scheduler.Schedule(RunAsync);
+        }
 
         public async Task RunAsync()
         {
@@ -57,7 +63,7 @@ namespace RedisSlimClient.Io.Pipelines
                 throw new InvalidOperationException("Resetting");
             }
 
-            await _pipe.Writer.WriteAsync(new ReadOnlyMemory<byte>(data));
+            await _pipe.Writer.WriteAsync(new ReadOnlyMemory<byte>(data), _cancellationToken).ConfigureAwait(false);
         }
 
         public async Task SendAsync(Func<IMemoryCursor, Task> writeAction)
@@ -84,15 +90,15 @@ namespace RedisSlimClient.Io.Pipelines
                 {
                     StateChanged?.Invoke(PipelineStatus.ReadingFromPipe);
 
-                    var result = await _pipe.Reader.ReadAsync(_cancellationToken);
+                    var result = await _pipe.Reader.ReadAsync(_cancellationToken).ConfigureAwait(false);
                     
                     if (IsRunning)
                     {
                         StateChanged?.Invoke(PipelineStatus.SendingToSocket);
 
-                        var bytes = await _socket.SendAsync(result.Buffer);
+                        var bytes = await _socket.SendAsync(result.Buffer).ConfigureAwait(false);
 
-                        StateChanged?.Invoke(PipelineStatus.Advancing);
+                        StateChanged?.Invoke(PipelineStatus.AdvancingWriter);
 
                         _pipe.Reader.AdvanceTo(result.Buffer.GetPosition(bytes));
                     }
@@ -104,7 +110,7 @@ namespace RedisSlimClient.Io.Pipelines
                 }
             }
 
-            _pipe.Reader.Complete();
+            _pipe.Reader.Complete(error);
 
             if (error != null)
             {

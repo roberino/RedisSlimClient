@@ -5,7 +5,7 @@ using RedisSlimClient.Types.Primatives;
 
 namespace RedisSlimClient.Serialization
 {
-    internal static class PrimitiveExtensions
+    static class PrimitiveExtensions
     {
         public static RedisType AsObjectType(this ResponseType type)
         {

@@ -1,6 +1,6 @@
 ﻿namespace RedisSlimClient.Types
 {
-    internal readonly struct RedisNull : IRedisObject
+    readonly struct RedisNull : IRedisObject
     {
         public static RedisNull Value = new RedisNull();
 

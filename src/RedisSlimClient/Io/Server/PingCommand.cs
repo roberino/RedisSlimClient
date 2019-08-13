@@ -4,7 +4,7 @@ using System;
 
 namespace RedisSlimClient.Io.Server
 {
-    internal class PingCommand : RedisCommand<bool>
+    class PingCommand : RedisCommand<bool>
     {
         public const string SuccessResponse = "PONG";
 

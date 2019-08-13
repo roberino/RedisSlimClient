@@ -3,11 +3,20 @@
     enum PipelineStatus : byte
     {
         None = 0,
+        AwaitingConnection,
         ReceivingFromSocket,
         ReadingFromPipe,
+        ReadFromPipe,
+        ReadFromPipeEmpty,
+        Delimiting,
+        ProcessingData,
+        ReadingMoreData,
         SendingToSocket,
         WritingToPipe,
-        Advancing,
+        AdvancingWriter,
+        AdvancingReader,
+        Flushing,
+        Flushed,
         Faulted
     }
 }

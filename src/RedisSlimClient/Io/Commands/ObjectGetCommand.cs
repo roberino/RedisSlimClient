@@ -9,8 +9,8 @@ namespace RedisSlimClient.Io.Commands
 {
     class ObjectGetCommand<T> : RedisCommand<T>
     {
-        private readonly ISerializerSettings _configuration;
-        private readonly IObjectSerializer<T> _serializer;
+        readonly ISerializerSettings _configuration;
+        readonly IObjectSerializer<T> _serializer;
 
         public ObjectGetCommand(RedisKey key, ISerializerSettings config) : base("GET", false, key)
         {

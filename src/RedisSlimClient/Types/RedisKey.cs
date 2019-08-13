@@ -6,7 +6,7 @@ namespace RedisSlimClient.Types
 {
     readonly struct RedisKey : IEquatable<RedisKey>
     {
-        private RedisKey(byte[] bytes)
+        RedisKey(byte[] bytes)
         {
             Bytes = bytes;
         }

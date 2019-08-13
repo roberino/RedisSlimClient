@@ -5,8 +5,10 @@
         None,
         CheckAvailable,
         Awaiting,
+        Receiving,
         ReceivedSynchronously,
         ReceivedAsynchronously,
+        Received,
         Completed,
         Faulted
     }

@@ -16,7 +16,7 @@ using System.Threading.Tasks;
 
 namespace RedisSlimClient.Io
 {
-    internal class SyncCommandPipeline : ICommandPipeline
+    class SyncCommandPipeline : ICommandPipeline
     {
         readonly object _lockObj = new object();
         readonly IManagedSocket _socket;

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace RedisSlimClient.Io.Net
+namespace RedisSlimClient.Telemetry
 {
     interface ITraceable
     {

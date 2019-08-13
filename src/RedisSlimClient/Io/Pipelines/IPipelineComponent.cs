@@ -1,8 +1,9 @@
 ﻿using System;
+using RedisSlimClient.Telemetry;
 
 namespace RedisSlimClient.Io.Pipelines
 {
-    interface IPipelineComponent : IDisposable
+    interface IPipelineComponent : ITraceable, IDisposable
     {
         Uri EndpointIdentifier { get; }
 

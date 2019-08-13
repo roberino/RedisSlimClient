@@ -6,7 +6,7 @@ namespace RedisSlimClient.Io.Server
 {
     class ClientSetNameCommand : RedisCommand<bool>
     {
-        private readonly string _name;
+        readonly string _name;
 
         public ClientSetNameCommand(string name) : base("CLIENT")
         {

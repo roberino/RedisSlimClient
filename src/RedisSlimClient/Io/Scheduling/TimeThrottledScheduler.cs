@@ -13,7 +13,11 @@ namespace RedisSlimClient.Io.Scheduling
         {
             _timeThrottle = new TimeThrottle(throttleTime);
             _baseScheduler = baseScheduler;
+            _baseScheduler.Scheduling += OnScheduling;
         }
+
+        public int ActiveWork => _baseScheduler.ActiveWork;
+        public event Action<int> Scheduling;
 
         public void Schedule(Func<Task> work)
         {
@@ -23,6 +27,11 @@ namespace RedisSlimClient.Io.Scheduling
         public void Dispose()
         {
             _baseScheduler.Dispose();
+        }
+
+        void OnScheduling(int obj)
+        {
+            Scheduling?.Invoke(obj);
         }
     }
 }

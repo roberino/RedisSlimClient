@@ -8,9 +8,9 @@ namespace RedisSlimClient.Io.Commands
 {
     class ObjectSetCommand<T> : RedisCommand<bool>
     {
-        private readonly ISerializerSettings _configuration;
-        private readonly T _objectData;
-        private readonly IObjectSerializer<T> _serializer;
+        readonly ISerializerSettings _configuration;
+        readonly T _objectData;
+        readonly IObjectSerializer<T> _serializer;
 
         public ObjectSetCommand(RedisKey key, ISerializerSettings config, T objectData) : base("SET", true, key)
         {

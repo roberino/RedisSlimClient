@@ -4,6 +4,7 @@ using System.Buffers;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Sdk;
 
 namespace RedisSlimClient.UnitTests.Io.Pipelines
 {
@@ -30,7 +31,7 @@ namespace RedisSlimClient.UnitTests.Io.Pipelines
                     waitHandle.Set();
                 });
 
-                var _ = receiver.ScheduleOnThreadpool();
+                receiver.ScheduleOnThreadpool();
 
                 socket.WaitForDataRead();
                 waitHandle.WaitOne(3000);
@@ -49,10 +50,8 @@ namespace RedisSlimClient.UnitTests.Io.Pipelines
         public async Task Reset_EndSchedulerThread()
         {
             using (var socket = new StubSocket())
-            using (var waitHandle = new ManualResetEvent(false))
+            using (var receiver = new SocketPipelineReceiver(socket, default))
             {
-                var receiver = new SocketPipelineReceiver(socket, default);
-
                 await socket.SendStringAsync("abcxefg");
 
                 receiver.RegisterHandler(s => s.PositionOf((byte)'x'), x =>
@@ -60,7 +59,16 @@ namespace RedisSlimClient.UnitTests.Io.Pipelines
                     receiver.Reset();
                 });
 
-                await receiver.ScheduleOnThreadpool();
+                receiver.Schedule(ThreadPoolScheduler.Instance);
+
+                var c = 0;
+
+                while (receiver.IsRunning && c++ < 1000)
+                {
+                    await Task.Delay(10);
+                }
+
+                Assert.False(receiver.IsRunning);
             }
         }
     }

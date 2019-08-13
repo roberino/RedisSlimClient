@@ -5,9 +5,9 @@ using RedisSlimClient.Types;
 
 namespace RedisSlimClient.Io.Server
 {
-    internal class AuthCommand : RedisCommand<bool>
+    class AuthCommand : RedisCommand<bool>
     {
-        private readonly string _password;
+        readonly string _password;
 
         public AuthCommand(string password) : base("AUTH")
         {

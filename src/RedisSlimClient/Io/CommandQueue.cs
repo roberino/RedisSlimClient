@@ -1,31 +1,45 @@
 ﻿using System;
-using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using RedisSlimClient.Io.Commands;
+using RedisSlimClient.Io.Scheduling;
 
 namespace RedisSlimClient.Io
 {
     class CommandQueue
     {
         readonly SemaphoreSlim _semaphore;
-        readonly ConcurrentQueue<IRedisCommand> _commandQueue;
+        readonly Queue<IRedisCommand> _commandQueue;
 
         public CommandQueue()
         {
-            _commandQueue = new ConcurrentQueue<IRedisCommand>();
+            _commandQueue = new Queue<IRedisCommand>();
             _semaphore = new SemaphoreSlim(1, 1);
         }
 
         public int QueueSize => _commandQueue.Count;
 
-        public void AbortAll(Exception ex)
+        public async Task AbortAll(Exception ex, IWorkScheduler scheduler)
         {
-            while (ProcessNextCommand(cmd =>
-             {
-                 cmd.Abandon(ex);
-             }))
+            IRedisCommand[] cmds = null;
+
+            await AccessQueue(q =>
             {
+                cmds = q.ToArray();
+
+                q.Clear();
+
+                return true;
+            });
+
+            foreach (var cmd in cmds)
+            {
+                scheduler.Schedule(() =>
+                {
+                    cmd.Abandon(ex);
+                    return Task.CompletedTask;
+                });
             }
         }
 
@@ -77,26 +91,38 @@ namespace RedisSlimClient.Io
 
         public bool ProcessNextCommand(Action<IRedisCommand> action)
         {
-            if (_commandQueue.TryDequeue(out var next))
+            return AccessQueue(x => ProcessNextCommandInternal(action)).ConfigureAwait(false).GetAwaiter().GetResult();
+        }
+
+        bool ProcessNextCommandInternal(Action<IRedisCommand> action)
+        {
+            if (_commandQueue.Count > 0)
             {
-                action(next);
+                action(_commandQueue.Dequeue());
 
                 return true;
             }
 
-            return !_commandQueue.IsEmpty;
+            return false;
+        }
+
+        async Task<T> AccessQueue<T>(Func<Queue<IRedisCommand>, T> work, CancellationToken cancellation = default)
+        {
+            await _semaphore.WaitAsync(cancellation);
+
+            try
+            {
+                return work(_commandQueue);
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
         }
 
         void Clear()
         {
-#if NET_CORE
             _commandQueue.Clear();
-#else
-            while (_commandQueue.Count > 0)
-            {
-                _commandQueue.TryDequeue(out var result);
-            }
-#endif
         }
     }
 }

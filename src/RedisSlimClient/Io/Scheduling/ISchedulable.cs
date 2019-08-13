@@ -2,9 +2,9 @@
 
 namespace RedisSlimClient.Io.Scheduling
 {
-    interface IRunnable
+    interface ISchedulable
     {
-        Task RunAsync();
+        void Schedule(IWorkScheduler scheduler);
 
         Task Reset();
     }

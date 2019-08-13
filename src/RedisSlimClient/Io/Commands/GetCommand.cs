@@ -2,7 +2,7 @@
 
 namespace RedisSlimClient.Io.Commands
 {
-    internal class GetCommand : RedisPrimativeCommand
+    class GetCommand : RedisPrimativeCommand
     {
         public GetCommand(RedisKey key) : base("GET", false, key)
         {

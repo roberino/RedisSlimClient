@@ -3,7 +3,7 @@ using System;
 
 namespace RedisSlimClient.Io.Commands
 {
-    internal class SetCommand : RedisCommand<bool>
+    class SetCommand : RedisCommand<bool>
     {
         public const string SuccessResponse = "OK";
 

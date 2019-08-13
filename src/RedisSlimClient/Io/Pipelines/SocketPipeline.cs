@@ -1,10 +1,9 @@
-﻿using RedisSlimClient.Configuration;
-using RedisSlimClient.Io.Net;
-using RedisSlimClient.Io.Scheduling;
-using System;
-using System.Linq;
+﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using RedisSlimClient.Configuration;
+using RedisSlimClient.Io.Net;
+using RedisSlimClient.Io.Scheduling;
 
 namespace RedisSlimClient.Io.Pipelines
 {
@@ -30,14 +29,17 @@ namespace RedisSlimClient.Io.Pipelines
 
         public event Action Faulted;
 
-        public Task RunAsync()
+        public void Schedule(IWorkScheduler scheduler)
         {
-            return Task.WhenAll(Runnables.Select(x => x.RunAsync()));
+            foreach (var item in Schedulables)
+            {
+                item.Schedule(scheduler);
+            }
         }
 
         public async Task Reset()
         {
-            foreach (var runnable in Runnables)
+            foreach (var runnable in Schedulables)
                 await runnable.Reset();
 
             await _socket.ConnectAsync();
@@ -68,6 +70,6 @@ namespace RedisSlimClient.Io.Pipelines
 
         ~SocketPipeline() { Dispose(); }
 
-        IRunnable[] Runnables => new[] { (IRunnable)Receiver, (IRunnable)Sender };
+        ISchedulable[] Schedulables => new[] { (ISchedulable)Receiver, (ISchedulable)Sender };
     }
 }

@@ -1,12 +1,10 @@
-﻿using System.Threading.Tasks;
-
-namespace RedisSlimClient.Io.Scheduling
+﻿namespace RedisSlimClient.Io.Scheduling
 {
     static class SchedulingExtensions
     {
-        public static Task ScheduleOnThreadpool(this IRunnable runnable)
+        public static void ScheduleOnThreadpool(this ISchedulable schedulable)
         {
-            return ThreadPoolScheduler.Instance.ScheduleWithHandle(runnable.RunAsync);
+            schedulable.Schedule(ThreadPoolScheduler.Instance);
         }
     }
 }

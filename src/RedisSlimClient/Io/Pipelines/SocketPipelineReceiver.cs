@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace RedisSlimClient.Io.Pipelines
 {
-    class SocketPipelineReceiver : IPipelineReceiver, IRunnable
+    class SocketPipelineReceiver : IPipelineReceiver, ISchedulable
     {
         readonly int _minBufferSize;
         readonly ISocket _socket;
@@ -31,11 +31,17 @@ namespace RedisSlimClient.Io.Pipelines
         public Uri EndpointIdentifier => _socket.EndpointIdentifier;
         public event Action<Exception> Error;
         public event Action<PipelineStatus> StateChanged;
+        public event Action<(string Action, byte[] Data)> Trace;
 
         public void RegisterHandler(Func<ReadOnlySequence<byte>, SequencePosition?> delimiter, Action<ReadOnlySequence<byte>> handler)
         {
             _delimiter = delimiter;
             _handler = handler;
+        }
+
+        public void Schedule(IWorkScheduler scheduler)
+        {
+            scheduler.Schedule(RunAsync);
         }
 
         public async Task RunAsync()
@@ -76,7 +82,7 @@ namespace RedisSlimClient.Io.Pipelines
             catch { }
         }
 
-        bool IsRunning => (!_cancellationToken.IsCancellationRequested && !_reset);
+        public bool IsRunning => (!_cancellationToken.IsCancellationRequested && !_reset);
 
         async Task PumpFromSocket()
         {
@@ -88,17 +94,19 @@ namespace RedisSlimClient.Io.Pipelines
             {
                 try
                 {
-                    await _socket.AwaitAvailableSocket(_cancellationToken);
+                    StateChanged?.Invoke(PipelineStatus.AwaitingConnection);
+
+                    await _socket.AwaitAvailableSocket(_cancellationToken).ConfigureAwait(false);
 
                     var memory = writer.GetMemory(_minBufferSize);
 
                     StateChanged?.Invoke(PipelineStatus.ReceivingFromSocket);
 
-                    var bytesRead = await _socket.ReceiveAsync(memory);
+                    var bytesRead = await _socket.ReceiveAsync(memory).ConfigureAwait(false);
 
                     if (IsRunning)
                     {
-                        StateChanged?.Invoke(PipelineStatus.Advancing);
+                        StateChanged?.Invoke(PipelineStatus.AdvancingWriter);
 
                         writer.Advance(bytesRead);
                     }
@@ -110,7 +118,11 @@ namespace RedisSlimClient.Io.Pipelines
                     break;
                 }
 
-                var result = await writer.FlushAsync(_cancellationToken);
+                StateChanged?.Invoke(PipelineStatus.Flushing);
+
+                var result = await writer.FlushAsync(_cancellationToken).ConfigureAwait(false);
+
+                StateChanged?.Invoke(PipelineStatus.Flushed);
 
                 if (result.IsCompleted)
                 {
@@ -118,7 +130,7 @@ namespace RedisSlimClient.Io.Pipelines
                 }
             }
 
-            writer.Complete();
+            writer.Complete(error);
 
             if (error != null)
             {
@@ -140,35 +152,49 @@ namespace RedisSlimClient.Io.Pipelines
             {
                 try
                 {
-                    await _socket.AwaitAvailableSocket(_cancellationToken);
+                    StateChanged?.Invoke(PipelineStatus.ReadingFromPipe);
 
-                    var result = await _pipe.Reader.ReadAsync(_cancellationToken);
+                    var result = await _pipe.Reader.ReadAsync(_cancellationToken).ConfigureAwait(false);
+
+                    StateChanged?.Invoke(PipelineStatus.ReadFromPipe);
 
                     var buffer = result.Buffer;
-                    SequencePosition? position = null;
+
+                    SequencePosition? position;
 
                     do
                     {
+                        StateChanged?.Invoke(PipelineStatus.Delimiting);
+
                         position = Delimit(buffer);
 
                         if (position.HasValue)
                         {
+                            StateChanged?.Invoke(PipelineStatus.ProcessingData);
+
                             // Odd behaviour - the Slice() function takes the end to be exclusive
-                            var posIncDelimitter = buffer.GetPosition(1, position.Value);
+                            var posIncDelimiter = buffer.GetPosition(1, position.Value);
 
-                            var next = buffer.Slice(0, posIncDelimitter);
+                            var next = buffer.Slice(0, posIncDelimiter);
 
-                            buffer = buffer.Slice(posIncDelimitter);
+                            buffer = buffer.Slice(posIncDelimiter);
 
                             Handle(next);
                         }
+                        else
+                        {
+                            StateChanged?.Invoke(PipelineStatus.ReadingMoreData);
+                            Trace?.Invoke((PipelineStatus.ReadingMoreData.ToString(), buffer.ToArray()));
+                        }
                     }
-                    while (position.HasValue);
+                    while (position.HasValue && !buffer.IsEmpty);
 
                     if (_reset)
                     {
                         break;
                     }
+
+                    StateChanged?.Invoke(PipelineStatus.AdvancingReader);
 
                     _pipe.Reader.AdvanceTo(buffer.Start, buffer.End);
 
@@ -188,10 +214,13 @@ namespace RedisSlimClient.Io.Pipelines
                 }
             }
 
-            _pipe.Reader.Complete();
+            _pipe.Reader.Complete(error);
 
             if (error != null)
+            {
+                StateChanged?.Invoke(PipelineStatus.Faulted);
                 Error?.Invoke(error);
+            }
         }
 
         SequencePosition? Delimit(ReadOnlySequence<byte> buffer)
