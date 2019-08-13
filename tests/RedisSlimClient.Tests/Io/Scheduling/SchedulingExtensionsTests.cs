@@ -1,8 +1,7 @@
-﻿using RedisSlimClient.Io.Pipelines;
-using RedisSlimClient.Io.Scheduling;
-using System;
+﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using RedisSlimClient.Io.Scheduling;
 using Xunit;
 
 namespace RedisSlimClient.UnitTests.Io.Scheduling
@@ -12,7 +11,7 @@ namespace RedisSlimClient.UnitTests.Io.Scheduling
         [Fact]
         public void ScheduleOnThreadpool_SomeRunnable_IsRunOnceOnly()
         {
-            var runnable = new MyRunnable();
+            var runnable = new MySchedulable();
 
             runnable.ScheduleOnThreadpool();
 
@@ -24,7 +23,7 @@ namespace RedisSlimClient.UnitTests.Io.Scheduling
         }
     }
 
-    class MyRunnable : IRunnable, IDisposable
+    class MySchedulable : ISchedulable, IDisposable
     {
         readonly ManualResetEvent _handle = new ManualResetEvent(false);
 
@@ -54,6 +53,11 @@ namespace RedisSlimClient.UnitTests.Io.Scheduling
 
                 _handle.Set();
             });
+        }
+
+        public void Schedule(IWorkScheduler scheduler)
+        {
+            scheduler.Schedule(RunAsync);
         }
 
         public Task Reset()

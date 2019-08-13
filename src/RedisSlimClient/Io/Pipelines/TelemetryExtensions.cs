@@ -1,6 +1,7 @@
 ﻿using RedisSlimClient.Telemetry;
 using System;
 using System.Diagnostics;
+using System.Text;
 
 namespace RedisSlimClient.Io.Pipelines
 {
@@ -21,6 +22,27 @@ namespace RedisSlimClient.Io.Pipelines
                 var sw = new Stopwatch();
 
                 sw.Start();
+
+                if (writer.Severity.HasFlag(Severity.Diagnostic))
+                {
+                    component.Trace += e =>
+                    {
+                        var childEvent = new TelemetryEvent()
+                        {
+                            Name = $"{baseName}/{e.Action}",
+                            Elapsed = sw.Elapsed,
+                            OperationId = opId,
+                            Data = $"{component.EndpointIdentifier} ({e.Data.Length} bytes): {Encoding.ASCII.GetString(e.Data)}",
+                            Severity = Severity.Diagnostic
+                        };
+
+                        childEvent.Dimensions[$"{nameof(Uri.Host)}"] = component.EndpointIdentifier.Host;
+                        childEvent.Dimensions[$"{nameof(Uri.Port)}"] = component.EndpointIdentifier.Port;
+                        childEvent.Dimensions["Role"] = component.EndpointIdentifier.Scheme;
+
+                        writer.Write(childEvent);
+                    };
+                }
 
                 component.StateChanged += s =>
                 {

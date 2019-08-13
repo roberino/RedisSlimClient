@@ -1,6 +1,6 @@
 ﻿namespace RedisSlimClient.Types
 {
-    internal readonly struct RedisError : IRedisObject
+    readonly struct RedisError : IRedisObject
     {
         public RedisError(string message)
         {

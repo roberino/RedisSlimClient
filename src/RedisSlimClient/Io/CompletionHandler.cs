@@ -4,16 +4,17 @@ using RedisSlimClient.Serialization.Protocol;
 using System;
 using System.Buffers;
 using System.Threading.Tasks;
+using RedisSlimClient.Telemetry;
 
 namespace RedisSlimClient.Io
 {
-    class CompletionHandler
+    class CompletionHandler : ITraceable
     {
         readonly RedisObjectBuilder _redisObjectBuilder;
         readonly IPipelineReceiver _receiver;
         readonly CommandQueue _commandQueue;
         readonly IWorkScheduler _workScheduler;
-        readonly RedisByteSequenceDelimitter _delimitter;
+        readonly RedisByteSequenceDelimitter _delimiter;
 
         public CompletionHandler(IPipelineReceiver receiver, CommandQueue commandQueue, IWorkScheduler workScheduler)
         {
@@ -21,40 +22,45 @@ namespace RedisSlimClient.Io
             _commandQueue = commandQueue;
             _workScheduler = workScheduler;
             _redisObjectBuilder = new RedisObjectBuilder();
-            _delimitter = new RedisByteSequenceDelimitter();
+            _delimiter = new RedisByteSequenceDelimitter();
 
-            _receiver.RegisterHandler(_delimitter.Delimit, OnReceive);
+            _receiver.RegisterHandler(_delimiter.Delimit, OnReceive);
             _receiver.Error += OnError;
         }
 
-        private void OnError(Exception ex)
+        public event Action<(string Action, byte[] Data)> Trace;
+
+        void OnError(Exception ex)
         {
-            _commandQueue.ProcessNextCommand(cmd =>
-            {
-                _workScheduler.Schedule(() =>
-                {
-                    cmd.Abandon(ex);
-                    return Task.CompletedTask;
-                });
-            });
+            _commandQueue
+                .AbortAll(ex, _workScheduler)
+                .ConfigureAwait(false).GetAwaiter().GetResult();
         }
 
-        private void OnReceive(ReadOnlySequence<byte> objData)
+        void OnReceive(ReadOnlySequence<byte> objData)
         {
             var nextData = objData.Slice(0, objData.Length - 2);
             
             var createdItems = _redisObjectBuilder.AppendObjectData(nextData);
 
+            if (createdItems.Length == 0)
+            {
+                Trace?.Invoke((nameof(_redisObjectBuilder.AppendObjectData), nextData.ToArray()));
+            }
+
             foreach (var item in createdItems)
             {
-                _commandQueue.ProcessNextCommand(cmd =>
+                if (!_commandQueue.ProcessNextCommand(cmd =>
                 {
                     _workScheduler.Schedule(() =>
                     {
                         cmd.Complete(item);
                         return Task.CompletedTask;
                     });
-                });
+                }))
+                {
+                    Trace?.Invoke(("What?", new byte[0]));
+                }
             }
         }
     }

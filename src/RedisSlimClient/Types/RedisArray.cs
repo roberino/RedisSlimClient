@@ -2,7 +2,7 @@
 
 namespace RedisSlimClient.Types
 {
-    internal class RedisArray : List<IRedisObject>, IRedisObject, IReadOnlyCollection<IRedisObject>
+    class RedisArray : List<IRedisObject>, IRedisObject, IReadOnlyCollection<IRedisObject>
     {
         readonly int _count;
 

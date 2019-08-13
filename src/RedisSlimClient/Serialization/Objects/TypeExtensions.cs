@@ -5,7 +5,7 @@ using System.Reflection;
 
 namespace RedisSlimClient.Serialization
 {
-    internal static class TypeExtensions
+    static class TypeExtensions
     {
         internal static PropertyInfo[] SerializableProperties(this Type type)
         {

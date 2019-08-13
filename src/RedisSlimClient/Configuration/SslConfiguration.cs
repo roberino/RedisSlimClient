@@ -56,7 +56,7 @@ namespace RedisSlimClient.Configuration
                     && ValidateIssuer(v2, issuer);
         }
 
-        private static bool ValidateIssuer(X509Certificate2 certificateToValidate, X509Certificate2 authority)
+        static bool ValidateIssuer(X509Certificate2 certificateToValidate, X509Certificate2 authority)
         {
             var chain = new X509Chain();
             chain.ChainPolicy.RevocationMode = X509RevocationMode.NoCheck;

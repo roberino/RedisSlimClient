@@ -1,6 +1,6 @@
 ﻿namespace RedisSlimClient.Types
 {
-    internal interface IRedisObject
+    interface IRedisObject
     {
         bool IsComplete { get; }
         bool IsNull { get; }

@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using RedisSlimClient.Telemetry;
 
 namespace RedisSlimClient
 {
@@ -24,6 +25,18 @@ namespace RedisSlimClient
         {
             _configuration = configuration;
             _connection = connectionFactory(_configuration);
+
+            //if (_configuration.TelemetryWriter.Enabled)
+            //{
+            //    _configuration.Scheduler.Scheduling += tc =>
+            //    {
+            //        _configuration.TelemetryWriter.Write(new TelemetryEvent()
+            //        {
+            //            Action = nameof(_configuration.Scheduler.Scheduling),
+            //            Data = tc.ToString()
+            //        });
+            //    };
+            //}
         }
 
         internal static IRedisClient Create(ClientConfiguration configuration) => new RedisClient(configuration);
@@ -130,7 +143,7 @@ namespace RedisSlimClient
 
                 try
                 {
-                    cmdx.AttachTelemetry(_configuration.TelemetryWriter);
+                    TelemetryExtensions.AttachTelemetry(cmdx, _configuration.TelemetryWriter);
 
                     var result = await c.Execute(cmdx);
 

@@ -6,7 +6,7 @@ using System.Net;
 
 namespace RedisSlimClient.Io.Server
 {
-    internal static class EndpointUtility
+    static class EndpointUtility
     {
         public static EndPoint CreateEndpoint(this IHostAddressResolver dnsResolver, Uri uriEndpoint)
         {

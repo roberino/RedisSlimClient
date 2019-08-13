@@ -49,7 +49,7 @@ namespace RedisSlimClient.UnitTests.Io.Pipelines
                     return formatter.Write(command.GetArgs());
                 });
 
-                var _ = pipe.ScheduleOnThreadpool();
+                pipe.ScheduleOnThreadpool();
 
                 waitHandle.WaitOne(1000);
             }
@@ -110,7 +110,7 @@ namespace RedisSlimClient.UnitTests.Io.Pipelines
                     }
                 });
 
-                var _ = pipe.ScheduleOnThreadpool();
+                pipe.ScheduleOnThreadpool();
 
                 waitHandle.WaitOne(3000);
             }

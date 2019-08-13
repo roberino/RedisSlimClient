@@ -3,7 +3,7 @@ using System.Text;
 
 namespace RedisSlimClient.Util
 {
-    internal static class DebugOutput
+    static class DebugOutput
     {
         public static Action<string> Output { get; set; }
 

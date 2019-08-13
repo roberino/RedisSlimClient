@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO.Pipelines;
 using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -53,7 +54,9 @@ namespace RedisSlimClient.Io.Net
 
         public Action<Action> CompletionHandler { get; set; }
 
-        public bool IsCompleted => ReferenceEquals(_onCompleted, _callbackCompleted) || Cancellation.IsCancellationRequested;
+        public bool IsCompleted =>
+            ReferenceEquals(_onCompleted, _callbackCompleted)
+            || Cancellation.IsCancellationRequested;
 
         public int GetResult()
         {
@@ -96,11 +99,21 @@ namespace RedisSlimClient.Io.Net
             Complete();
         }
 
-        protected override void OnCompleted(SocketAsyncEventArgs e)
-        {
-            base.OnCompleted(e);
+        //protected override void OnCompleted(SocketAsyncEventArgs e)
+        //{
+        //    base.OnCompleted(e);
 
-            Continue();
+        //    Continue();
+        //}
+
+        protected override void OnCompleted(SocketAsyncEventArgs _)
+        {
+            var continuation = Interlocked.Exchange(ref _onCompleted, _callbackCompleted);
+
+            if (continuation != null)
+            {
+                PipeScheduler.ThreadPool.Schedule(state => ((Action)state)(), continuation);
+            }
         }
 
         void Continue()

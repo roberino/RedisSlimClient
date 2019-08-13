@@ -5,7 +5,7 @@ using System.Reflection.Emit;
 
 namespace RedisSlimClient.Serialization.Emit
 {
-    internal class ReadObjectImplBuilder<T> : TypeProxyBuilder<T>
+    class ReadObjectImplBuilder<T> : TypeProxyBuilder<T>
     {
         readonly OverloadedMethodLookup<IObjectReader, Type> _objectReaderMethods;
         readonly Type _objectReaderType;

@@ -4,7 +4,7 @@ using System.Text;
 
 namespace RedisSlimClient.Types
 {
-    internal readonly struct RedisString : IRedisObject
+    readonly struct RedisString : IRedisObject
     {
         readonly ReadOnlySequence<byte> _sequence;
 

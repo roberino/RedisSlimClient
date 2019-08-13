@@ -4,9 +4,9 @@ using System.Linq;
 
 namespace RedisSlimClient.Io.Commands
 {
-    internal class MGetCommand : RedisCommand<IEnumerable<RedisString>>
+    class MGetCommand : RedisCommand<IEnumerable<RedisString>>
     {
-        private readonly object[] _args;
+        readonly object[] _args;
 
         public MGetCommand(IReadOnlyCollection<RedisKey> keys, RedisKey key0) : base("GET", false, key0.IsNull ? keys.First() : key0)
         {

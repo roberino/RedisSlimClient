@@ -1,6 +1,6 @@
 ﻿namespace RedisSlimClient.Types
 {
-    internal readonly struct RedisInteger : IRedisObject
+    readonly struct RedisInteger : IRedisObject
     {
         public RedisInteger(long value)
         {

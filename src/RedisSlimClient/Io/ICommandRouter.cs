@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace RedisSlimClient.Io
 {
-    internal interface ICommandRouter : IDisposable
+    interface ICommandRouter : IDisposable
     {
         Task<IDictionary<ICommandExecutor, IList<RedisKey>>> RouteMultiKeyCommandAsync(IMultiKeyCommandIdentity command);
 

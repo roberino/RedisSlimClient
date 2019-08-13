@@ -31,7 +31,7 @@ namespace RedisSlimClient.Io
             _socket = socket;
             _commandQueue = new CommandQueue();
 
-            var _ = new CompletionHandler(_pipeline.Receiver, _commandQueue, workScheduler);
+            var _ = new CompletionHandler(_pipeline.Receiver, _commandQueue, workScheduler).AttachTelemetry(telemetryWriter);
 
             var throttledScheduler = new TimeThrottledScheduler(workScheduler, TimeSpan.FromMilliseconds(500));
 
@@ -45,7 +45,7 @@ namespace RedisSlimClient.Io
                 }, nameof(IDuplexPipeline.Faulted));
             };
 
-            workScheduler.Schedule(_pipeline.RunAsync);
+            _pipeline.Schedule(workScheduler);
 
             _status = PipelineStatus.Uninitialized;
             Initialising = new AsyncEvent<ICommandPipeline>();

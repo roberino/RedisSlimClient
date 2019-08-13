@@ -26,7 +26,7 @@ namespace RedisSlimClient.Io.Net
                             Name = $"{baseName}/{e.Action}",
                             Elapsed = sw.Elapsed,
                             OperationId = opId,
-                            Data = $"{socket.EndpointIdentifier}: {Encoding.ASCII.GetString(e.Data)}",
+                            Data = $"{socket.EndpointIdentifier} ({e.Data.Length} bytes): {Encoding.ASCII.GetString(e.Data)}",
                             Severity = Severity.Diagnostic
                         };
 

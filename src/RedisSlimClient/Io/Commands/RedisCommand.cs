@@ -6,9 +6,14 @@ using System.Threading.Tasks;
 
 namespace RedisSlimClient.Io.Commands
 {
-    internal abstract class RedisCommand<T> : IRedisResult<T>
+    static class EndpointConstants
     {
-        static readonly Uri UnassignedEndpoint = new Uri("unknown://unassigned:1");
+        public static readonly Uri UnassignedEndpoint = new Uri("unknown://unassigned:1");
+    }
+
+    abstract class RedisCommand<T> : IRedisResult<T>
+    {
+        readonly TaskCompletionSource<T> _completionSource;
 
         Action<CommandState> _stateChanged;
         Stopwatch _sw;
@@ -22,7 +27,7 @@ namespace RedisSlimClient.Io.Commands
             RequireMaster = requireMaster;
             CommandText = commandText;
             Key = key;
-            CompletionSource = new TaskCompletionSource<T>();
+            _completionSource = new TaskCompletionSource<T>();
         }
 
         protected void BeginTimer()
@@ -38,10 +43,7 @@ namespace RedisSlimClient.Io.Commands
 
         void FireStateChange(CommandStatus status)
         {
-            if (_stateChanged != null)
-            {
-                _stateChanged.Invoke(new CommandState(Elapsed, status, this));
-            }
+            _stateChanged?.Invoke(new CommandState(Elapsed, status, this));
         }
 
         public Action<CommandState> OnStateChanged
@@ -53,17 +55,15 @@ namespace RedisSlimClient.Io.Commands
             }
         }
 
-        public TimeSpan Elapsed => _sw == null ? TimeSpan.Zero : _sw.Elapsed;
+        public TimeSpan Elapsed => _sw?.Elapsed ?? TimeSpan.Zero;
 
-        public Uri AssignedEndpoint { get; set; } = UnassignedEndpoint;
-
-        private TaskCompletionSource<T> CompletionSource { get; }
+        public Uri AssignedEndpoint { get; set; } = EndpointConstants.UnassignedEndpoint;
 
         public virtual RedisKey Key { get; }
 
         public bool RequireMaster { get; }
 
-        public bool CanBeCompleted => !(CompletionSource.Task.IsCanceled || CompletionSource.Task.IsCompleted || CompletionSource.Task.IsFaulted);
+        public bool CanBeCompleted => !(_completionSource.Task.IsCanceled || _completionSource.Task.IsCompleted || _completionSource.Task.IsFaulted);
 
         public string CommandText { get; }
 
@@ -85,18 +85,18 @@ namespace RedisSlimClient.Io.Commands
             {
                 if (redisObject is RedisError err)
                 {
-                    if (CompletionSource.TrySetException(TranslateError(err)))
+                    if (_completionSource.TrySetException(TranslateError(err)))
                         FireStateChange(CommandStatus.Faulted);
 
                     return;
                 }
 
-                if (CompletionSource.TrySetResult(TranslateResult(redisObject)))
+                if (_completionSource.TrySetResult(TranslateResult(redisObject)))
                     FireStateChange(CommandStatus.Completed);
             }
             catch (Exception ex)
             {
-                if (CompletionSource.TrySetException(ex))
+                if (_completionSource.TrySetException(ex))
                     FireStateChange(CommandStatus.Faulted);
             }
         }
@@ -113,17 +113,17 @@ namespace RedisSlimClient.Io.Commands
                 return;
             }
 
-            if (CompletionSource.TrySetException(ex))
+            if (_completionSource.TrySetException(ex))
                 FireStateChange(CommandStatus.Abandoned);
         }
 
-        public TaskAwaiter<T> GetAwaiter() => CompletionSource.Task.GetAwaiter();
+        public TaskAwaiter<T> GetAwaiter() => _completionSource.Task.GetAwaiter();
 
-        TaskAwaiter IRedisCommand.GetAwaiter() => ((Task)CompletionSource.Task).GetAwaiter();
+        TaskAwaiter IRedisCommand.GetAwaiter() => ((Task)_completionSource.Task).GetAwaiter();
 
         public void Cancel()
         {
-            if (CompletionSource.TrySetCanceled())
+            if (_completionSource.TrySetCanceled())
                 FireStateChange(CommandStatus.Cancelled);
         }
     }

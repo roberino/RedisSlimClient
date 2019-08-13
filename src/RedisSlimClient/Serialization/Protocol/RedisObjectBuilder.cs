@@ -18,6 +18,8 @@ namespace RedisSlimClient.Serialization.Protocol
             _items = new List<RedisObjectPart>();
         }
 
+        public int PendingObjectParts => _items.Count;
+
         public IRedisObject[] AppendObjectData(ReadOnlySequence<byte> obj)
         {
             var byteSequence = new MemoryByteSequenceAdapter(obj);
