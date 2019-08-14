@@ -1,5 +1,6 @@
 ﻿using RedisSlimClient.Io.Server;
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -24,6 +25,9 @@ namespace RedisSlimClient
         Task<bool> SetBytesAsync(string key, byte[] data, CancellationToken cancellation = default);
         Task<bool> SetStringAsync(string key, string data, CancellationToken cancellation = default);
         Task<bool> SetObjectAsync<T>(string key, T obj, CancellationToken cancellation = default);
+
+        Task<IReadOnlyCollection<string>> GetStringsAsync(IReadOnlyCollection<string> keys,
+            CancellationToken cancellation = default);
     }
 
     public interface IRedisClient : IRedisReaderWriter, IRedisDiagnosticClient

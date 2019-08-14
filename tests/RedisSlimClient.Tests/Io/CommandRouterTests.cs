@@ -122,10 +122,12 @@ namespace RedisSlimClient.UnitTests.Io
 
                 cmd.Keys.Returns(new[] { key1, key2 });
 
-                var pipelines = await connection.RouteMultiKeyCommandAsync(cmd);
+                var routes = (await connection.RouteMultiKeyCommandAsync(cmd)).ToArray();
 
-                Assert.Equal(key1, pipelines[_sub1.pip].Single());
-                Assert.Equal(key2, pipelines[_sub2.pip].Single());
+                Assert.Equal(key1, routes[0].Keys.Single());
+                Assert.Equal(_sub1.pip, routes[0].Executor);
+                Assert.Equal(key2, routes[1].Keys.Single());
+                Assert.Equal(_sub2.pip, routes[1].Executor);
             }
         }
 

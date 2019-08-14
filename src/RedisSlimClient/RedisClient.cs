@@ -1,14 +1,13 @@
-﻿using RedisSlimClient.Configuration;
-using RedisSlimClient.Io;
-using RedisSlimClient.Io.Commands;
-using RedisSlimClient.Io.Server;
-using RedisSlimClient.Types;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using RedisSlimClient.Telemetry;
+using RedisSlimClient.Configuration;
+using RedisSlimClient.Io;
+using RedisSlimClient.Io.Commands;
+using RedisSlimClient.Io.Server;
+using RedisSlimClient.Types;
 
 namespace RedisSlimClient
 {
@@ -25,18 +24,6 @@ namespace RedisSlimClient
         {
             _configuration = configuration;
             _connection = connectionFactory(_configuration);
-
-            //if (_configuration.TelemetryWriter.Enabled)
-            //{
-            //    _configuration.Scheduler.Scheduling += tc =>
-            //    {
-            //        _configuration.TelemetryWriter.Write(new TelemetryEvent()
-            //        {
-            //            Action = nameof(_configuration.Scheduler.Scheduling),
-            //            Data = tc.ToString()
-            //        });
-            //    };
-            //}
         }
 
         internal static IRedisClient Create(ClientConfiguration configuration) => new RedisClient(configuration);
@@ -108,15 +95,19 @@ namespace RedisSlimClient
             return rstr.ToString(_configuration.Encoding);
         }
 
-        public async Task<IEnumerable<string>> GetStringsAsync(IReadOnlyCollection<string> keys, CancellationToken cancellation = default)
+        public async Task<IReadOnlyCollection<string>> GetStringsAsync(IReadOnlyCollection<string> keys, CancellationToken cancellation = default)
         {
-            var cmd = new MGetCommand(RedisKeys.FromStrings(keys), keys.First());
+            var cmd = new MGetCommand(RedisKeys.FromStrings(keys));
 
-            var cmdPipe = await RouteCommandAsync(cmd);
+            var routes = await _connection.RouteMultiKeyCommandAsync(cmd);
 
-            var results = await cmdPipe.ExecuteWithCancellation(cmd, cancellation, _configuration.DefaultOperationTimeout);
+            var resultTasks = routes.Select(r =>
+                r.Executor.ExecuteWithCancellation(new MGetCommand(r.Keys).AttachTelemetry(_configuration.TelemetryWriter), cancellation,
+                    _configuration.DefaultOperationTimeout));
 
-            return results.Select(s => s.ToString(_configuration.Encoding));
+            var results = await Task.WhenAll(resultTasks);
+
+            return results.SelectMany(s => s.Select(r => r.ToString(_configuration.Encoding))).ToList();
         }
 
         public void Dispose()
@@ -143,9 +134,9 @@ namespace RedisSlimClient
 
                 try
                 {
-                    TelemetryExtensions.AttachTelemetry(cmdx, _configuration.TelemetryWriter);
+                    cmdx.AttachTelemetry(_configuration.TelemetryWriter);
 
-                    var result = await c.Execute(cmdx);
+                    var result = await c.Execute(cmdx, cancellation);
 
                     return translator(result, cmdx.AssignedEndpoint);
                 }
@@ -154,17 +145,6 @@ namespace RedisSlimClient
                     return errorTranslator(ex, cmdx.AssignedEndpoint);
                 }
             }));
-        }
-
-        async Task<bool> CompareStringResponse<T>(IRedisResult<T> cmd, string expectedResponse, CancellationToken cancellation = default)
-        {
-            var cmdPipe = await RouteCommandAsync(cmd);
-
-            var result = await cmdPipe.ExecuteWithCancellation(cmd, cancellation, _configuration.DefaultOperationTimeout);
-
-            var msg = result.ToString();
-
-            return string.Equals(expectedResponse, msg, StringComparison.OrdinalIgnoreCase);
         }
 
         async Task<long> GetIntResponse(IRedisResult<IRedisObject> cmd, CancellationToken cancellation = default)

@@ -1,14 +1,13 @@
-﻿using RedisSlimClient.Io.Commands;
-using RedisSlimClient.Types;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using RedisSlimClient.Io.Commands;
 
 namespace RedisSlimClient.Io
 {
     interface ICommandRouter : IDisposable
     {
-        Task<IDictionary<ICommandExecutor, IList<RedisKey>>> RouteMultiKeyCommandAsync(IMultiKeyCommandIdentity command);
+        Task<IEnumerable<MultiKeyRoute>> RouteMultiKeyCommandAsync(IMultiKeyCommandIdentity command);
 
         Task<IEnumerable<ICommandExecutor>> RouteCommandAsync(ICommandIdentity command, ConnectionTarget target);
 

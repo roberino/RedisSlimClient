@@ -5,7 +5,8 @@ namespace RedisSlimClient.Io.Commands
 {
     static class TelemetryExtensions
     {
-        public static void AttachTelemetry(this IRedisCommand cmd, ITelemetryWriter writer)
+        public static T AttachTelemetry<T>(this T cmd, ITelemetryWriter writer)
+            where T : IRedisCommand
         {
             if (writer.Enabled)
             {
@@ -40,6 +41,8 @@ namespace RedisSlimClient.Io.Commands
                     }
                 };
             }
+
+            return cmd;
         }
     }
 }

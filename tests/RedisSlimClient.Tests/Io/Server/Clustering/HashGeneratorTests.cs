@@ -1,5 +1,4 @@
-﻿using RedisSlimClient.Io.Commands;
-using RedisSlimClient.Io.Server.Clustering;
+﻿using RedisSlimClient.Io.Server.Clustering;
 using RedisSlimClient.Types;
 using Xunit;
 

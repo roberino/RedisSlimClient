@@ -4,11 +4,11 @@ using System.Linq;
 
 namespace RedisSlimClient.Io.Commands
 {
-    class MGetCommand : RedisCommand<IEnumerable<RedisString>>
+    class MGetCommand : RedisCommand<IEnumerable<RedisString>>, IMultiKeyCommandIdentity
     {
         readonly object[] _args;
 
-        public MGetCommand(IReadOnlyCollection<RedisKey> keys, RedisKey key0) : base("GET", false, key0.IsNull ? keys.First() : key0)
+        public MGetCommand(IReadOnlyCollection<RedisKey> keys) : base("MGET", false, default)
         {
             _args = new object[keys.Count + 1];
             _args[0] = CommandText;
@@ -19,6 +19,8 @@ namespace RedisSlimClient.Io.Commands
             {
                 _args[i++] = item.Bytes;
             }
+
+            Keys = keys;
         }
 
         protected override IEnumerable<RedisString> TranslateResult(IRedisObject redisObject)
@@ -29,5 +31,7 @@ namespace RedisSlimClient.Io.Commands
         }
 
         public override object[] GetArgs() => _args;
+
+        public IReadOnlyCollection<RedisKey> Keys { get; }
     }
 }

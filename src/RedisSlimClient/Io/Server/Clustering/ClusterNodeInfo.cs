@@ -12,13 +12,15 @@ namespace RedisSlimClient.Io.Server.Clustering
             Slots = slots;
         }
 
+        public override bool IsCluster => true;
+
         public SlotRange[] Slots { get; }
 
         public override bool CanServe(ICommandIdentity command, RedisKey key = default)
         {
             if (key.IsNull) key = command.Key;
 
-            return base.CanServe(command) && (command.Key.IsNull || Slots.Any(s => s.IsWithinRange(HashGenerator.Generate(command.Key.Bytes))));
+            return base.CanServe(command) && (key.IsNull || Slots.Any(s => s.IsWithinRange(HashGenerator.Generate(key.Bytes))));
         }
     }
 }

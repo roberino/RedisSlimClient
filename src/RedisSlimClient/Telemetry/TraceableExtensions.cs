@@ -5,9 +5,9 @@ namespace RedisSlimClient.Telemetry
 {
     static class TraceableExtensions
     {
-        public static T AttachTelemetry<T>(this T traceable, ITelemetryWriter writer) where T : ITraceable
+        public static T AttachTelemetry<T>(this T traceable, ITelemetryWriter writer, Severity severity = Severity.Diagnostic) where T : ITraceable
         {
-            if (writer == null || !writer.Enabled || !writer.Severity.HasFlag(Severity.Diagnostic))
+            if (writer == null || !writer.Enabled || !writer.Severity.HasFlag(severity))
             {
                 return traceable;
             }

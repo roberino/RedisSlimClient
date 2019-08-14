@@ -6,9 +6,7 @@ namespace RedisSlimClient.IntegrationTests
 {
     static class Environments
     {
-        public static Uri DefaultEndpoint => new Uri($"redis://localhost:{(int)ConfigurationScenario.NonSslBasic}");
-
-        public static ClientConfiguration DefaultConfiguration(Action<string> output = null, Action < ClientConfiguration> onConfigure = null)
+        public static ClientConfiguration DefaultConfiguration(Action<string> output = null, Action<ClientConfiguration> onConfigure = null)
         {
             var conf = GetConfiguration(ConfigurationScenario.NonSslBasic, PipelineMode.Default, output);
 
@@ -22,13 +20,13 @@ namespace RedisSlimClient.IntegrationTests
             var config = new ClientConfiguration($"redis://localhost:{(int)scenario}")
             {
                 PipelineMode = pipelineMode,
-                DefaultOperationTimeout = TimeSpan.FromMilliseconds(5000),
-                ConnectTimeout = TimeSpan.FromMilliseconds(5000)
+                DefaultOperationTimeout = TimeSpan.FromMilliseconds(10000),
+                ConnectTimeout = TimeSpan.FromMilliseconds(15000)
             };
 
             if (output != null)
             {
-                config.TelemetryWriter = new TextTelemetryWriter(output, Severity.Warn);
+                config.TelemetryWriter = new TextTelemetryWriter(output, Severity.Warn | Severity.Error | Severity.Info);
             }
 
             config.NetworkConfiguration.PortMappings
@@ -41,7 +39,7 @@ namespace RedisSlimClient.IntegrationTests
                 .Register("redis-slave1", "127.0.0.1")
                 .Register("redis-slave2", "127.0.0.1")
                 .Map("192.168.0.0/16", "127.0.0.1")
-				.Map("172.16.0.0/12", "127.0.0.1");
+                .Map("172.16.0.0/12", "127.0.0.1");
 
             if (!scenario.ToString().Contains("NonSsl"))
             {

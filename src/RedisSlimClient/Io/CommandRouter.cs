@@ -1,11 +1,11 @@
-﻿using RedisSlimClient.Io.Commands;
-using RedisSlimClient.Io.Server;
-using RedisSlimClient.Types;
-using RedisSlimClient.Util;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using RedisSlimClient.Io.Commands;
+using RedisSlimClient.Io.Server;
+using RedisSlimClient.Io.Server.Clustering;
+using RedisSlimClient.Util;
 
 namespace RedisSlimClient.Io
 {
@@ -21,40 +21,38 @@ namespace RedisSlimClient.Io
             _subConnections = new SyncronizedInstance<IReadOnlyCollection<IConnectionSubordinate>>(_serverNodeInitialiser.InitialiseAsync);
         }
 
-        public async Task<IDictionary<ICommandExecutor, IList<RedisKey>>> RouteMultiKeyCommandAsync(IMultiKeyCommandIdentity command)
+        public async Task<IEnumerable<MultiKeyRoute>> RouteMultiKeyCommandAsync(IMultiKeyCommandIdentity command)
         {
-            var subConnections = await _subConnections.GetValue();
-            var selected = new Dictionary<IConnectionSubordinate, IList<RedisKey>>();
+            var subConnections = (await _subConnections.GetValue())
+                .Where(s => s.Status == PipelineStatus.Ok || s.Status == PipelineStatus.Uninitialized)
+                .ToList();
 
-            foreach (var key in command.Keys)
+            if (!subConnections.Any(c => c.EndPointInfo.IsCluster))
             {
-                var match = selected.FirstOrDefault(s => s.Key.EndPointInfo.CanServe(command, key)).Value;
+                var pipe = await subConnections.OrderBy(x => x.Metrics.Workload).First().GetPipeline();
 
-                if (match == null)
+                return new[] {new MultiKeyRoute(pipe, command.Keys.ToArray())};
+            }
+
+            var groups = command.Keys.GroupBy(k => HashGenerator.Generate(k)).ToArray();
+            var results = new MultiKeyRoute[groups.Length];
+            var i = 0;
+
+            foreach (var keyGroup in groups)
+            {
+                var conn = subConnections.FirstOrDefault(s => s.EndPointInfo.CanServe(command, keyGroup.First()));
+
+                if (conn == null)
                 {
-                    var conn = subConnections.FirstOrDefault(s => s.EndPointInfo.CanServe(command, key));
-
-                    if (conn == null)
-                    {
-                        continue;
-                    }
-
-                    selected[conn] = match = new List<RedisKey>();
+                    throw new NoAvailableConnectionException();
                 }
 
-                match.Add(key);
+                var executor = await conn.GetPipeline();
+
+                results[i++] = new MultiKeyRoute(executor, keyGroup.ToArray());
             }
 
-            var executors = new Dictionary<ICommandExecutor, IList<RedisKey>>();
-
-            foreach(var conn in selected)
-            {
-                var x = await conn.Key.GetPipeline();
-
-                executors[x] = conn.Value;
-            }
-
-            return executors;
+            return results;
         }
 
         public async Task<IEnumerable<ICommandExecutor>> RouteCommandAsync(ICommandIdentity command, ConnectionTarget target)

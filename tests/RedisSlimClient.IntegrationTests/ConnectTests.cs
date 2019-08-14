@@ -11,6 +11,7 @@ namespace RedisSlimClient.IntegrationTests
 {
     public class ConnectTests
     {
+        const int defaultTimeout = 6000;
         readonly ITestOutputHelper _output;
 
         public ConnectTests(ITestOutputHelper output)
@@ -29,12 +30,12 @@ namespace RedisSlimClient.IntegrationTests
 
             using (var client = config.CreateClient())
             {
-                var cancel = new CancellationTokenSource(3000);
+                var cancel = new CancellationTokenSource(defaultTimeout);
                 var wasThrown = false;
 
                 try
                 {
-                    var result = await client.PingAsync(cancel.Token);
+                    await client.PingAsync(cancel.Token);
                 }
                 catch (ConnectionInitialisationException)
                 {
@@ -57,7 +58,7 @@ namespace RedisSlimClient.IntegrationTests
 
             using (var client = config.CreateClient())
             {
-                var cancel = new CancellationTokenSource(3000);
+                var cancel = new CancellationTokenSource(defaultTimeout);
                 var result = await client.PingAsync(cancel.Token);
 
                 Assert.True(result);
@@ -76,7 +77,7 @@ namespace RedisSlimClient.IntegrationTests
 
             using (var client = config.CreateClient())
             {
-                var cancel = new CancellationTokenSource(3000);
+                var cancel = new CancellationTokenSource(defaultTimeout);
                 var results = await client.PingAllAsync(cancel.Token);
 
                 foreach (var result in results)
@@ -96,7 +97,7 @@ namespace RedisSlimClient.IntegrationTests
 
             using (var client = config.CreateClient())
             {
-                var cancel = new CancellationTokenSource(3000);
+                var cancel = new CancellationTokenSource(defaultTimeout);
                 var result = await client.PingAsync(cancel.Token);
 
                 Assert.True(result);

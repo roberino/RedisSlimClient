@@ -1,17 +1,16 @@
-﻿using RedisSlimClient.Io.Pipelines;
-using RedisSlimClient.Io.Scheduling;
-using System.Buffers;
+﻿using System.Buffers;
 using System.Threading;
 using System.Threading.Tasks;
+using RedisSlimClient.Io.Pipelines;
+using RedisSlimClient.Io.Scheduling;
 using Xunit;
-using Xunit.Sdk;
 
 namespace RedisSlimClient.UnitTests.Io.Pipelines
 {
     public class SocketPipelineReceiverTests
     {
         [Fact]
-        public async Task SendAsync_SomeData_FiresReceievedEvent()
+        public async Task SendAsync_SomeData_FiresReceivedEvent()
         {
             var eventFired = false;
             ReadOnlySequence<byte> capturedData = default;

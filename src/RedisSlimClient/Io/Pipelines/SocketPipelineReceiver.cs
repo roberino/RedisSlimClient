@@ -111,6 +111,10 @@ namespace RedisSlimClient.Io.Pipelines
                         writer.Advance(bytesRead);
                     }
                 }
+                catch (TaskCanceledException)
+                {
+                    break;
+                }
                 catch (Exception ex)
                 {
                     error = ex;

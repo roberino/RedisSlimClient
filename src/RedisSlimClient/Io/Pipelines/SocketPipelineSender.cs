@@ -91,7 +91,7 @@ namespace RedisSlimClient.Io.Pipelines
                     StateChanged?.Invoke(PipelineStatus.ReadingFromPipe);
 
                     var result = await _pipe.Reader.ReadAsync(_cancellationToken).ConfigureAwait(false);
-                    
+
                     if (IsRunning)
                     {
                         StateChanged?.Invoke(PipelineStatus.SendingToSocket);
@@ -102,6 +102,10 @@ namespace RedisSlimClient.Io.Pipelines
 
                         _pipe.Reader.AdvanceTo(result.Buffer.GetPosition(bytes));
                     }
+                }
+                catch (TaskCanceledException)
+                {
+                    break;
                 }
                 catch (Exception ex)
                 {

@@ -16,6 +16,8 @@ namespace RedisSlimClient.TestHarness
 
             using (var client = config.CreateClient())
             {
+                int i = 0;
+
                 while (true)
                 {
                     try
@@ -27,12 +29,16 @@ namespace RedisSlimClient.TestHarness
                             Console.WriteLine($"PING {response.Endpoint}{response.Ok}: {response.Error}");
                         }
 
-                        await client.SetStringAsync("x2", Guid.NewGuid().ToString());
+                        var k = i % 100;
 
-                        //await client.SetObjectAsync("x1", new MyDto()
-                        //{
-                        //    Stuff = Guid.NewGuid().ToString()
-                        //});
+                        await client.SetStringAsync($"x{k}", Guid.NewGuid().ToString());
+
+                        await client.SetObjectAsync($"y{k}", new MyDto()
+                        {
+                            Stuff = Guid.NewGuid().ToString()
+                        });
+
+                        await client.GetStringAsync($"x{k}");
                     }
                     catch (Exception ex)
                     {

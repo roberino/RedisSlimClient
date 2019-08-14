@@ -31,7 +31,7 @@ namespace RedisSlimClient.Io
             _socket = socket;
             _commandQueue = new CommandQueue();
 
-            var _ = new CompletionHandler(_pipeline.Receiver, _commandQueue, workScheduler).AttachTelemetry(telemetryWriter);
+            var _ = new CompletionHandler(_pipeline.Receiver, _commandQueue, workScheduler).AttachTelemetry(telemetryWriter, Severity.Diagnostic);
 
             var throttledScheduler = new TimeThrottledScheduler(workScheduler, TimeSpan.FromMilliseconds(500));
 

@@ -1,14 +1,13 @@
-﻿using RedisSlimClient.Configuration;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Security.Authentication;
+using System.Threading.Tasks;
+using RedisSlimClient.Configuration;
 using RedisSlimClient.Io.Net;
 using RedisSlimClient.Io.Server.Clustering;
 using RedisSlimClient.Telemetry;
 using RedisSlimClient.Util;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Authentication;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace RedisSlimClient.Io.Server
 {
@@ -44,10 +43,6 @@ namespace RedisSlimClient.Io.Server
                 var pipelines = await InitialiseAsync(CreatePipelineConnection(_initialEndPoint));
 
                 return pipelines;
-            }
-            catch
-            {
-                throw;
             }
             finally
             {

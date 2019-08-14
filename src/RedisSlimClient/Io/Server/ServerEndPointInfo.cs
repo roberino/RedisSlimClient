@@ -67,6 +67,8 @@ namespace RedisSlimClient.Io.Server
             }
         }
 
+        public virtual bool IsCluster => false;
+
         public IHostAddressResolver DnsResolver { get; }
 
         public string Host { get; }
