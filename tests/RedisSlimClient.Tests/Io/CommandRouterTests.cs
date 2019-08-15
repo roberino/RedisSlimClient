@@ -15,25 +15,32 @@ namespace RedisSlimClient.UnitTests.Io
         readonly ITestOutputHelper _output;
         readonly (IConnectionSubordinate sub, ICommandPipeline pip) _sub1;
         readonly (IConnectionSubordinate sub, ICommandPipeline pip) _sub2;
+        readonly (IConnectionSubordinate sub, ICommandPipeline pip) _subCluster1;
+        readonly (IConnectionSubordinate sub, ICommandPipeline pip) _subCluster2;
         readonly IServerNodeInitialiser _pipelineInitialiser;
+        readonly IServerNodeInitialiser _pipelineInitialiserCluster;
 
         public CommandRouterTests(ITestOutputHelper output)
         {
             _output = output;
             _pipelineInitialiser = Substitute.For<IServerNodeInitialiser>();
+            _pipelineInitialiserCluster = Substitute.For<IServerNodeInitialiser>();
 
             _sub1 = CreateConnectionSubordinate(1);
             _sub2 = CreateConnectionSubordinate(2);
+            _subCluster1 = CreateConnectionSubordinate(3, true);
+            _subCluster2 = CreateConnectionSubordinate(4, true);
 
             _pipelineInitialiser.InitialiseAsync().Returns(new[] { _sub1.sub, _sub2.sub });
+            _pipelineInitialiserCluster.InitialiseAsync().Returns(new[] { _subCluster1.sub, _subCluster2.sub });
         }
 
-        static (IConnectionSubordinate sub, ICommandPipeline pip) CreateConnectionSubordinate(int id)
+        static (IConnectionSubordinate sub, ICommandPipeline pip) CreateConnectionSubordinate(int id, bool isCluster = false)
         {
             var pipeline = Substitute.For<ICommandPipeline>();
             var connectedSubordinate = Substitute.For<IConnectionSubordinate>();
             connectedSubordinate.GetPipeline().Returns(pipeline);
-            connectedSubordinate.EndPointInfo.Returns(new TestServerInfo(id));
+            connectedSubordinate.EndPointInfo.Returns(new TestServerInfo(id, isCluster));
             connectedSubordinate.Status.Returns(PipelineStatus.Ok);
             return (connectedSubordinate, pipeline);
         }
@@ -41,6 +48,11 @@ namespace RedisSlimClient.UnitTests.Io
         CommandRouter CreateConnection()
         {
             return new CommandRouter(_pipelineInitialiser);
+        }
+
+        CommandRouter CreateClusteredConnection()
+        {
+            return new CommandRouter(_pipelineInitialiserCluster);
         }
 
         [Fact]
@@ -108,15 +120,15 @@ namespace RedisSlimClient.UnitTests.Io
         }
 
         [Fact]
-        public async Task RouteMultiKeyCommandAsync_KeysSplitOverConnections_ReturnsConnectionLookupWithCorrectKey()
+        public async Task RouteMultiKeyCommandAsync_ClusteredConnection_ReturnsConnectionsSplitByHash()
         {
-            using (var connection = CreateConnection())
+            using (var connection = CreateClusteredConnection())
             {
                 var key1 = (RedisKey)"a";
                 var key2 = (RedisKey)"b";
 
-                WhenConnectionMatchesKey(_sub1.sub, key1);
-                WhenConnectionMatchesKey(_sub2.sub, key2);
+                WhenConnectionMatchesKey(_subCluster1.sub, key1);
+                WhenConnectionMatchesKey(_subCluster2.sub, key2);
 
                 var cmd = Substitute.For<IMultiKeyCommandIdentity>();
 
@@ -125,9 +137,29 @@ namespace RedisSlimClient.UnitTests.Io
                 var routes = (await connection.RouteMultiKeyCommandAsync(cmd)).ToArray();
 
                 Assert.Equal(key1, routes[0].Keys.Single());
-                Assert.Equal(_sub1.pip, routes[0].Executor);
+                Assert.Equal(_subCluster1.pip, routes[0].Executor);
                 Assert.Equal(key2, routes[1].Keys.Single());
-                Assert.Equal(_sub2.pip, routes[1].Executor);
+                Assert.Equal(_subCluster2.pip, routes[1].Executor);
+            }
+        }
+
+        [Fact]
+        public async Task RouteMultiKeyCommandAsync_NonClusteredConnection_ReturnsSingleRoute()
+        {
+            using (var connection = CreateConnection())
+            {
+                var key1 = (RedisKey)"a";
+                var key2 = (RedisKey)"b";
+
+                var cmd = Substitute.For<IMultiKeyCommandIdentity>();
+
+                cmd.Keys.Returns(new[] { key1, key2 });
+
+                var routes = (await connection.RouteMultiKeyCommandAsync(cmd)).ToArray();
+
+                Assert.Single(routes);
+                Assert.Equal(key1, routes[0].Keys.ElementAt(0));
+                Assert.Equal(key2, routes[0].Keys.ElementAt(1));
             }
         }
 
@@ -179,11 +211,14 @@ namespace RedisSlimClient.UnitTests.Io
 
         class TestServerInfo : ServerEndPointInfo
         {
-            public TestServerInfo(int id) : base($"localhost{id}", 1234, 2345, null, ServerRoleType.Master)
+            public TestServerInfo(int id, bool isCluster = false) : base($"localhost{id}", 1234, 2345, null, ServerRoleType.Master)
             {
+                IsCluster = isCluster;
             }
 
             public bool Enabled { get; set; } = true;
+
+            public override bool IsCluster { get; }
 
             public RedisKey KeyMatch { get; set; }
 

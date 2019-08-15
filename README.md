@@ -17,6 +17,7 @@ The main aims of the client are:
 * Support for SSL
 * Flexible thread management
 * Support for clusters and replica configurations
+* Support for master/slave configurations
 
 # Benchmarks
 
@@ -24,9 +25,9 @@ The main aims of the client are:
 
 # TODO
 
-* Support for clustering / redirection
-* Support for master/slave
+* Support for clustering redirection
 * Keep alive & socket monitoring
 * Better memory management
 * Slimmer object serialization
 * Retry and TRYAGAIN response handling
+* Support for GEO commands

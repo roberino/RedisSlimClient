@@ -130,12 +130,10 @@ namespace RedisSlimClient
 
             return await Task.WhenAll(cmdPipes.Select(async c =>
             {
-                var cmdx = cmdFactory();
+                var cmdx = cmdFactory().AttachTelemetry(_configuration.TelemetryWriter);
 
                 try
                 {
-                    cmdx.AttachTelemetry(_configuration.TelemetryWriter);
-
                     var result = await c.Execute(cmdx, cancellation);
 
                     return translator(result, cmdx.AssignedEndpoint);

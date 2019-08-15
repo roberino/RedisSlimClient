@@ -101,7 +101,15 @@ namespace RedisSlimClient.Io.Commands
             }
         }
 
-        protected virtual Exception TranslateError(RedisError err) => new RedisServerException(err.Message);
+        protected virtual Exception TranslateError(RedisError err)
+        {
+            if (ObjectMovedException.TryParse(err.Message, out var ex))
+            {
+                return ex;
+            }
+
+            return new RedisServerException(err.Message);
+        }
 
         protected abstract T TranslateResult(IRedisObject redisObject);
 
