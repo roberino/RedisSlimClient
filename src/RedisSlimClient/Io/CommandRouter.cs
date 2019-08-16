@@ -21,7 +21,7 @@ namespace RedisSlimClient.Io
             _subConnections = new SyncronizedInstance<IReadOnlyCollection<IConnectionSubordinate>>(_serverNodeInitialiser.InitialiseAsync);
         }
 
-        public async Task<IEnumerable<MultiKeyRoute>> RouteMultiKeyCommandAsync(IMultiKeyCommandIdentity command)
+        public async Task<IReadOnlyCollection<MultiKeyRoute>> RouteMultiKeyCommandAsync(IMultiKeyCommandIdentity command)
         {
             var subConnections = (await _subConnections.GetValue())
                 .Where(s => s.Status == PipelineStatus.Ok || s.Status == PipelineStatus.Uninitialized)

@@ -1,5 +1,4 @@
 ﻿using RedisSlimClient.Io.Commands;
-using RedisSlimClient.Types;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -15,28 +14,11 @@ namespace RedisSlimClient.Io
             _connections = connections;
         }
 
-        public async Task<IEnumerable<MultiKeyRoute>> RouteMultiKeyCommandAsync(IMultiKeyCommandIdentity command)
+        public async Task<IReadOnlyCollection<MultiKeyRoute>> RouteMultiKeyCommandAsync(IMultiKeyCommandIdentity command)
         {
-            var finalSelection = new Dictionary<ICommandExecutor, RedisKey[]>();
+            var availablePipelines = (await Task.WhenAll(_connections.Select(c => c.RouteMultiKeyCommandAsync(command)))).ToArray();
 
-            var availablePipelines = (await Task.WhenAll(_connections.Select(c => c.RouteMultiKeyCommandAsync(command))))
-                .SelectMany(x => x)
-                .OrderByDescending(x => x.Keys.Length).ToList();
-
-            var assigned = new HashSet<RedisKey>(command.Keys);
-
-            foreach(var pipeGroup in availablePipelines)
-            {
-                foreach(var k in pipeGroup.Keys)
-                {
-                    if (assigned.Contains(k))
-                    {
-
-                    }
-                }
-            }
-
-            throw new System.NotImplementedException();
+            return availablePipelines.OrderBy(x => x.Count()).FirstOrDefault();
         }
 
         public async Task<IEnumerable<ICommandExecutor>> RouteCommandAsync(ICommandIdentity command, ConnectionTarget target)
