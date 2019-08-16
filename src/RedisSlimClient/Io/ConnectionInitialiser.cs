@@ -1,13 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Authentication;
-using System.Threading.Tasks;
-using RedisSlimClient.Configuration;
+﻿using RedisSlimClient.Configuration;
+using RedisSlimClient.Io.Commands;
 using RedisSlimClient.Io.Net;
 using RedisSlimClient.Io.Server.Clustering;
 using RedisSlimClient.Telemetry;
 using RedisSlimClient.Util;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Security.Authentication;
+using System.Threading.Tasks;
 
 namespace RedisSlimClient.Io.Server
 {
@@ -50,15 +51,15 @@ namespace RedisSlimClient.Io.Server
             }
         }
 
-        AuthCommand AuthCommand => new AuthCommand(_clientCredentials.Password);
+        AuthCommand AuthCommand => new AuthCommand(_clientCredentials.Password).AttachTelemetry(_telemetryWriter);
 
-        ClientSetNameCommand ClientSetName => new ClientSetNameCommand(_clientCredentials.ClientName);
+        ClientSetNameCommand ClientSetName => new ClientSetNameCommand(_clientCredentials.ClientName).AttachTelemetry(_telemetryWriter);
 
-        RoleCommand RoleCommand => new RoleCommand(_networkConfiguration);
+        RoleCommand RoleCommand => new RoleCommand(_networkConfiguration).AttachTelemetry(_telemetryWriter);
 
-        InfoCommand InfoCommand => new InfoCommand();
+        InfoCommand InfoCommand => new InfoCommand().AttachTelemetry(_telemetryWriter);
 
-        ClusterNodesCommand ClusterCommand => new ClusterNodesCommand(_networkConfiguration);
+        ClusterNodesCommand ClusterCommand => new ClusterNodesCommand(_networkConfiguration).AttachTelemetry(_telemetryWriter);
 
         async Task<IReadOnlyCollection<IConnectionSubordinate>> InitialiseAsync(IConnectionSubordinate initialPipeline, int level = 0)
         {
@@ -120,8 +121,6 @@ namespace RedisSlimClient.Io.Server
                             var subPipe = await _pipelineFactory(endPointInfo);
 
                             await Auth(subPipe);
-
-                            ctx.Write(nameof(Auth));
 
                             subPipe.Initialising.Subscribe(Auth);
 

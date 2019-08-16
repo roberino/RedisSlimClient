@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using RedisSlimClient.Configuration;
@@ -29,12 +30,19 @@ namespace RedisSlimClient.Io.Pipelines
 
         public event Action Faulted;
 
+        public Task RunAsync()
+        {
+            return Task.WhenAll(Schedulables.Select(x => x.RunAsync()));
+        }
+
         public void Schedule(IWorkScheduler scheduler)
         {
-            foreach (var item in Schedulables)
-            {
-                item.Schedule(scheduler);
-            }
+            scheduler.Schedule(RunAsync);
+
+            //foreach (var item in Schedulables)
+            //{
+            //    item.Schedule(scheduler);
+            //}
         }
 
         public async Task Reset()

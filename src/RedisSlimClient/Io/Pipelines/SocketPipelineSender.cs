@@ -1,10 +1,10 @@
-﻿using RedisSlimClient.Types.Primatives;
+﻿using RedisSlimClient.Io.Net;
+using RedisSlimClient.Io.Scheduling;
+using RedisSlimClient.Types.Primatives;
 using System;
 using System.IO.Pipelines;
 using System.Threading;
 using System.Threading.Tasks;
-using RedisSlimClient.Io.Scheduling;
-using RedisSlimClient.Io.Net;
 
 namespace RedisSlimClient.Io.Pipelines
 {
@@ -56,17 +56,21 @@ namespace RedisSlimClient.Io.Pipelines
             return Task.CompletedTask;
         }
 
-        public async Task SendAsync(byte[] data)
+        public async ValueTask SendAsync(byte[] data)
         {
             if (_reset)
             {
                 throw new InvalidOperationException("Resetting");
             }
 
+            StateChanged?.Invoke(PipelineStatus.WritingToPipe);
+
             await _pipe.Writer.WriteAsync(new ReadOnlyMemory<byte>(data), _cancellationToken).ConfigureAwait(false);
+
+            StateChanged?.Invoke(PipelineStatus.WritingToPipeComplete);
         }
 
-        public async Task SendAsync(Func<IMemoryCursor, Task> writeAction)
+        public async ValueTask SendAsync(Func<IMemoryCursor, ValueTask> writeAction)
         {
             if (_reset)
             {
@@ -77,7 +81,9 @@ namespace RedisSlimClient.Io.Pipelines
 
             StateChanged?.Invoke(PipelineStatus.WritingToPipe);
 
-            await _memoryCursor.FlushAsync();
+            await _memoryCursor.FlushAsync().ConfigureAwait(false);
+
+            StateChanged?.Invoke(PipelineStatus.WritingToPipeComplete);
         }
 
         async Task PumpToSocket()
@@ -106,6 +112,13 @@ namespace RedisSlimClient.Io.Pipelines
                 catch (TaskCanceledException)
                 {
                     break;
+                }
+                catch (AggregateException ex)
+                {
+                    if (ex.InnerException is TaskCanceledException)
+                    {
+                        break;
+                    }
                 }
                 catch (Exception ex)
                 {

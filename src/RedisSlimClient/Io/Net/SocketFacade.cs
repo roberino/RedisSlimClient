@@ -78,6 +78,7 @@ namespace RedisSlimClient.Io.Net
         {
             while (!State.IsAvailable && !cancellation.IsCancellationRequested)
             {
+                Console.WriteLine($"Status: {State.Status}");
                 await Task.Delay(5, cancellation);
             }
         }

@@ -13,6 +13,7 @@
         ReadingMoreData,
         SendingToSocket,
         WritingToPipe,
+        WritingToPipeComplete,
         AdvancingWriter,
         AdvancingReader,
         Flushing,

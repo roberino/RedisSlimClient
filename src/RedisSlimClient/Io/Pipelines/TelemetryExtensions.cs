@@ -9,74 +9,77 @@ namespace RedisSlimClient.Io.Pipelines
     {
         public static void AttachTelemetry(this IDuplexPipeline component, ITelemetryWriter writer)
         {
-            component.Receiver.AttachTelemetry(writer);
-            component.Sender.AttachTelemetry(writer);
+            if (!writer.Enabled)
+            {
+                return;
+            }
+
+            var opId = TelemetryEvent.CreateId();
+            var sw = new Stopwatch();
+
+            sw.Start();
+
+            component.Receiver.AttachTelemetry(writer, opId, sw);
+            component.Sender.AttachTelemetry(writer, opId, sw);
         }
 
-        public static void AttachTelemetry(this IPipelineComponent component, ITelemetryWriter writer)
+        static void AttachTelemetry(this IPipelineComponent component, ITelemetryWriter writer, string opId, Stopwatch sw)
         {
-            if (writer.Enabled)
+            var baseName = component.GetType().Name;
+
+            if (writer.Severity.HasFlag(Severity.Diagnostic))
             {
-                var baseName = component.GetType().Name;
-                var opId = TelemetryEvent.CreateId();
-                var sw = new Stopwatch();
-
-                sw.Start();
-
-                if (writer.Severity.HasFlag(Severity.Diagnostic))
-                {
-                    component.Trace += e =>
-                    {
-                        var childEvent = new TelemetryEvent()
-                        {
-                            Name = $"{baseName}/{e.Action}",
-                            Elapsed = sw.Elapsed,
-                            OperationId = opId,
-                            Data = $"{component.EndpointIdentifier} ({e.Data.Length} bytes): {Encoding.ASCII.GetString(e.Data)}",
-                            Severity = Severity.Diagnostic
-                        };
-
-                        childEvent.Dimensions[$"{nameof(Uri.Host)}"] = component.EndpointIdentifier.Host;
-                        childEvent.Dimensions[$"{nameof(Uri.Port)}"] = component.EndpointIdentifier.Port;
-                        childEvent.Dimensions["Role"] = component.EndpointIdentifier.Scheme;
-
-                        writer.Write(childEvent);
-                    };
-                }
-
-                component.StateChanged += s =>
+                component.Trace += e =>
                 {
                     var childEvent = new TelemetryEvent()
                     {
-                        Name = $"{baseName}/{s}",                        
+                        Name = $"{baseName}/{e.Action}",
                         Elapsed = sw.Elapsed,
                         OperationId = opId,
-                        Data = component.EndpointIdentifier.ToString(),
-                        Severity = s == PipelineStatus.Faulted ? Severity.Error : Severity.Diagnostic
+                        Data = $"{component.EndpointIdentifier} ({e.Data.Length} bytes): {Encoding.ASCII.GetString(e.Data)}",
+                        Severity = Severity.Diagnostic
                     };
 
-                    childEvent.AddComponentInf(component);
-
-                    writer.Write(childEvent);
-                };
-
-                component.Error += e =>
-                {
-                    var childEvent = new TelemetryEvent()
-                    {
-                        Name = nameof(component.Error),
-                        Elapsed = sw.Elapsed,
-                        OperationId = opId,
-                        Data = component.EndpointIdentifier.ToString(),
-                        Severity = Severity.Error,
-                        Exception = e
-                    };
-
-                    childEvent.AddComponentInf(component);
+                    childEvent.Dimensions[$"{nameof(Uri.Host)}"] = component.EndpointIdentifier.Host;
+                    childEvent.Dimensions[$"{nameof(Uri.Port)}"] = component.EndpointIdentifier.Port;
+                    childEvent.Dimensions["Role"] = component.EndpointIdentifier.Scheme;
 
                     writer.Write(childEvent);
                 };
             }
+
+            component.StateChanged += s =>
+            {
+                var childEvent = new TelemetryEvent()
+                {
+                    Name = $"{baseName}/{s}",
+                    Elapsed = sw.Elapsed,
+                    OperationId = opId,
+                    Data = component.EndpointIdentifier.ToString(),
+                    Severity = s == PipelineStatus.Faulted ? Severity.Error : Severity.Diagnostic
+                };
+
+                childEvent.AddComponentInf(component);
+
+                writer.Write(childEvent);
+            };
+
+            component.Error += e =>
+            {
+                var childEvent = new TelemetryEvent()
+                {
+                    Name = nameof(component.Error),
+                    Elapsed = sw.Elapsed,
+                    OperationId = opId,
+                    Data = component.EndpointIdentifier.ToString(),
+                    Severity = Severity.Error,
+                    Exception = e
+                };
+
+                childEvent.AddComponentInf(component);
+
+                writer.Write(childEvent);
+            };
         }
 
         static void AddComponentInf(this TelemetryEvent childEvent, IPipelineComponent component)

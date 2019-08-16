@@ -26,7 +26,7 @@ namespace RedisSlimClient.IntegrationTests
 
             if (output != null)
             {
-                config.TelemetryWriter = new TextTelemetryWriter(output, Severity.Warn | Severity.Error | Severity.Info);
+                config.TelemetryWriter = new TextTelemetryWriter(output, Severity.All);
             }
 
             config.NetworkConfiguration.PortMappings

@@ -6,7 +6,7 @@ namespace RedisSlimClient.Types.Primatives
     {
         int CurrentPosition { get; }
 
-        Task Write(byte data);
-        Task Write(byte[] data);
+        ValueTask<bool> Write(byte data);
+        ValueTask<bool> Write(byte[] data);
     }
 }

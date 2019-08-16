@@ -6,8 +6,8 @@ namespace RedisSlimClient.Io.Pipelines
 {
     interface IPipelineSender : IPipelineComponent
     {
-        Task SendAsync(byte[] data);
+        ValueTask SendAsync(byte[] data);
 
-        Task SendAsync(Func<IMemoryCursor, Task> writeAction);
+        ValueTask SendAsync(Func<IMemoryCursor, ValueTask> writeAction);
     }
 }

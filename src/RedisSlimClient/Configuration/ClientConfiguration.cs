@@ -17,7 +17,7 @@ namespace RedisSlimClient.Configuration
         {
             Id = Interlocked.Increment(ref _idCounter);
             SslConfiguration = new SslConfiguration();
-            ClientName = $"RSC{Process.GetCurrentProcess().Id}-{Environment.MachineName}-{_idCounter}";
+            ClientName = $"RSC{Process.GetCurrentProcess().Id}-{Environment.MachineName}-{Id}";
             NetworkConfiguration = networkConfiguration ?? new NetworkConfiguration();
 
             Parse(connectionOptions);

@@ -6,6 +6,8 @@ namespace RedisSlimClient.Io.Scheduling
     {
         void Schedule(IWorkScheduler scheduler);
 
+        Task RunAsync();
+
         Task Reset();
     }
 }

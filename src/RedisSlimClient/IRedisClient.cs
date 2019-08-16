@@ -10,7 +10,6 @@ namespace RedisSlimClient
     {
         Task<byte[]> GetBytesAsync(string key, CancellationToken cancellation = default);
         Task<string> GetStringAsync(string key, CancellationToken cancellation = default);
-        Task<T> GetObjectAsync<T>(string key, CancellationToken cancellation = default);
     }
 
     public interface IRedisDiagnosticClient : IDisposable
@@ -24,13 +23,18 @@ namespace RedisSlimClient
         Task<long> DeleteAsync(string key, CancellationToken cancellation = default);
         Task<bool> SetBytesAsync(string key, byte[] data, CancellationToken cancellation = default);
         Task<bool> SetStringAsync(string key, string data, CancellationToken cancellation = default);
-        Task<bool> SetObjectAsync<T>(string key, T obj, CancellationToken cancellation = default);
 
         Task<IReadOnlyCollection<string>> GetStringsAsync(IReadOnlyCollection<string> keys,
             CancellationToken cancellation = default);
     }
 
-    public interface IRedisClient : IRedisReaderWriter, IRedisDiagnosticClient
+    public interface IRedisObjectReaderWriter
+    {
+        Task<T> GetObjectAsync<T>(string key, CancellationToken cancellation = default);
+        Task<bool> SetObjectAsync<T>(string key, T obj, CancellationToken cancellation = default);
+    }
+
+    public interface IRedisClient : IRedisReaderWriter, IRedisObjectReaderWriter, IRedisDiagnosticClient
     {
     }
 }
