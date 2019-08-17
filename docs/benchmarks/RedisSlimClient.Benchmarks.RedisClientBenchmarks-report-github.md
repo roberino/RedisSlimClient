@@ -10,21 +10,21 @@ Job=Core  Runtime=Core  InvocationCount=1
 UnrollFactor=1  
 
 ```
-|         Method |  PipelineMode | ConnectionPoolSize | DataCollectionSize | ParallelOps |       Mean |     Error |   StdDev | Rank |
-|--------------- |-------------- |------------------- |------------------- |------------ |-----------:|----------:|---------:|-----:|
-| **SetAndGetAsync** | **AsyncPipeline** |                  **1** |                  **5** |           **1** |   **969.6 us** |  **57.60 us** | **168.9 us** |    **1** |
-| **SetAndGetAsync** | **AsyncPipeline** |                  **1** |                  **5** |           **4** |   **938.9 us** |  **42.55 us** | **122.1 us** |    **1** |
-| **SetAndGetAsync** | **AsyncPipeline** |                  **1** |                 **10** |           **1** | **1,061.0 us** |  **58.22 us** | **167.0 us** |    **2** |
-| **SetAndGetAsync** | **AsyncPipeline** |                  **1** |                 **10** |           **4** | **1,139.3 us** |  **55.66 us** | **161.5 us** |    **2** |
-| **SetAndGetAsync** | **AsyncPipeline** |                  **4** |                  **5** |           **1** |   **901.1 us** |  **46.21 us** | **135.5 us** |    **1** |
-| **SetAndGetAsync** | **AsyncPipeline** |                  **4** |                  **5** |           **4** |   **985.6 us** |  **35.05 us** | **101.7 us** |    **1** |
-| **SetAndGetAsync** | **AsyncPipeline** |                  **4** |                 **10** |           **1** | **1,153.3 us** |  **69.92 us** | **206.2 us** |    **2** |
-| **SetAndGetAsync** | **AsyncPipeline** |                  **4** |                 **10** |           **4** | **1,202.8 us** |  **39.49 us** | **114.6 us** |    **3** |
-| **SetAndGetAsync** |          **Sync** |                  **1** |                  **5** |           **1** | **1,036.7 us** |  **53.31 us** | **156.3 us** |    **2** |
-| **SetAndGetAsync** |          **Sync** |                  **1** |                  **5** |           **4** | **3,793.7 us** | **177.36 us** | **514.6 us** |    **4** |
-| **SetAndGetAsync** |          **Sync** |                  **1** |                 **10** |           **1** | **1,238.9 us** |  **52.82 us** | **155.7 us** |    **3** |
-| **SetAndGetAsync** |          **Sync** |                  **1** |                 **10** |           **4** | **4,789.8 us** | **236.52 us** | **686.2 us** |    **6** |
-| **SetAndGetAsync** |          **Sync** |                  **4** |                  **5** |           **1** | **1,113.2 us** |  **58.50 us** | **171.6 us** |    **2** |
-| **SetAndGetAsync** |          **Sync** |                  **4** |                  **5** |           **4** | **4,089.8 us** | **234.60 us** | **676.9 us** |    **5** |
-| **SetAndGetAsync** |          **Sync** |                  **4** |                 **10** |           **1** | **1,227.5 us** |  **70.95 us** | **201.3 us** |    **3** |
-| **SetAndGetAsync** |          **Sync** |                  **4** |                 **10** |           **4** | **4,868.2 us** | **341.17 us** | **984.4 us** |    **6** |
+|         Method |  PipelineMode | ConnectionPoolSize | DataCollectionSize | ParallelOps |     Mean |     Error |    StdDev |   Median | Rank |
+|--------------- |-------------- |------------------- |------------------- |------------ |---------:|----------:|----------:|---------:|-----:|
+| **SetAndGetAsync** | **AsyncPipeline** |                  **1** |                  **5** |           **1** | **1.314 ms** | **0.0464 ms** | **0.1248 ms** | **1.296 ms** |    **2** |
+| **SetAndGetAsync** | **AsyncPipeline** |                  **1** |                  **5** |           **4** | **1.184 ms** | **0.0553 ms** | **0.1586 ms** | **1.184 ms** |    **1** |
+| **SetAndGetAsync** | **AsyncPipeline** |                  **1** |                 **10** |           **1** | **1.466 ms** | **0.0435 ms** | **0.1220 ms** | **1.447 ms** |    **4** |
+| **SetAndGetAsync** | **AsyncPipeline** |                  **1** |                 **10** |           **4** | **1.576 ms** | **0.0610 ms** | **0.1789 ms** | **1.561 ms** |    **4** |
+| **SetAndGetAsync** | **AsyncPipeline** |                  **4** |                  **5** |           **1** | **1.532 ms** | **0.1160 ms** | **0.3422 ms** | **1.442 ms** |    **4** |
+| **SetAndGetAsync** | **AsyncPipeline** |                  **4** |                  **5** |           **4** | **1.305 ms** | **0.0657 ms** | **0.1918 ms** | **1.296 ms** |    **2** |
+| **SetAndGetAsync** | **AsyncPipeline** |                  **4** |                 **10** |           **1** | **1.619 ms** | **0.1053 ms** | **0.3089 ms** | **1.518 ms** |    **4** |
+| **SetAndGetAsync** | **AsyncPipeline** |                  **4** |                 **10** |           **4** | **1.742 ms** | **0.0753 ms** | **0.2219 ms** | **1.742 ms** |    **5** |
+| **SetAndGetAsync** |          **Sync** |                  **1** |                  **5** |           **1** | **1.238 ms** | **0.0643 ms** | **0.1833 ms** | **1.188 ms** |    **1** |
+| **SetAndGetAsync** |          **Sync** |                  **1** |                  **5** |           **4** | **4.601 ms** | **0.2374 ms** | **0.7001 ms** | **4.512 ms** |    **6** |
+| **SetAndGetAsync** |          **Sync** |                  **1** |                 **10** |           **1** | **1.411 ms** | **0.0726 ms** | **0.2060 ms** | **1.375 ms** |    **3** |
+| **SetAndGetAsync** |          **Sync** |                  **1** |                 **10** |           **4** | **5.562 ms** | **0.2677 ms** | **0.7768 ms** | **5.451 ms** |    **8** |
+| **SetAndGetAsync** |          **Sync** |                  **4** |                  **5** |           **1** | **1.333 ms** | **0.0728 ms** | **0.2111 ms** | **1.303 ms** |    **2** |
+| **SetAndGetAsync** |          **Sync** |                  **4** |                  **5** |           **4** | **4.980 ms** | **0.2962 ms** | **0.8641 ms** | **5.033 ms** |    **7** |
+| **SetAndGetAsync** |          **Sync** |                  **4** |                 **10** |           **1** | **1.481 ms** | **0.0590 ms** | **0.1693 ms** | **1.426 ms** |    **4** |
+| **SetAndGetAsync** |          **Sync** |                  **4** |                 **10** |           **4** | **5.548 ms** | **0.3040 ms** | **0.8524 ms** | **5.370 ms** |    **8** |
