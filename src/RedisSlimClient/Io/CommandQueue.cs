@@ -1,32 +1,45 @@
-﻿using RedisSlimClient.Io.Commands;
-using System;
-using System.Collections.Concurrent;
-using System.Linq;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using RedisSlimClient.Io.Commands;
+using RedisSlimClient.Io.Scheduling;
 
 namespace RedisSlimClient.Io
 {
-    internal class CommandQueue
+    class CommandQueue
     {
         readonly SemaphoreSlim _semaphore;
-        readonly ConcurrentQueue<IRedisCommand> _commandQueue;
+        readonly Queue<IRedisCommand> _commandQueue;
 
         public CommandQueue()
         {
-            _commandQueue = new ConcurrentQueue<IRedisCommand>();
+            _commandQueue = new Queue<IRedisCommand>();
             _semaphore = new SemaphoreSlim(1, 1);
         }
 
         public int QueueSize => _commandQueue.Count;
 
-        public void AbortAll(Exception ex)
+        public async Task AbortAll(Exception ex, IWorkScheduler scheduler)
         {
-            while (ProcessNextCommand(cmd =>
-             {
-                 cmd.Abandon(ex);
-             }))
+            IRedisCommand[] cmds = null;
+
+            await AccessQueue(q =>
             {
+                cmds = q.ToArray();
+
+                q.Clear();
+
+                return true;
+            });
+
+            foreach (var cmd in cmds)
+            {
+                scheduler.Schedule(() =>
+                {
+                    cmd.Abandon(ex);
+                    return Task.CompletedTask;
+                });
             }
         }
 
@@ -36,11 +49,11 @@ namespace RedisSlimClient.Io
 
             try
             {
-                await synchronisedWork();
-
                 var salvagable = _commandQueue.ToArray();
 
                 Clear();
+
+                await synchronisedWork();
 
                 foreach (var command in salvagable)
                 {
@@ -53,24 +66,6 @@ namespace RedisSlimClient.Io
 
                     _commandQueue.Enqueue(command);
                 }
-            }
-            finally
-            {
-                _semaphore.Release();
-            }
-        }
-
-        public async Task Enqueue(Func<Task<IRedisCommand>> commandFactory, CancellationToken cancellation = default)
-        {
-            IRedisCommand cmd;
-
-            await _semaphore.WaitAsync(cancellation);
-
-            try
-            {
-                cmd = await commandFactory();
-
-                _commandQueue.Enqueue(cmd);
             }
             finally
             {
@@ -96,26 +91,38 @@ namespace RedisSlimClient.Io
 
         public bool ProcessNextCommand(Action<IRedisCommand> action)
         {
-            if (_commandQueue.TryDequeue(out var next))
+            return AccessQueue(x => ProcessNextCommandInternal(action)).ConfigureAwait(false).GetAwaiter().GetResult();
+        }
+
+        bool ProcessNextCommandInternal(Action<IRedisCommand> action)
+        {
+            if (_commandQueue.Count > 0)
             {
-                action(next);
+                action(_commandQueue.Dequeue());
 
                 return true;
             }
 
-            return !_commandQueue.IsEmpty;
+            return false;
+        }
+
+        async Task<T> AccessQueue<T>(Func<Queue<IRedisCommand>, T> work, CancellationToken cancellation = default)
+        {
+            await _semaphore.WaitAsync(cancellation);
+
+            try
+            {
+                return work(_commandQueue);
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
         }
 
         void Clear()
         {
-#if NET_CORE
             _commandQueue.Clear();
-#else
-            while (_commandQueue.Count > 0)
-            {
-                _commandQueue.TryDequeue(out var result);
-            }
-#endif
         }
     }
 }

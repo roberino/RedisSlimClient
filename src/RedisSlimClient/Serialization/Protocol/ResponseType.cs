@@ -1,6 +1,6 @@
 ﻿namespace RedisSlimClient.Serialization
 {
-    internal enum ResponseType : byte
+    enum ResponseType : byte
     {
         Unknown,
 

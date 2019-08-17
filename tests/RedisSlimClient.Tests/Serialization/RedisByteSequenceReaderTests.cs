@@ -52,11 +52,11 @@ namespace RedisSlimClient.UnitTests.Serialization
             Assert.Single(parsedObjects);
 
             var arr1 = (RedisArray)parsedObjects[0];
-            var str1 = (RedisString)arr1.Items[0];
-            var arr2 = (RedisArray) arr1.Items[1];
-            var int1 = (RedisInteger) arr2.Items[0];
-            var int2 = (RedisInteger)arr2.Items[1];
-            var str2 = (RedisString)arr1.Items[2];
+            var str1 = (RedisString)arr1[0];
+            var arr2 = (RedisArray) arr1[1];
+            var int1 = (RedisInteger) arr2[0];
+            var int2 = (RedisInteger)arr2[1];
+            var str2 = (RedisString)arr1[2];
 
             Assert.Equal("abc", str1.ToString());
             Assert.Equal(123, int1.Value);

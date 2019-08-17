@@ -1,11 +1,10 @@
-﻿using RedisSlimClient.Configuration;
-using RedisSlimClient.Io.Net;
-using RedisSlimClient.Io.Scheduling;
-using System;
+﻿using System;
 using System.Linq;
-using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using RedisSlimClient.Configuration;
+using RedisSlimClient.Io.Net;
+using RedisSlimClient.Io.Scheduling;
 
 namespace RedisSlimClient.Io.Pipelines
 {
@@ -13,11 +12,6 @@ namespace RedisSlimClient.Io.Pipelines
     {
         readonly ISocket _socket;
         readonly CancellationTokenSource _cancellationTokenSource;
-
-        public SocketPipeline(EndPoint endPoint, TimeSpan timeout, IReadWriteBufferSettings bufferSettings)
-            : this(new SocketFacade(endPoint, timeout), bufferSettings)
-        {
-        }
 
         public SocketPipeline(ISocket socket, IReadWriteBufferSettings bufferSettings = null)
         {
@@ -38,12 +32,22 @@ namespace RedisSlimClient.Io.Pipelines
 
         public Task RunAsync()
         {
-            return Task.WhenAll(Runnables.Select(x => x.RunAsync()));
+            return Task.WhenAll(Schedulables.Select(x => x.RunAsync()));
+        }
+
+        public void Schedule(IWorkScheduler scheduler)
+        {
+            scheduler.Schedule(RunAsync);
+
+            //foreach (var item in Schedulables)
+            //{
+            //    item.Schedule(scheduler);
+            //}
         }
 
         public async Task Reset()
         {
-            foreach (var runnable in Runnables)
+            foreach (var runnable in Schedulables)
                 await runnable.Reset();
 
             await _socket.ConnectAsync();
@@ -64,9 +68,9 @@ namespace RedisSlimClient.Io.Pipelines
             }
         }
 
-        void OnSocketChange(SocketStatus e)
+        void OnSocketChange((SocketStatus status, long id) state)
         {
-            if (e == SocketStatus.ReadFault || e == SocketStatus.WriteFault)
+            if (state.status == SocketStatus.ReadFault || state.status == SocketStatus.WriteFault)
             {
                 Faulted?.Invoke();
             }
@@ -74,6 +78,6 @@ namespace RedisSlimClient.Io.Pipelines
 
         ~SocketPipeline() { Dispose(); }
 
-        IRunnable[] Runnables => new[] { (IRunnable)Receiver, (IRunnable)Sender };
+        ISchedulable[] Schedulables => new[] { (ISchedulable)Receiver, (ISchedulable)Sender };
     }
 }

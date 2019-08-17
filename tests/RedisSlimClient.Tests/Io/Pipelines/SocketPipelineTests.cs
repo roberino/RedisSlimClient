@@ -1,6 +1,7 @@
 ﻿using RedisSlimClient.Io.Commands;
 using RedisSlimClient.Io.Pipelines;
 using RedisSlimClient.Io.Scheduling;
+using RedisSlimClient.Io.Server;
 using RedisSlimClient.Serialization.Protocol;
 using System.Buffers;
 using System.Collections.Concurrent;
@@ -48,7 +49,7 @@ namespace RedisSlimClient.UnitTests.Io.Pipelines
                     return formatter.Write(command.GetArgs());
                 });
 
-                var _ = pipe.ScheduleOnThreadpool();
+                pipe.ScheduleOnThreadpool();
 
                 waitHandle.WaitOne(1000);
             }
@@ -109,7 +110,7 @@ namespace RedisSlimClient.UnitTests.Io.Pipelines
                     }
                 });
 
-                var _ = pipe.ScheduleOnThreadpool();
+                pipe.ScheduleOnThreadpool();
 
                 waitHandle.WaitOne(3000);
             }

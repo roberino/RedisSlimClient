@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace RedisSlimClient.Io.Server
 {
-    public sealed class TcpServer : IDisposable
+    sealed class TcpServer : IDisposable
     {
         readonly EndPoint _local;
         readonly EndPoint _target;

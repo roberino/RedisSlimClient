@@ -1,9 +1,13 @@
 ﻿namespace RedisSlimClient.Types
 {
-    internal class RedisNull : RedisObject
+    readonly struct RedisNull : IRedisObject
     {
-        RedisNull() : base(RedisType.Null) { }
-
         public static RedisNull Value = new RedisNull();
+
+        public bool IsComplete => true;
+        public bool IsNull => true;
+        public RedisType Type => RedisType.Null;
+
+        public override string ToString() => Type.ToString();
     }
 }

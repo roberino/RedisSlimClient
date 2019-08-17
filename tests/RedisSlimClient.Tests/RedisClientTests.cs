@@ -22,10 +22,10 @@ namespace RedisSlimClient.UnitTests
         [Fact]
         public async Task SetObjectAsync_WritesObjectDataToStore()
         {
-            var connection = Substitute.For<IConnection>();
+            var connection = Substitute.For<ICommandRouter>();
             var pipeline = Substitute.For<ICommandPipeline>();
             
-            connection.ConnectAsync().Returns(pipeline);
+            connection.RouteCommandAsync(Arg.Any<ICommandIdentity>()).Returns(pipeline);
             pipeline.Execute(Arg.Any<ObjectSetCommand<MyData>>(), Arg.Any<CancellationToken>())
                 .Returns(call =>
                 {

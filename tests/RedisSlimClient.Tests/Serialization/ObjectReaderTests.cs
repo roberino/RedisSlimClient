@@ -126,7 +126,7 @@ namespace RedisSlimClient.UnitTests.Serialization
 
         IEnumerable<RedisObjectPart> CreateParts(
             string name, TypeCode code, SubType subType,
-            params RedisObject[] content)
+            params IRedisObject[] content)
         {
             var i = 3;
             var level = 1;

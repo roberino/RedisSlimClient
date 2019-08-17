@@ -1,8 +1,10 @@
-﻿namespace RedisSlimClient.Io.Commands
+﻿using RedisSlimClient.Types;
+
+namespace RedisSlimClient.Io.Commands
 {
-    class DeleteCommand : StringCommand
+    class DeleteCommand : RedisPrimativeCommand
     {
-        public DeleteCommand(string key) : base("DEL", key)
+        public DeleteCommand(RedisKey key) : base("DEL", true, key)
         {
         }
     }

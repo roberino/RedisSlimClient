@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace RedisSlimClient.Io.Pipelines
 {
-    public class ErrorBroadcaster
+    class ErrorBroadcaster
     {
         readonly IList<Exception> _errors = new List<Exception>();
 

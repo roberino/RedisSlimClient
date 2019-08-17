@@ -3,7 +3,7 @@ using System.Buffers;
 
 namespace RedisSlimClient.Types.Primatives
 {
-    struct MemoryByteSequenceAdapter : IByteSequence
+    readonly struct MemoryByteSequenceAdapter : IByteSequence
     {
         readonly ReadOnlySequence<byte> _sequence;
 

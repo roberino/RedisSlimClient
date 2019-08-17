@@ -2,7 +2,7 @@
 
 namespace RedisSlimClient.Io.Server
 {
-    public class RequestHandler
+    class RequestHandler
     {
         readonly Func<Request, Response> _handler;
 

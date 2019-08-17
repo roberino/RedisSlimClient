@@ -6,14 +6,31 @@ namespace RedisSlimClient.Telemetry
 {
     static class TelemetryEventExtensions
     {
-        public static async Task<T> ExecuteAsync<T>(this ITelemetryWriter writer, Func<TelemetricContext, Task<T>> act, string name)
+        public static void Execute(this ITelemetryWriter writer, Action<TelemetricContext> act, string name = null)
+        {
+            ExecuteAsync(writer, c =>
+            {
+                act(c);
+                return Task.FromResult(true);
+            }, name).GetAwaiter().GetResult();
+        }
+
+        public static async Task<T> ExecuteAsync<T>(this ITelemetryWriter writer, Func<TelemetricContext, Task<T>> act, string name = null)
         {
             var timer = new Stopwatch();
 
+            if (name == null)
+            {
+                name = act.Method.Name;
+            }
+
             var ev = TelemetryEvent.CreateStart(name);
-            var ctx = new TelemetricContext(writer, ev);
+
             var endEv = ev.CreateChild(name);
+
             endEv.Action = "End";
+
+            var ctx = new TelemetricContext(writer, ev, endEv.Dimensions);
 
             writer.Write(ev);
 

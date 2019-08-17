@@ -2,7 +2,7 @@
 
 namespace RedisSlimClient.Serialization
 {
-    internal interface IBinaryFormatter
+    interface IBinaryFormatter
     {
         double ToDouble(byte[] data);
         byte[] ToBytes(double value);

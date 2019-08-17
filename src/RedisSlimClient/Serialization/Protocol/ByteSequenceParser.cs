@@ -96,7 +96,7 @@ namespace RedisSlimClient.Serialization
             return array;
         }
 
-        RedisObjectPart YieldObjectPart(RedisObject value)
+        RedisObjectPart YieldObjectPart(IRedisObject value)
         {
             _currentState = ReadState.Type;
 
@@ -138,16 +138,16 @@ namespace RedisSlimClient.Serialization
             }
         }
 
-        RedisObject GetCurrentValue(IByteSequence segment)
+        IRedisObject GetCurrentValue(IByteSequence segment)
         {
             switch (_currentType.type)
             {
                 case ResponseType.ErrorType:
                     return new RedisError(segment.ToAsciiString(_currentType.offset));
                 case ResponseType.StringType:
-                    return new RedisString(segment.ToArray(_currentType.offset));
+                    return new RedisString(segment.ToSequence(_currentType.offset));
                 case ResponseType.BulkStringType:
-                    return new RedisString(segment.ToArray(_currentType.offset));
+                    return new RedisString(segment.ToSequence(_currentType.offset));
             }
 
             throw new NotSupportedException(_currentType.type.ToString());

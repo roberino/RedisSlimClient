@@ -1,19 +1,43 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO.Pipelines;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace RedisSlimClient.Io.Scheduling
 {
     class ThreadPoolScheduler : IWorkScheduler
     {
-        private ThreadPoolScheduler() { }
+        int _activeWork;
+
+        ThreadPoolScheduler() { }
 
         public static ThreadPoolScheduler Instance { get; } = new ThreadPoolScheduler();
 
+        public int ActiveWork => _activeWork;
+        public event Action<int> Scheduling;
+
         public void Schedule(Func<Task> work)
         {
-            ScheduleWithHandle(work);
+            var threads = Interlocked.Increment(ref _activeWork);
+
+            Scheduling?.Invoke(threads);
+
+            PipeScheduler.ThreadPool.Schedule(x =>
+            {
+                try
+                {
+                    work().ConfigureAwait(false).GetAwaiter().GetResult();
+                }
+                catch (Exception ex)
+                {
+                    Trace.WriteLine(ex);
+                }
+                finally
+                {
+                    Interlocked.Decrement(ref _activeWork);
+                }
+            }, null);
         }
 
         public Task ScheduleWithHandle(Func<Task> work)
@@ -39,6 +63,7 @@ namespace RedisSlimClient.Io.Scheduling
 
         public void Dispose()
         {
+            Scheduling = null;
         }
     }
 }

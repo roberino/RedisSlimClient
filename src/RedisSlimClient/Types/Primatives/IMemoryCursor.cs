@@ -1,11 +1,12 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 
 namespace RedisSlimClient.Types.Primatives
 {
     interface IMemoryCursor
     {
-        Task Write(byte data);
-        Task Write(byte[] data);
+        int CurrentPosition { get; }
+
+        ValueTask<bool> Write(byte data);
+        ValueTask<bool> Write(byte[] data);
     }
 }

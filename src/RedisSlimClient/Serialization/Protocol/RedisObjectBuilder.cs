@@ -10,7 +10,7 @@ namespace RedisSlimClient.Serialization.Protocol
     {
         readonly ByteSequenceParser _parser;
         readonly List<RedisObjectPart> _items;
-        readonly RedisObject[] _empty = new RedisObject[0];
+        readonly IRedisObject[] _empty = new IRedisObject[0];
 
         public RedisObjectBuilder()
         {
@@ -18,7 +18,9 @@ namespace RedisSlimClient.Serialization.Protocol
             _items = new List<RedisObjectPart>();
         }
 
-        public RedisObject[] AppendObjectData(ReadOnlySequence<byte> obj)
+        public int PendingObjectParts => _items.Count;
+
+        public IRedisObject[] AppendObjectData(ReadOnlySequence<byte> obj)
         {
             var byteSequence = new MemoryByteSequenceAdapter(obj);
 
@@ -28,7 +30,7 @@ namespace RedisSlimClient.Serialization.Protocol
             {
                 var objs = _items.ToObjects().ToArray();
 
-                if (objs.Last().IsComplete)
+                if (objs.Length > 0 && objs.Last().IsComplete)
                 {
                     _items.Clear();
                     return objs;

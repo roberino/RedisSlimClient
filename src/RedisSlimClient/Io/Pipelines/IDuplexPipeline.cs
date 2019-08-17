@@ -3,7 +3,7 @@ using System;
 
 namespace RedisSlimClient.Io.Pipelines
 {
-    interface IDuplexPipeline : IRunnable, IDisposable
+    interface IDuplexPipeline : ISchedulable, IDisposable
     {
         event Action Faulted;
 

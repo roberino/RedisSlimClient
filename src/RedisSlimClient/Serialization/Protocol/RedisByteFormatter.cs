@@ -16,7 +16,7 @@ namespace RedisSlimClient.Serialization.Protocol
             _memory = memory;
         }
 
-        public Task Write(object item)
+        public ValueTask Write(object item)
         {
             var tc = Type.GetTypeCode(item.GetType());
 
@@ -35,7 +35,7 @@ namespace RedisSlimClient.Serialization.Protocol
             }
         }
 
-        public async Task Write(object[] data)
+        public async ValueTask Write(object[] data)
         {
             await WriteStartArray(data.Length);
 
@@ -45,7 +45,7 @@ namespace RedisSlimClient.Serialization.Protocol
             }
         }
 
-        public async Task Write(string[] data)
+        public async ValueTask Write(string[] data)
         {
             await WriteStartArray(data.Length);
 
@@ -55,7 +55,7 @@ namespace RedisSlimClient.Serialization.Protocol
             }
         }
 
-        public async Task Write(byte[][] data)
+        public async ValueTask Write(byte[][] data)
         {
             await WriteStartArray(data.Length);
 
@@ -65,14 +65,14 @@ namespace RedisSlimClient.Serialization.Protocol
             }
         }
 
-        public async Task WriteStartArray(int arrayLength)
+        public async ValueTask WriteStartArray(int arrayLength)
         {
             await Write(ResponseType.ArrayType);
             await WriteRaw(arrayLength.ToString());
             await WriteEnd();
         }
 
-        public async Task Write(byte[] data)
+        public async ValueTask Write(byte[] data)
         {
             await Write(ResponseType.BulkStringType);
             await WriteRaw(data.Length.ToString());
@@ -83,14 +83,14 @@ namespace RedisSlimClient.Serialization.Protocol
             await WriteEnd();
         }
 
-        public async Task Write(long value)
+        public async ValueTask Write(long value)
         {
             await Write(ResponseType.IntType);
             await WriteRaw(value.ToString());
             await WriteEnd();
         }
 
-        public async Task Write(string data, bool bulk = false)
+        public async ValueTask Write(string data, bool bulk = false)
         {
             if (bulk)
             {
@@ -108,17 +108,17 @@ namespace RedisSlimClient.Serialization.Protocol
             }
         }
 
-        Task WriteRaw(string data)
+        ValueTask<bool> WriteRaw(string data)
         {
             return _memory.Write(Encoding.ASCII.GetBytes(data));
         }
 
-        Task WriteEnd()
+        ValueTask<bool> WriteEnd()
         {
             return _memory.Write(_endBytes);
         }
 
-        Task Write(ResponseType responseType)
+        ValueTask<bool> Write(ResponseType responseType)
         {
             return _memory.Write(new byte[] { (byte)responseType });
         }

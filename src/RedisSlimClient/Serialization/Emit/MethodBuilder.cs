@@ -6,7 +6,7 @@ using System.Reflection.Emit;
 
 namespace RedisSlimClient.Serialization.Emit
 {
-    internal class MethodBuilder
+    class MethodBuilder
     {
         readonly IDictionary<string, (int index, Type type, bool isParam)> _locals;
 

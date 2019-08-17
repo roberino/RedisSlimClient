@@ -9,7 +9,7 @@ using System.Threading;
 
 namespace RedisSlimClient.Io
 {
-    internal class StreamIterator : IEnumerable<ArraySegment<byte>>, IDisposable
+    class StreamIterator : IEnumerable<ArraySegment<byte>>, IDisposable
     {
         readonly Stream _stream;
         readonly byte[] _buffer;
@@ -143,6 +143,8 @@ namespace RedisSlimClient.Io
             _cancellationToken.Cancel();
 
             _overflow?.Dispose();
+
+            _cancellationToken.Dispose();
         }
     }
 }

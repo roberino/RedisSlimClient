@@ -7,7 +7,7 @@ using RedisSlimClient.Types.Primatives;
 
 namespace RedisSlimClient.Serialization
 {
-    internal class ArraySegmentToRedisObjectReader : IEnumerable<RedisObjectPart>
+    class ArraySegmentToRedisObjectReader : IEnumerable<RedisObjectPart>
     {
         readonly IEnumerable<IByteSequence> _byteStream;
         readonly ByteSequenceParser _parser;

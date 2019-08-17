@@ -1,4 +1,6 @@
 ﻿using RedisSlimClient.Io.Commands;
+using RedisSlimClient.Io.Monitoring;
+using RedisSlimClient.Io.Net;
 using RedisSlimClient.Io.Pipelines;
 using RedisSlimClient.Io.Scheduling;
 using RedisSlimClient.Serialization.Protocol;
@@ -10,58 +12,88 @@ using System.Threading.Tasks;
 
 namespace RedisSlimClient.Io
 {
-    internal class AsyncCommandPipeline : ICommandPipeline
+    class AsyncCommandPipeline : ICommandPipeline
     {
         readonly SyncedCounter _pendingWrites = new SyncedCounter();
 
         readonly IDuplexPipeline _pipeline;
-        readonly ITelemetryWriter _telemetryWriter;
+        readonly ISocket _socket;
         readonly CommandQueue _commandQueue;
-        readonly CompletionHandler _completionHandler;
 
         bool _disposed;
 
-        public AsyncCommandPipeline(IDuplexPipeline pipeline, IWorkScheduler workScheduler, ITelemetryWriter telemetryWriter)
+        volatile PipelineStatus _status;
+        volatile int _reconnectAttempts;
+
+        public AsyncCommandPipeline(IDuplexPipeline pipeline, ISocket socket, IWorkScheduler workScheduler, ITelemetryWriter telemetryWriter)
         {
             _pipeline = pipeline;
-            _telemetryWriter = telemetryWriter ?? NullWriter.Instance;
+            _socket = socket;
             _commandQueue = new CommandQueue();
-            _completionHandler = new CompletionHandler(_pipeline.Receiver, _commandQueue);
-            
+
+            var _ = new CompletionHandler(_pipeline.Receiver, _commandQueue, workScheduler).AttachTelemetry(telemetryWriter, Severity.Diagnostic);
+
+            var throttledScheduler = new TimeThrottledScheduler(workScheduler, TimeSpan.FromMilliseconds(500));
+
             _pipeline.Faulted += () =>
             {
-                telemetryWriter.Write(new TelemetryEvent()
+                _status = PipelineStatus.Broken;
+
+                telemetryWriter.Execute(ctx =>
                 {
-                     Name = $"{nameof(IDuplexPipeline)}.{nameof(IDuplexPipeline.Faulted)}"
-                });
-                
-                workScheduler.Schedule(() => _commandQueue.Requeue(_pipeline.Reset));
+                    throttledScheduler.Schedule(Reconnect);
+                }, nameof(IDuplexPipeline.Faulted));
             };
 
-            workScheduler.Schedule(_pipeline.RunAsync);
+            _pipeline.Schedule(workScheduler);
+
+            _status = PipelineStatus.Uninitialized;
+            Initialising = new AsyncEvent<ICommandPipeline>();
         }
 
-        public (int PendingWrites, int PendingReads) PendingWork => ((int)_pendingWrites.Value, _commandQueue.QueueSize);
+        public PipelineStatus Status => _status;
 
-        public async Task<T> Execute<T>(IRedisResult<T> command, CancellationToken cancellation = default)
+        public PipelineMetrics Metrics => new PipelineMetrics((int)_pendingWrites.Value, _commandQueue.QueueSize);
+
+        public IAsyncEvent<ICommandPipeline> Initialising { get; }
+
+        public Task<T> Execute<T>(IRedisResult<T> command, CancellationToken cancellation = default) => ExecuteInternal(command, cancellation);
+
+        public Task<T> ExecuteAdmin<T>(IRedisResult<T> command, CancellationToken cancellation = default) => ExecuteInternal(command, cancellation, true);
+
+        public void Dispose()
+        {
+            if (!_disposed)
+            {
+                _pipeline.Dispose();
+            }
+
+            _disposed = true;
+        }
+
+        async Task<T> ExecuteInternal<T>(IRedisResult<T> command, CancellationToken cancellation = default, bool isAdmin = false)
         {
             if (_disposed)
             {
                 throw new ObjectDisposedException(nameof(AsyncCommandPipeline));
             }
 
-            command.Execute = async () =>
+            if (Status != PipelineStatus.Ok && !isAdmin)
+            {
+                command.Abandon(new ConnectionUnavailableException());
+
+                return await command;
+            }
+
+            command.AssignedEndpoint = _socket.EndpointIdentifier;
+
+            command.OnExecute = async (args) =>
             {
                 await _pipeline.Sender.SendAsync(m =>
                 {
                     var formatter = new RedisByteFormatter(m);
 
-                    if (!cancellation.IsCancellationRequested)
-                    {
-                        return formatter.Write(command.GetArgs());
-                    }
-
-                    return Task.CompletedTask;
+                    return formatter.Write(args);
                 });
             };
 
@@ -82,17 +114,39 @@ namespace RedisSlimClient.Io
                 _pendingWrites.Decrement();
             }
 
-            return await command;
+            var result = await command;
+
+            _status = PipelineStatus.Ok;
+
+            return result;
         }
 
-        public void Dispose()
+        async Task Reconnect()
         {
-            if (!_disposed)
+            if (_status == PipelineStatus.Reinitializing || _disposed || _reconnectAttempts > 10)
             {
-                _pipeline.Dispose();
+                return;
             }
 
-            _disposed = true;
+            _status = PipelineStatus.Reinitializing;
+            _reconnectAttempts++;
+
+            try
+            {
+                await _commandQueue.Requeue(async () =>
+                {
+                    await _pipeline.Reset();
+
+                    await ((AsyncEvent<ICommandPipeline>)Initialising).PublishAsync(this);
+                });
+
+                _reconnectAttempts = 0;
+                _status = PipelineStatus.Ok;
+            }
+            catch
+            {
+                _status = PipelineStatus.Broken;
+            }
         }
     }
 }

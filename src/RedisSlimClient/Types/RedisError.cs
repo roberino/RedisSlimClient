@@ -1,12 +1,17 @@
 ﻿namespace RedisSlimClient.Types
 {
-    internal class RedisError : RedisObject
+    readonly struct RedisError : IRedisObject
     {
-        public RedisError(string message) : base(RedisType.Error)
+        public RedisError(string message)
         {
             Message = message;
         }
 
         public string Message { get; }
+        public bool IsComplete => true;
+        public bool IsNull => false;
+        public RedisType Type => RedisType.Error;
+
+        public override string ToString() => Message;
     }
 }

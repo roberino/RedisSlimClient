@@ -21,7 +21,7 @@ namespace RedisSlimClient.Io.Pipelines
 
         public int CurrentPosition => _position;
 
-        public async Task Write(byte[] data)
+        public async ValueTask<bool> Write(byte[] data)
         {
             var mem = await GetMemory(data.Length);
 
@@ -29,25 +29,31 @@ namespace RedisSlimClient.Io.Pipelines
             {
                 mem.Span[_position++] = data[i];
             }
+
+            return true;
         }
 
-        public async Task Write(byte data)
+        public async ValueTask<bool> Write(byte data)
         {
             var mem = await GetMemory(1);
 
             mem.Span[_position++] = data;
+
+            return true;
         }
 
-        public async Task FlushAsync()
+        public async ValueTask<bool> FlushAsync()
         {
             if (_position > 0)
             {
-                await FlushAndReset();
+                var result = await FlushAndReset();
                 _memory = default;
+                return result.IsCompleted;
             }
+            return true;
         }
 
-        async Task<Memory<byte>> GetMemory(int length)
+        async ValueTask<Memory<byte>> GetMemory(int length)
         {
             if (_memory.IsEmpty)
             {

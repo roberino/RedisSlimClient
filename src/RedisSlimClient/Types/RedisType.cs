@@ -1,6 +1,6 @@
 ﻿namespace RedisSlimClient.Types
 {
-    public enum RedisType
+    enum RedisType
     {
         Null,
         Integer,

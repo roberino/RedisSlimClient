@@ -1,8 +1,8 @@
-﻿using RedisSlimClient.Io.Pipelines;
-using RedisSlimClient.Io.Scheduling;
-using System.Buffers;
+﻿using System.Buffers;
 using System.Threading;
 using System.Threading.Tasks;
+using RedisSlimClient.Io.Pipelines;
+using RedisSlimClient.Io.Scheduling;
 using Xunit;
 
 namespace RedisSlimClient.UnitTests.Io.Pipelines
@@ -10,31 +10,33 @@ namespace RedisSlimClient.UnitTests.Io.Pipelines
     public class SocketPipelineReceiverTests
     {
         [Fact]
-        public async Task SendAsync_SomeData_FiresReceievedEvent()
+        public async Task SendAsync_SomeData_FiresReceivedEvent()
         {
             var eventFired = false;
-            var socket = new StubSocket();
-            var waitHandle = new ManualResetEvent(false);
-            var cancellationTokenSource = new CancellationTokenSource();
-            var receiver = new SocketPipelineReceiver(socket, cancellationTokenSource.Token);
-
             ReadOnlySequence<byte> capturedData = default;
 
-            await socket.SendStringAsync("abcxefg");
-
-            receiver.RegisterHandler(s => s.PositionOf((byte)'x'), x =>
+            using (var socket = new StubSocket())
             {
-                eventFired = true;
-                capturedData = x;
-                waitHandle.Set();
-            });
+                var waitHandle = new ManualResetEvent(false);
+                var cancellationTokenSource = new CancellationTokenSource();
+                var receiver = new SocketPipelineReceiver(socket, cancellationTokenSource.Token);
 
-            var _ = receiver.ScheduleOnThreadpool();
-            
-            socket.WaitForDataRead();
-            waitHandle.WaitOne(3000);
+                await socket.SendStringAsync("abcxefg");
 
-            cancellationTokenSource.Cancel();
+                receiver.RegisterHandler(s => s.PositionOf((byte)'x'), x =>
+                {
+                    eventFired = true;
+                    capturedData = x;
+                    waitHandle.Set();
+                });
+
+                receiver.ScheduleOnThreadpool();
+
+                socket.WaitForDataRead();
+                waitHandle.WaitOne(3000);
+
+                cancellationTokenSource.Cancel();
+            }
 
             Assert.True(eventFired);
             Assert.Equal(4, capturedData.Length);
@@ -46,12 +48,9 @@ namespace RedisSlimClient.UnitTests.Io.Pipelines
         [Fact]
         public async Task Reset_EndSchedulerThread()
         {
-            var socket = new StubSocket();
-
-            using (var waitHandle = new ManualResetEvent(false))
+            using (var socket = new StubSocket())
+            using (var receiver = new SocketPipelineReceiver(socket, default))
             {
-                var receiver = new SocketPipelineReceiver(socket, default);
-                
                 await socket.SendStringAsync("abcxefg");
 
                 receiver.RegisterHandler(s => s.PositionOf((byte)'x'), x =>
@@ -59,7 +58,16 @@ namespace RedisSlimClient.UnitTests.Io.Pipelines
                     receiver.Reset();
                 });
 
-                await receiver.ScheduleOnThreadpool();
+                receiver.Schedule(ThreadPoolScheduler.Instance);
+
+                var c = 0;
+
+                while (receiver.IsRunning && c++ < 1000)
+                {
+                    await Task.Delay(10);
+                }
+
+                Assert.False(receiver.IsRunning);
             }
         }
     }

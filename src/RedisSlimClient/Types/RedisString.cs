@@ -1,21 +1,52 @@
-﻿using System.IO;
+﻿using System.Buffers;
+using System.IO;
 using System.Text;
 
 namespace RedisSlimClient.Types
 {
-    internal class RedisString : RedisObject
+    readonly struct RedisString : IRedisObject
     {
-        public RedisString(byte[] value) : base(RedisType.String)
+        readonly ReadOnlySequence<byte> _sequence;
+
+        public RedisString(byte[] value)
         {
-            Value = value;
+            _sequence = new ReadOnlySequence<byte>(value);
         }
 
-        public byte[] Value { get; }
+        public RedisString(ReadOnlySequence<byte> sequence) : this(sequence.ToArray())
+        {
+        }
 
-        public string ToString(Encoding encoding) => Value == null ? null : encoding.GetString(Value);
+        public byte[] Value => _sequence.ToArray();
+
+        public bool IsComplete => true;
+
+        public bool IsNull => false;
+
+        public RedisType Type => RedisType.String;
+
+        public string ToString(Encoding encoding)
+        {
+            if (_sequence.IsEmpty)
+            {
+                return null;
+            }
+
+#if NET_CORE
+
+            if (_sequence.IsSingleSegment)
+            {
+                return encoding.GetString(_sequence.First.Span);
+            }
+#endif
+
+            return encoding.GetString(_sequence.ToArray());
+        }
 
         public override string ToString() => ToString(Encoding.ASCII);
 
         public Stream ToStream() => new MemoryStream(Value);
+
+        public static implicit operator string(RedisString x) => x.ToString(Encoding.UTF8);
     }
 }

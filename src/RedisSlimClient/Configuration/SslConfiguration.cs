@@ -46,6 +46,8 @@ namespace RedisSlimClient.Configuration
 
         public RemoteCertificateValidationCallback RemoteCertificateValidationCallback { get; set; }
 
+        public LocalCertificateSelectionCallback ClientCertificateValidationCallback { get; set; }
+
         static RemoteCertificateValidationCallback Trust(X509Certificate2 issuer)
         {
             return (object _, X509Certificate certificate, X509Chain __, SslPolicyErrors sslPolicyError)
@@ -54,7 +56,7 @@ namespace RedisSlimClient.Configuration
                     && ValidateIssuer(v2, issuer);
         }
 
-        private static bool ValidateIssuer(X509Certificate2 certificateToValidate, X509Certificate2 authority)
+        static bool ValidateIssuer(X509Certificate2 certificateToValidate, X509Certificate2 authority)
         {
             var chain = new X509Chain();
             chain.ChainPolicy.RevocationMode = X509RevocationMode.NoCheck;

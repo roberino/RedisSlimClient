@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 
 namespace RedisSlimClient.Types.Primatives
 {
@@ -33,5 +34,13 @@ namespace RedisSlimClient.Types.Primatives
         }
 
         public byte GetValue(int index) => _segment.Array[index + _segment.Offset];
+
+        public ReadOnlySequence<byte> ToSequence(int offset)
+        {
+            if (offset == 0)
+                return new ReadOnlySequence<byte>(_segment.AsMemory());
+
+            return new ReadOnlySequence<byte>(_segment.Array, _segment.Offset + offset, _segment.Count - offset);
+        }
     }
 }
