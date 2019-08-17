@@ -1,15 +1,19 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace RedisSlimClient.Io.Net
 {
     class SocketState : IDisposable
     {
+        long _connectionNumber;
+        long _lastFauledConnectionNumber;
+
         readonly Func<bool> _connectedState;
 
         SocketStatus _knownStatus;
 
-        public event Action<SocketStatus> Changed;
+        public event Action<(SocketStatus Status, long Id)> Changed;
 
         public async Task DoConnect(Func<Task> connectAsync)
         {
@@ -18,6 +22,7 @@ namespace RedisSlimClient.Io.Net
             try
             {
                 await connectAsync();
+                Interlocked.Increment(ref _connectionNumber);
                 ChangeStatus(SocketStatus.Connected);
             }
             catch (Exception ex)
@@ -51,7 +56,7 @@ namespace RedisSlimClient.Io.Net
             Changed = null;
         }
 
-        public bool IsFaulted => Status == SocketStatus.ConnectFault || Status == SocketStatus.ReadFault || Status == SocketStatus.WriteFault;
+        public bool IsFaulted => IsFaultedStatus(Status);
 
         public bool IsAvailable => Status == SocketStatus.Connected || Status == SocketStatus.Disconnected;
 
@@ -75,11 +80,34 @@ namespace RedisSlimClient.Io.Net
             }
         }
 
+        public long Id => Interlocked.Read(ref _connectionNumber);
+
         void ChangeStatus(SocketStatus status)
         {
-            _knownStatus = status;
-            Changed?.Invoke(status);
+            var currentId = Id;
+            var lastError = -1L;
+
+            if (IsFaultedStatus(status))
+            {
+                lastError = Interlocked.Exchange(ref _lastFauledConnectionNumber, currentId);
+            }
+
+            if (_knownStatus != status)
+            {
+                _knownStatus = status;
+
+                Changed?.Invoke((status, currentId));
+
+                return;
+            }
+
+            if (lastError != -1 && lastError != currentId)
+            {
+                Changed?.Invoke((status, currentId));
+            }
         }
+
+        static bool IsFaultedStatus(SocketStatus status) => status == SocketStatus.ConnectFault || status == SocketStatus.ReadFault || status == SocketStatus.WriteFault;
 
         public void Dispose()
         {

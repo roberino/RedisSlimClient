@@ -43,13 +43,13 @@ namespace RedisSlimClient.Io
 
             Initialising = new AsyncEvent<ICommandPipeline>();
 
-            _socket.State.Changed += s =>
+            _socket.State.Changed += x =>
             {
-                if (s == SocketStatus.WriteFault || s == SocketStatus.ReadFault)
+                if (x.Status == SocketStatus.WriteFault || x.Status == SocketStatus.ReadFault)
                 {
                     _status = PipelineStatus.Broken;
 
-                    _scheduler.Schedule(Reconnect);
+                    _scheduler.Schedule(() => Reconnect(x.Id));
                 }
             };
         }
@@ -146,9 +146,9 @@ namespace RedisSlimClient.Io
             return result;
         }
 
-        async Task Reconnect()
+        async Task Reconnect(long id)
         {
-            if (_status == PipelineStatus.Reinitializing || _disposed || _reconnectAttempts > 10)
+            if (_status == PipelineStatus.Reinitializing || _disposed || _reconnectAttempts > 10 || _socket.State.Id > id)
             {
                 return;
             }

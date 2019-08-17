@@ -68,9 +68,9 @@ namespace RedisSlimClient.Io.Pipelines
             }
         }
 
-        void OnSocketChange(SocketStatus e)
+        void OnSocketChange((SocketStatus status, long id) state)
         {
-            if (e == SocketStatus.ReadFault || e == SocketStatus.WriteFault)
+            if (state.status == SocketStatus.ReadFault || state.status == SocketStatus.WriteFault)
             {
                 Faulted?.Invoke();
             }

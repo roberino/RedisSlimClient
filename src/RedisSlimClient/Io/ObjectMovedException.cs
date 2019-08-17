@@ -2,7 +2,7 @@
 
 namespace RedisSlimClient.Io
 {
-    class ObjectMovedException : Exception
+    class ObjectMovedException : Exception, IRedirectionInfo
     {
         const string MOVED = "MOVED";
 

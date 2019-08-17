@@ -43,6 +43,11 @@ namespace RedisSlimClient.Io.Server
             {
                 var pipelines = await InitialiseAsync(CreatePipelineConnection(_initialEndPoint));
 
+                if (pipelines.Any(p => p.EndPointInfo.IsCluster))
+                {
+                    return pipelines.Select(p => (IConnectionSubordinate)new RedirectingConnection(p)).ToList();
+                }
+
                 return pipelines;
             }
             finally
@@ -108,35 +113,40 @@ namespace RedisSlimClient.Io.Server
         {
             if (!_connectionCache.TryGetValue(endPointInfo, out var connection))
             {
-                _connectionCache[endPointInfo] = connection = new ConnectionSubordinate(endPointInfo, new SyncronizedInstance<ICommandPipeline>(async () =>
-                {
-                    try
-                    {
-                        var result = await _telemetryWriter.ExecuteAsync(async ctx =>
-                        {
-                            ctx.Dimensions[nameof(endPointInfo.Host)] = endPointInfo.Host;
-                            ctx.Dimensions[nameof(endPointInfo.Port)] = endPointInfo.Port;
-                            ctx.Dimensions[nameof(endPointInfo.MappedPort)] = endPointInfo.MappedPort;
-
-                            var subPipe = await _pipelineFactory(endPointInfo);
-
-                            await Auth(subPipe);
-
-                            subPipe.Initialising.Subscribe(Auth);
-
-                            return subPipe;
-                        }, nameof(CreatePipelineConnection));
-
-                        return result;
-                    }
-                    catch (Exception ex)
-                    {
-                        throw new ConnectionInitialisationException(endPointInfo, ex);
-                    }
-                }));
+                _connectionCache[endPointInfo] = connection = CreateConnectionSubordinate(endPointInfo);
             }
 
             return connection;
+        }
+
+        ConnectionSubordinate CreateConnectionSubordinate(ServerEndPointInfo endPointInfo)
+        {
+            return new ConnectionSubordinate(endPointInfo, new SyncronizedInstance<ICommandPipeline>(async () =>
+            {
+                try
+                {
+                    var result = await _telemetryWriter.ExecuteAsync(async ctx =>
+                    {
+                        ctx.Dimensions[nameof(endPointInfo.Host)] = endPointInfo.Host;
+                        ctx.Dimensions[nameof(endPointInfo.Port)] = endPointInfo.Port;
+                        ctx.Dimensions[nameof(endPointInfo.MappedPort)] = endPointInfo.MappedPort;
+
+                        var subPipe = await _pipelineFactory(endPointInfo);
+
+                        await Auth(subPipe);
+
+                        subPipe.Initialising.Subscribe(Auth);
+
+                        return subPipe;
+                    }, nameof(CreatePipelineConnection));
+
+                    return result;
+                }
+                catch (Exception ex)
+                {
+                    throw new ConnectionInitialisationException(endPointInfo, ex);
+                }
+            }));
         }
 
         async Task<ICommandPipeline> Auth(ICommandPipeline pipeline)
