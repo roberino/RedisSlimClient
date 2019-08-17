@@ -21,8 +21,8 @@ namespace RedisSlimClient.Io.Net
 
             try
             {
-                await connectAsync();
                 Interlocked.Increment(ref _connectionNumber);
+                await connectAsync();
                 ChangeStatus(SocketStatus.Connected);
             }
             catch (Exception ex)

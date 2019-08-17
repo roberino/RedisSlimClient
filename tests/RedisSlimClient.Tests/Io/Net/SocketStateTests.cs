@@ -1,5 +1,7 @@
 ﻿using RedisSlimClient.Io.Net;
 using System;
+using System.Linq;
+using System.Net.Sockets;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -37,6 +39,31 @@ namespace RedisSlimClient.UnitTests.Io.Net
             var newId = state.Id;
 
             Assert.Equal(id + 1, newId);
+        }
+
+        [Fact]
+        public async Task Changed_MultipleDoConnectErrors_FiresEachError()
+        {
+            var state = new SocketState(() => true);
+
+            var raised = 0;
+
+            state.Changed += x =>
+            {
+                if (x.Status == SocketStatus.ConnectFault)
+                    raised++;
+            };
+
+            foreach (var n in Enumerable.Range(1, 10))
+            {
+                try
+                {
+                    await state.DoConnect(() => throw new SocketException());
+                }
+                catch { }
+            }
+
+            Assert.Equal(10, raised);
         }
 
         [Fact]
