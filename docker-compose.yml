@@ -8,6 +8,15 @@ services:
    - "9096:6379"
   networks:
    - net1
+   
+ redis-authd1:
+  image: redis:alpine
+  container_name: redis-authd1
+  command: redis-server --port 6379 --requirepass p@ssw0rd
+  ports:
+   - "9296:6379"
+  networks:
+   - net1
  
  redis-master1:
   image: redis:alpine

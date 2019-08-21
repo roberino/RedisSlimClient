@@ -29,7 +29,7 @@ namespace RedisSlimClient.Configuration
 
         public string ClientName { get; private set; }
 
-        public string Password { get; private set; }
+        public string Password { get; set; }
 
 
         readonly NonNullable<IWorkScheduler> _scheduler = ThreadPoolScheduler.Instance;

@@ -66,6 +66,22 @@ namespace RedisSlimClient.IntegrationTests
         }
 
         [Theory]
+        [InlineData(PipelineMode.Sync, ConfigurationScenario.NonSslWithPassword)]
+        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslWithPassword)]
+        public async Task PingAsync_RequirePassword_ReturnsTrue(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
+        {
+            var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine);
+
+            using (var client = config.CreateClient())
+            {
+                var cancel = new CancellationTokenSource(defaultTimeout);
+                var result = await client.PingAsync(cancel.Token);
+
+                Assert.True(result);
+            }
+        }
+
+        [Theory]
         [InlineData(PipelineMode.Sync, ConfigurationScenario.NonSslBasic)]
         [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
         [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.SslBasic)]

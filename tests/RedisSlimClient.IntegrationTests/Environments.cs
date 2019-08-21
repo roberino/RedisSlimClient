@@ -47,6 +47,11 @@ namespace RedisSlimClient.IntegrationTests
                 config.SslConfiguration.CertificatePath = "ca.pem";
             }
 
+            if (scenario.ToString().Contains("Password"))
+            {
+                config.Password = "p@ssw0rd";
+            }
+
             return config;
         }
     }
@@ -54,6 +59,7 @@ namespace RedisSlimClient.IntegrationTests
     public enum ConfigurationScenario
     {
         NonSslBasic = 9096,
+        NonSslWithPassword = 9296,
         SslBasic = 6380,
         NonSslReplicaSetMaster = 9196,
         NonSslReplicaSetSlave1 = 9194,
