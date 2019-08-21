@@ -92,6 +92,9 @@ namespace RedisSlimClient.Configuration
                             case nameof(DefaultOperationTimeout):
                                 DefaultOperationTimeout = TimeSpan.Parse(kv[1]);
                                 break;
+                            case nameof(ConnectTimeout):
+                                ConnectTimeout = TimeSpan.Parse(kv[1]);
+                                break;
                             case nameof(ConnectionPoolSize):
                                 ConnectionPoolSize = int.Parse(kv[1]);
                                 break;
