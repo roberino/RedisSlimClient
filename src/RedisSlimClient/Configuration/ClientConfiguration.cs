@@ -29,7 +29,7 @@ namespace RedisSlimClient.Configuration
 
         public string ClientName { get; private set; }
 
-        public string Password { get; private set; }
+        public string Password { get; set; }
 
 
         readonly NonNullable<IWorkScheduler> _scheduler = ThreadPoolScheduler.Instance;
@@ -91,6 +91,9 @@ namespace RedisSlimClient.Configuration
                                 break;
                             case nameof(DefaultOperationTimeout):
                                 DefaultOperationTimeout = TimeSpan.Parse(kv[1]);
+                                break;
+                            case nameof(ConnectTimeout):
+                                ConnectTimeout = TimeSpan.Parse(kv[1]);
                                 break;
                             case nameof(ConnectionPoolSize):
                                 ConnectionPoolSize = int.Parse(kv[1]);
