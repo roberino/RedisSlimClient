@@ -3,6 +3,8 @@ using RedisSlimClient.Io.Monitoring;
 using RedisSlimClient.Io.Server;
 using RedisSlimClient.Util;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -11,26 +13,26 @@ namespace RedisSlimClient.Io
     class RedirectingConnection : IConnectionSubordinate
     {
         readonly IConnectionSubordinate _innerConnection;
+        readonly IReadOnlyCollection<IConnectionSubordinate> _connections;
         readonly SyncronizedInstance<ICommandPipeline> _commandExecutor;
 
-        public RedirectingConnection(IConnectionSubordinate innerConnection)
+        public RedirectingConnection(IConnectionSubordinate innerConnection, IReadOnlyCollection<IConnectionSubordinate> connections, Action<IRedirectionInfo> configurationChangeHandler)
         {
             _innerConnection = innerConnection;
+            _connections = connections;
             _commandExecutor = new SyncronizedInstance<ICommandPipeline>(async () =>
             {
                 var cmd = await innerConnection.GetPipeline();
 
-                return new RedirectingPipeline(cmd)
+                return new RedirectingPipeline(cmd, Redirect)
                 {
-                    ConfigurationDetected = r =>
+                    ConfigurationChangeDetected = r =>
                     {
-                        ConfigurationDetected?.Invoke(r);
+                        configurationChangeHandler.Invoke(r);
                     }
                 };
             });
         }
-
-        public event Action<IRedirectionInfo> ConfigurationDetected;
 
         public PipelineStatus Status => _innerConnection.Status;
 
@@ -46,23 +48,39 @@ namespace RedisSlimClient.Io
         public void Dispose()
         {
             _innerConnection.Dispose();
+            _commandExecutor.Dispose();
         }
 
         public Task<ICommandPipeline> GetPipeline() => _commandExecutor.GetValue();
 
+        Task<ICommandPipeline> Redirect(IRedirectionInfo redirectionInfo)
+        {
+            var match = _connections.FirstOrDefault(c => c.EndPointInfo.DnsResolver.AreIpEquivalent(c.EndPointInfo.Host, redirectionInfo.Location.Host) && c.EndPointInfo.MappedPort == redirectionInfo.Location.Port);
+
+            if (match == null)
+            {
+                throw new NotSupportedException();
+            }
+
+            return match.GetPipeline();
+
+        }
+
         class RedirectingPipeline : ICommandPipeline
         {
-            private readonly ICommandPipeline _innerCommandExecutor;
+            readonly ICommandPipeline _innerCommandExecutor;
+            readonly Func<IRedirectionInfo, Task<ICommandPipeline>> _redirectionResolver;
 
-            public RedirectingPipeline(ICommandPipeline innerCommandExecutor)
+            public RedirectingPipeline(ICommandPipeline innerCommandExecutor, Func<IRedirectionInfo, Task<ICommandPipeline>> redirectionResolver)
             {
                 _innerCommandExecutor = innerCommandExecutor;
+                _redirectionResolver = redirectionResolver;
             }
 
             public PipelineMetrics Metrics => _innerCommandExecutor.Metrics;
             public IAsyncEvent<ICommandPipeline> Initialising => _innerCommandExecutor.Initialising;
             public PipelineStatus Status => _innerCommandExecutor.Status;
-            public Action<IRedirectionInfo> ConfigurationDetected;
+            public Action<IRedirectionInfo> ConfigurationChangeDetected;
 
             public async Task<T> Execute<T>(IRedisResult<T> command, CancellationToken cancellation = default)
             {
@@ -72,8 +90,11 @@ namespace RedisSlimClient.Io
                 }
                 catch (ObjectMovedException ex)
                 {
-                    ConfigurationDetected?.Invoke(ex);
-                    throw;
+                    var newLocation = await _redirectionResolver(ex);
+
+                    ConfigurationChangeDetected?.Invoke(ex);
+
+                    return await newLocation.ExecuteAdmin(command, cancellation);
                 }
             }
 
@@ -85,13 +106,17 @@ namespace RedisSlimClient.Io
                 }
                 catch (ObjectMovedException ex)
                 {
-                    ConfigurationDetected?.Invoke(ex);
-                    throw;
+                    var newLocation = await _redirectionResolver(ex);
+
+                    ConfigurationChangeDetected?.Invoke(ex);
+
+                    return await newLocation.ExecuteAdmin(command, cancellation);
                 }
             }
 
             public void Dispose()
             {
+                ConfigurationChangeDetected = null;
                 _innerCommandExecutor.Dispose();
             }
         }

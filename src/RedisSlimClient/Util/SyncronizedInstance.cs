@@ -81,7 +81,7 @@ namespace RedisSlimClient.Util
 
             try
             {
-                (_instance as IDisposable)?.Dispose();
+                CleanupInstance();
 
                 _instance = default;
             }
@@ -92,6 +92,13 @@ namespace RedisSlimClient.Util
         }
 
         public void Dispose()
+        {
+            CleanupInstance();
+
+            _semaphore.Dispose();
+        }
+
+        void CleanupInstance()
         {
             if (_instance is IDisposable d)
             {
@@ -108,8 +115,6 @@ namespace RedisSlimClient.Util
                     }
                 }
             }
-
-            _semaphore.Dispose();
         }
     }
 }

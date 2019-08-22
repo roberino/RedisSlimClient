@@ -37,6 +37,8 @@ namespace RedisSlimClient.Io.Server
             _connectionCache = new Dictionary<ServerEndPointInfo, IConnectionSubordinate>();
         }
 
+        public event Action ConfigurationChanged;
+
         public async Task<IReadOnlyCollection<IConnectionSubordinate>> InitialiseAsync()
         {
             try
@@ -45,7 +47,7 @@ namespace RedisSlimClient.Io.Server
 
                 if (pipelines.Any(p => p.EndPointInfo.IsCluster))
                 {
-                    return pipelines.Select(p => (IConnectionSubordinate)new RedirectingConnection(p)).ToList();
+                    return pipelines.Select(p => (IConnectionSubordinate)new RedirectingConnection(p, pipelines, OnChangeDetected)).ToList();
                 }
 
                 return pipelines;
@@ -65,6 +67,23 @@ namespace RedisSlimClient.Io.Server
         InfoCommand InfoCommand => new InfoCommand().AttachTelemetry(_telemetryWriter);
 
         ClusterNodesCommand ClusterCommand => new ClusterNodesCommand(_networkConfiguration).AttachTelemetry(_telemetryWriter);
+
+
+        void OnChangeDetected(IRedirectionInfo redirectionInfo)
+        {
+            if (_telemetryWriter.Enabled)
+            {
+                _telemetryWriter.Write(new TelemetryEvent()
+                {
+                    Name = nameof(ConnectionInitialiser),
+                    Action = nameof(ConfigurationChanged),
+                    Data = redirectionInfo.Location.ToString(),
+                    Severity = Severity.Warn
+                });
+            }
+
+            ConfigurationChanged?.Invoke();
+        }
 
         async Task<IReadOnlyCollection<IConnectionSubordinate>> InitialiseAsync(IConnectionSubordinate initialPipeline, int level = 0)
         {

@@ -19,6 +19,8 @@ namespace RedisSlimClient.Io
         {
             _serverNodeInitialiser = serverNodeInitialiser;
             _subConnections = new SyncronizedInstance<IReadOnlyCollection<IConnectionSubordinate>>(_serverNodeInitialiser.InitialiseAsync);
+
+            _serverNodeInitialiser.ConfigurationChanged += () => _subConnections.Reset().SyncExec();
         }
 
         public async Task<IReadOnlyCollection<MultiKeyRoute>> RouteMultiKeyCommandAsync(IMultiKeyCommandIdentity command)

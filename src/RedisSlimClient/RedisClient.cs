@@ -11,7 +11,7 @@ using RedisSlimClient.Types;
 
 namespace RedisSlimClient
 {
-    public class RedisClient : IRedisClient
+    class RedisClient : IRedisClient
     {
         readonly ClientConfiguration _configuration;
         readonly ICommandRouter _connection;
