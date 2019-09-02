@@ -1,10 +1,26 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Threading;
 
 namespace RedisSlimClient.Io.Monitoring
 {
     class DefaultMonitoringStrategy
     {
+        readonly Timer _timer;
+
+        public DefaultMonitoringStrategy(IRedisDiagnosticClient client, int heartbeatInterval = 1000)
+        {
+            _timer = new Timer(x => OnHeartbeat((IRedisDiagnosticClient)x), client, heartbeatInterval, heartbeatInterval);
+        }
+
+        static void OnHeartbeat(IRedisDiagnosticClient client)
+        {
+            try
+            {
+                var results = client.PingAllAsync();
+            }
+            catch
+            {
+
+            }
+        }
     }
 }

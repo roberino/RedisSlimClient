@@ -1,5 +1,7 @@
 ﻿using RedisSlimClient.Io.Scheduling;
 using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace RedisSlimClient.Io.Pipelines
 {
@@ -10,5 +12,7 @@ namespace RedisSlimClient.Io.Pipelines
         IPipelineReceiver Receiver { get; }
 
         IPipelineSender Sender { get; }
+
+        Task ResetAsync(CancellationToken cancellation = default);
     }
 }

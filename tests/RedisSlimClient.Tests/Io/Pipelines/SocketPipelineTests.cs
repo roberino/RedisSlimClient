@@ -5,6 +5,7 @@ using RedisSlimClient.Io.Server;
 using RedisSlimClient.Serialization.Protocol;
 using System.Buffers;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -56,7 +57,41 @@ namespace RedisSlimClient.UnitTests.Io.Pipelines
 
             Assert.True(received);
         }
-        
+
+        [Fact(Skip = "WIP")]
+        public async Task Reset_SomeDataWriten_ResetsPipeline()
+        {
+            var chunks = new List<byte[]>();
+
+            using (var socket = new StubSocket())
+            using (var pipe = new SocketPipeline(socket))
+            {
+                pipe.Receiver.RegisterHandler(x => x.PositionOf((byte)0), s =>
+                {
+                    chunks.Add(s.ToArray());
+                });
+
+                pipe.Receiver.Error += e =>
+                {
+                    TestOutput.WriteLine(e.ToString());
+                };
+
+                pipe.ScheduleOnThreadpool();
+
+                await pipe.Sender.SendAsync(async m =>
+                {
+                    await m.Write(new byte[] { 1, 2, 3, 0, 4, 5, 6 });
+                });
+
+                await pipe.ResetAsync();
+
+                await pipe.Sender.SendAsync(async m =>
+                {
+                    await m.Write(new byte[] { 7, 8, 9, 0 });
+                });
+            }
+        }
+
         [Theory]
         [InlineData(10, 5)]
         [InlineData(7, 7)]

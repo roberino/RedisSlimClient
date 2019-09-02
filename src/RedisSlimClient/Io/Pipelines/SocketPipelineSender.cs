@@ -1,6 +1,7 @@
 ﻿using RedisSlimClient.Io.Net;
 using RedisSlimClient.Io.Scheduling;
 using RedisSlimClient.Types.Primatives;
+using RedisSlimClient.Util;
 using System;
 using System.IO.Pipelines;
 using System.Threading;
@@ -8,20 +9,22 @@ using System.Threading.Tasks;
 
 namespace RedisSlimClient.Io.Pipelines
 {
-    class SocketPipelineSender : IPipelineSender, ISchedulable
+    class SocketPipelineSender : IPipelineSender, ISchedulable, IResetable
     {
         readonly ISocket _socket;
         readonly Pipe _pipe;
         readonly CancellationToken _cancellationToken;
         readonly MemoryCursor _memoryCursor;
+        readonly AsyncLock _resetLock;
 
-        volatile bool _reset;
+        volatile bool _resetting;
 
         public SocketPipelineSender(ISocket socket, CancellationToken cancellationToken)
         {
             _cancellationToken = cancellationToken;
             _socket = socket;
 
+            _resetLock = new AsyncLock();
             _pipe = new Pipe();
 
             _memoryCursor = new MemoryCursor(_pipe.Writer);
@@ -39,29 +42,33 @@ namespace RedisSlimClient.Io.Pipelines
 
         public async Task RunAsync()
         {
-            _reset = false;
+            _resetting = false;
 
             await PumpToSocket();
-
-            if (_reset)
-            {
-                _pipe.Reset();
-                _reset = false;
-            }
         }
 
-        public Task Reset()
+        public async Task<IDisposable> ResetAsync()
         {
-            _reset = true;
-            return Task.CompletedTask;
+            StateChanged?.Invoke(PipelineStatus.Resetting);
+
+            var handle = await _resetLock.LockAsync();
+
+            _resetting = true;
+
+            _pipe.Reader.CancelPendingRead();
+            _pipe.Writer.CancelPendingFlush();
+            _pipe.Reader.Complete();
+            _pipe.Writer.Complete();
+            _pipe.Reset();
+
+            _resetting = false;
+
+            return handle;
         }
 
         public async ValueTask SendAsync(byte[] data)
         {
-            if (_reset)
-            {
-                throw new InvalidOperationException("Resetting");
-            }
+            await AwaitReset();
 
             StateChanged?.Invoke(PipelineStatus.WritingToPipe);
 
@@ -72,10 +79,7 @@ namespace RedisSlimClient.Io.Pipelines
 
         public async ValueTask SendAsync(Func<IMemoryCursor, ValueTask> writeAction)
         {
-            if (_reset)
-            {
-                throw new InvalidOperationException("Resetting");
-            }
+            await AwaitReset();
 
             await writeAction(_memoryCursor);
 
@@ -86,6 +90,15 @@ namespace RedisSlimClient.Io.Pipelines
             StateChanged?.Invoke(PipelineStatus.WritingToPipeComplete);
         }
 
+        async ValueTask AwaitReset()
+        {
+            while (_resetting)
+            {
+                StateChanged?.Invoke(PipelineStatus.AwaitingReset);
+                await _resetLock.AwaitAsync();
+            }
+        }
+
         async Task PumpToSocket()
         {
             Exception error = null;
@@ -94,6 +107,8 @@ namespace RedisSlimClient.Io.Pipelines
             {
                 try
                 {
+                    await AwaitReset();
+
                     StateChanged?.Invoke(PipelineStatus.ReadingFromPipe);
 
                     var result = await _pipe.Reader.ReadAsync(_cancellationToken).ConfigureAwait(false);
@@ -123,20 +138,15 @@ namespace RedisSlimClient.Io.Pipelines
                 catch (Exception ex)
                 {
                     error = ex;
-                    break;
+                    StateChanged?.Invoke(PipelineStatus.Faulted);
+                    Error?.Invoke(error);
                 }
             }
 
             _pipe.Reader.Complete(error);
-
-            if (error != null)
-            {
-                StateChanged?.Invoke(PipelineStatus.Faulted);
-                Error?.Invoke(error);
-            }
         }
 
-        bool IsRunning => (!_cancellationToken.IsCancellationRequested && !_reset);
+        bool IsRunning => (!_cancellationToken.IsCancellationRequested);
 
         public void Dispose()
         {

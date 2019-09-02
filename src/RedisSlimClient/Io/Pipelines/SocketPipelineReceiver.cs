@@ -1,5 +1,6 @@
 ﻿using RedisSlimClient.Io.Net;
 using RedisSlimClient.Io.Scheduling;
+using RedisSlimClient.Util;
 using System;
 using System.Buffers;
 using System.IO.Pipelines;
@@ -8,14 +9,15 @@ using System.Threading.Tasks;
 
 namespace RedisSlimClient.Io.Pipelines
 {
-    class SocketPipelineReceiver : IPipelineReceiver, ISchedulable
+    class SocketPipelineReceiver : IPipelineReceiver, ISchedulable, IResetable
     {
         readonly int _minBufferSize;
         readonly ISocket _socket;
         readonly Pipe _pipe;
         readonly CancellationToken _cancellationToken;
+        readonly AsyncLock _resetLock;
 
-        volatile bool _reset;
+        volatile bool _resetting;
         Func<ReadOnlySequence<byte>, SequencePosition?> _delimiter;
         Action<ReadOnlySequence<byte>> _handler;
 
@@ -25,6 +27,7 @@ namespace RedisSlimClient.Io.Pipelines
             _minBufferSize = minBufferSize;
             _socket = socket;
 
+            _resetLock = new AsyncLock();
             _pipe = new Pipe();
         }
 
@@ -46,25 +49,31 @@ namespace RedisSlimClient.Io.Pipelines
 
         public async Task RunAsync()
         {
-            _reset = false;
+            _resetting = false;
 
             var readerTask = PumpFromSocket();
             var pubTask = ReadPipeAsync();
 
             await Task.WhenAll(readerTask, pubTask);
-
-            if (_reset)
-            {
-                _pipe.Reader.CancelPendingRead();
-                _pipe.Writer.CancelPendingFlush();
-                _pipe.Reset();
-            }
         }
 
-        public Task Reset()
+        public async Task<IDisposable> ResetAsync()
         {
-            _reset = true;
-            return Task.CompletedTask;
+            _resetting = true;
+
+            StateChanged?.Invoke(PipelineStatus.Resetting);
+
+            var handle = await _resetLock.LockAsync();
+
+            _pipe.Reader.CancelPendingRead();
+            _pipe.Writer.CancelPendingFlush();
+            _pipe.Reader.Complete();
+            _pipe.Writer.Complete();
+            _pipe.Reset();
+
+            _resetting = false;
+
+            return handle;
         }
 
         public void Dispose()
@@ -72,17 +81,13 @@ namespace RedisSlimClient.Io.Pipelines
             Error = null;
             StateChanged = null;
 
+            _resetLock.Dispose();
+
             _pipe.Reader.Complete();
             _pipe.Writer.Complete();
-
-            try
-            {
-                _pipe.Reset();
-            }
-            catch { }
         }
 
-        public bool IsRunning => (!_cancellationToken.IsCancellationRequested && !_reset);
+        public bool IsRunning => (!_cancellationToken.IsCancellationRequested);
 
         async Task PumpFromSocket()
         {
@@ -94,6 +99,8 @@ namespace RedisSlimClient.Io.Pipelines
             {
                 try
                 {
+                    await AwaitReset();
+
                     StateChanged?.Invoke(PipelineStatus.AwaitingConnection);
 
                     await _socket.AwaitAvailableSocket(_cancellationToken).ConfigureAwait(false);
@@ -119,7 +126,10 @@ namespace RedisSlimClient.Io.Pipelines
                 {
                     error = ex;
 
-                    break;
+                    StateChanged?.Invoke(PipelineStatus.Faulted);
+                    Error?.Invoke(ex);
+
+                    continue;
                 }
 
                 StateChanged?.Invoke(PipelineStatus.Flushing);
@@ -135,11 +145,14 @@ namespace RedisSlimClient.Io.Pipelines
             }
 
             writer.Complete(error);
+        }
 
-            if (error != null)
+        async Task AwaitReset()
+        {
+            while (_resetting)
             {
-                StateChanged?.Invoke(PipelineStatus.Faulted);
-                Error?.Invoke(error);
+                StateChanged?.Invoke(PipelineStatus.AwaitingReset);
+                await _resetLock.AwaitAsync();
             }
         }
 
@@ -156,6 +169,8 @@ namespace RedisSlimClient.Io.Pipelines
             {
                 try
                 {
+                    await AwaitReset();
+
                     StateChanged?.Invoke(PipelineStatus.ReadingFromPipe);
 
                     var result = await _pipe.Reader.ReadAsync(_cancellationToken).ConfigureAwait(false);
@@ -193,11 +208,6 @@ namespace RedisSlimClient.Io.Pipelines
                     }
                     while (position.HasValue && !buffer.IsEmpty);
 
-                    if (_reset)
-                    {
-                        break;
-                    }
-
                     StateChanged?.Invoke(PipelineStatus.AdvancingReader);
 
                     _pipe.Reader.AdvanceTo(buffer.Start, buffer.End);
@@ -214,17 +224,12 @@ namespace RedisSlimClient.Io.Pipelines
                 catch (Exception ex)
                 {
                     error = ex;
-                    break;
+                    StateChanged?.Invoke(PipelineStatus.Faulted);
+                    Error?.Invoke(ex);
                 }
             }
 
             _pipe.Reader.Complete(error);
-
-            if (error != null)
-            {
-                StateChanged?.Invoke(PipelineStatus.Faulted);
-                Error?.Invoke(error);
-            }
         }
 
         SequencePosition? Delimit(ReadOnlySequence<byte> buffer)

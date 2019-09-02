@@ -38,19 +38,26 @@ namespace RedisSlimClient.Io.Pipelines
         public void Schedule(IWorkScheduler scheduler)
         {
             scheduler.Schedule(RunAsync);
-
-            //foreach (var item in Schedulables)
-            //{
-            //    item.Schedule(scheduler);
-            //}
         }
 
-        public async Task Reset()
+        public async Task ResetAsync(CancellationToken cancellation = default)
         {
-            foreach (var runnable in Schedulables)
-                await runnable.Reset();
-
-            await _socket.ConnectAsync();
+            using (await ((IResetable)Sender).ResetAsync())
+            using (await ((IResetable)Receiver).ResetAsync())
+            {
+                while (!cancellation.IsCancellationRequested)
+                {
+                    try
+                    {
+                        await _socket.ConnectAsync();
+                        break;
+                    }
+                    catch
+                    {
+                        await Task.Delay(1000, cancellation);
+                    }
+                }
+            }
         }
 
         public void Dispose()
@@ -70,7 +77,7 @@ namespace RedisSlimClient.Io.Pipelines
 
         void OnSocketChange((SocketStatus status, long id) state)
         {
-            if (state.status == SocketStatus.ReadFault || state.status == SocketStatus.WriteFault)
+            if (state.status == SocketStatus.WriteFault)
             {
                 Faulted?.Invoke();
             }

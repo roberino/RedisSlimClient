@@ -3,7 +3,9 @@
     enum PipelineStatus : byte
     {
         None = 0,
+        Resetting,
         AwaitingConnection,
+        AwaitingReset,
         ReceivingFromSocket,
         ReadingFromPipe,
         ReadFromPipe,

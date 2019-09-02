@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 
 namespace RedisSlimClient.Io.Scheduling
 {
@@ -7,7 +8,5 @@ namespace RedisSlimClient.Io.Scheduling
         void Schedule(IWorkScheduler scheduler);
 
         Task RunAsync();
-
-        Task Reset();
     }
 }

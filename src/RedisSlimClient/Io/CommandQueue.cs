@@ -1,21 +1,22 @@
-﻿using System;
+﻿using RedisSlimClient.Io.Commands;
+using RedisSlimClient.Io.Scheduling;
+using RedisSlimClient.Util;
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using RedisSlimClient.Io.Commands;
-using RedisSlimClient.Io.Scheduling;
 
 namespace RedisSlimClient.Io
 {
-    class CommandQueue
+    class CommandQueue : IDisposable
     {
-        readonly SemaphoreSlim _semaphore;
+        readonly AsyncLock _lock;
         readonly Queue<IRedisCommand> _commandQueue;
 
         public CommandQueue()
         {
             _commandQueue = new Queue<IRedisCommand>();
-            _semaphore = new SemaphoreSlim(1, 1);
+            _lock = new AsyncLock();
         }
 
         public int QueueSize => _commandQueue.Count;
@@ -45,16 +46,24 @@ namespace RedisSlimClient.Io
 
         public async Task Requeue(Func<Task> synchronisedWork)
         {
-            await _semaphore.WaitAsync();
+            IRedisCommand[] salvagable;
 
-            try
+            using (await _lock.LockAsync())
             {
-                var salvagable = _commandQueue.ToArray();
+                salvagable = _commandQueue.ToArray();
 
                 Clear();
+            }
 
-                await synchronisedWork();
+            await synchronisedWork();
 
+            if (salvagable.Length == 0)
+            {
+                return;
+            }
+
+            using (await _lock.LockAsync())
+            {
                 foreach (var command in salvagable)
                 {
                     if (!command.CanBeCompleted)
@@ -67,25 +76,15 @@ namespace RedisSlimClient.Io
                     _commandQueue.Enqueue(command);
                 }
             }
-            finally
-            {
-                _semaphore.Release();
-            }
         }
 
         public async Task Enqueue(IRedisCommand command, CancellationToken cancellation = default)
         {
-            await _semaphore.WaitAsync(cancellation);
-
-            try
+            using (await _lock.LockAsync(cancellation))
             {
                 await command.Execute();
 
                 _commandQueue.Enqueue(command);
-            }
-            finally
-            {
-                _semaphore.Release();
             }
         }
 
@@ -108,21 +107,20 @@ namespace RedisSlimClient.Io
 
         async Task<T> AccessQueue<T>(Func<Queue<IRedisCommand>, T> work, CancellationToken cancellation = default)
         {
-            await _semaphore.WaitAsync(cancellation);
-
-            try
+            using (await _lock.LockAsync(cancellation))
             {
                 return work(_commandQueue);
-            }
-            finally
-            {
-                _semaphore.Release();
             }
         }
 
         void Clear()
         {
             _commandQueue.Clear();
+        }
+
+        public void Dispose()
+        {
+            _lock.Dispose();
         }
     }
 }

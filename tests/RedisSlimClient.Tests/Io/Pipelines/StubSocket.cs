@@ -28,7 +28,7 @@ namespace RedisSlimClient.UnitTests.Io.Pipelines
 
         public void RaiseError(Exception ex = null)
         {
-            State.ReadError(ex ?? new TimeoutException());
+            State.WriteError(ex ?? new TimeoutException());
         }
 
         public void BreakReconnection(Exception ex = null)

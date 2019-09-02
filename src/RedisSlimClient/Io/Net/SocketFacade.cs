@@ -1,11 +1,11 @@
-﻿using System;
+﻿using RedisSlimClient.Telemetry;
+using System;
 using System.Buffers;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
-using RedisSlimClient.Telemetry;
 
 namespace RedisSlimClient.Io.Net
 {
@@ -73,7 +73,7 @@ namespace RedisSlimClient.Io.Net
         {
             return InitSocketAndNotifyAsync();
         }
-        
+
         public async Task AwaitAvailableSocket(CancellationToken cancellation)
         {
             while (!State.IsAvailable && !cancellation.IsCancellationRequested)
@@ -156,25 +156,35 @@ namespace RedisSlimClient.Io.Net
         {
             OnReceiving(ReceiveStatus.Receiving);
 
-            var task = Socket.ReceiveAsync(memory, SocketFlags.None, CancellationToken);
-            var wasSync = false;
-
-            if (task.IsCompleted)
+            try
             {
-                OnReceiving(ReceiveStatus.ReceivedSynchronously);
-                wasSync = true;
+
+                var task = Socket.ReceiveAsync(memory, SocketFlags.None, CancellationToken);
+                var wasSync = false;
+
+                if (task.IsCompleted)
+                {
+                    OnReceiving(ReceiveStatus.ReceivedSynchronously);
+                    wasSync = true;
+                }
+
+                var read = await task;
+
+                if (!wasSync)
+                {
+                    OnReceiving(ReceiveStatus.ReceivedAsynchronously);
+                }
+
+                OnReceiving(ReceiveStatus.Received);
+
+                return read;
             }
-
-            var read = await task;
-
-            if (!wasSync)
+            catch (Exception ex)
             {
-                OnReceiving(ReceiveStatus.ReceivedAsynchronously);
+                OnReceiving(ReceiveStatus.Faulted);
+                State.ReadError(ex);
+                throw;
             }
-
-            OnReceiving(ReceiveStatus.Received);
-
-            return read;
         }
 #endif
 
@@ -233,7 +243,7 @@ namespace RedisSlimClient.Io.Net
             }
 
             OnReceiving(ReceiveStatus.Completed);
-            
+
             Trace?.Invoke((nameof(ReceiveAsync), memory.Slice(0, bytesRead).ToArray()));
 
             return bytesRead;
@@ -254,11 +264,19 @@ namespace RedisSlimClient.Io.Net
 #if NET_CORE
         async ValueTask<int> SendToSocket(ReadOnlyMemory<byte> buffer, SocketFlags flags = SocketFlags.None)
         {
-            var result = await Socket.SendAsync(buffer, flags, CancellationToken);
+            try
+            {
+                var result = await Socket.SendAsync(buffer, flags, CancellationToken);
 
-            Trace?.Invoke(($"{nameof(SendToSocket)},flags:{flags}", buffer.Slice(0, result).ToArray()));
+                Trace?.Invoke(($"{nameof(SendToSocket)},flags:{flags}", buffer.Slice(0, result).ToArray()));
 
-            return result;
+                return result;
+            }
+            catch (Exception ex)
+            {
+                State.WriteError(ex);
+                throw;
+            }
         }
 #else
         async ValueTask<int> SendToSocket(ReadOnlyMemory<byte> buffer, SocketFlags flags = SocketFlags.None)

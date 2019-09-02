@@ -42,7 +42,7 @@ namespace RedisSlimClient.Io
                 telemetryWriter.Execute(ctx =>
                 {
                     throttledScheduler.Schedule(Reconnect);
-                }, nameof(IDuplexPipeline.Faulted));
+                }, nameof(Reconnect));
             };
 
             _pipeline.Schedule(workScheduler);
@@ -66,6 +66,7 @@ namespace RedisSlimClient.Io
             if (!_disposed)
             {
                 _pipeline.Dispose();
+                _commandQueue.Dispose();
             }
 
             _disposed = true;
@@ -135,7 +136,7 @@ namespace RedisSlimClient.Io
             {
                 await _commandQueue.Requeue(async () =>
                 {
-                    await _pipeline.Reset();
+                    await _pipeline.ResetAsync();
 
                     await ((AsyncEvent<ICommandPipeline>)Initialising).PublishAsync(this);
                 });
