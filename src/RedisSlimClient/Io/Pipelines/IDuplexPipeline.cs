@@ -13,6 +13,6 @@ namespace RedisSlimClient.Io.Pipelines
 
         IPipelineSender Sender { get; }
 
-        Task ResetAsync(CancellationToken cancellation = default);
+        Task ResetAsync();
     }
 }

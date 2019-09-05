@@ -80,11 +80,11 @@ namespace RedisSlimClient.Io.Net
             }
         }
 
-        public long Id => Interlocked.Read(ref _connectionNumber);
+        public long Sequence => Interlocked.Read(ref _connectionNumber);
 
         void ChangeStatus(SocketStatus status)
         {
-            var currentId = Id;
+            var currentId = Sequence;
             var lastError = -1L;
 
             if (IsFaultedStatus(status))

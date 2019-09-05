@@ -20,18 +20,18 @@ namespace RedisSlimClient.Io
         readonly ISocket _socket;
         readonly CommandQueue _commandQueue;
 
-        bool _disposed;
+        readonly CancellationTokenSource _cancellation;
 
         volatile PipelineStatus _status;
-        volatile int _reconnectAttempts;
 
         public AsyncCommandPipeline(IDuplexPipeline pipeline, ISocket socket, IWorkScheduler workScheduler, ITelemetryWriter telemetryWriter)
         {
             _pipeline = pipeline;
             _socket = socket;
             _commandQueue = new CommandQueue();
+            _cancellation = new CancellationTokenSource();
 
-            var _ = new CompletionHandler(_pipeline.Receiver, _commandQueue, workScheduler).AttachTelemetry(telemetryWriter, Severity.Diagnostic);
+            new CompletionHandler(_pipeline.Receiver, _commandQueue, workScheduler).AttachTelemetry(telemetryWriter, Severity.Diagnostic);
 
             var throttledScheduler = new TimeThrottledScheduler(workScheduler, TimeSpan.FromMilliseconds(500));
 
@@ -63,21 +63,22 @@ namespace RedisSlimClient.Io
 
         public void Dispose()
         {
-            if (!_disposed)
+            if (!_cancellation.IsCancellationRequested)
             {
+                _cancellation.Cancel();
                 _pipeline.Dispose();
                 _commandQueue.Dispose();
             }
-
-            _disposed = true;
         }
 
         async Task<T> ExecuteInternal<T>(IRedisResult<T> command, CancellationToken cancellation = default, bool isAdmin = false)
         {
-            if (_disposed)
+            if (_cancellation.IsCancellationRequested)
             {
                 throw new ObjectDisposedException(nameof(AsyncCommandPipeline));
             }
+
+            cancellation.ThrowIfCancellationRequested();
 
             if (Status != PipelineStatus.Ok && !isAdmin)
             {
@@ -124,15 +125,14 @@ namespace RedisSlimClient.Io
 
         async Task Reconnect()
         {
-            if (_status == PipelineStatus.Reinitializing || _disposed || _reconnectAttempts > 10)
+            if (_status == PipelineStatus.Reinitializing || _cancellation.IsCancellationRequested)
             {
                 return;
             }
 
             _status = PipelineStatus.Reinitializing;
-            _reconnectAttempts++;
 
-            try
+            await Attempt.WithExponentialBackoff(async () =>
             {
                 await _commandQueue.Requeue(async () =>
                 {
@@ -140,14 +140,9 @@ namespace RedisSlimClient.Io
 
                     await ((AsyncEvent<ICommandPipeline>)Initialising).PublishAsync(this);
                 });
+            }, TimeSpan.FromSeconds(5), cancellation: _cancellation.Token);
 
-                _reconnectAttempts = 0;
-                _status = PipelineStatus.Ok;
-            }
-            catch
-            {
-                _status = PipelineStatus.Broken;
-            }
+            _status = PipelineStatus.Ok;
         }
     }
 }

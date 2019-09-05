@@ -18,6 +18,23 @@ namespace RedisSlimClient.Io.Server
             return new IPEndPoint(dnsResolver.ParseIp(host), port);
         }
 
+        public static bool IsLoopback(this IPAddress address)
+        {
+            if (IPAddress.Loopback.Equals(address))
+            {
+                return true;
+            }
+
+            var addStr = address.ToString();
+
+            return addStr == "::1" || addStr == "127.0.0.1";
+        }
+
+        public static IPEndPoint CreateLoopbackEndpoint(int port)
+        {
+            return new IPEndPoint(IPAddress.Loopback, port);
+        }
+
         public static IPAddress ParseIp(this IHostAddressResolver dnsResolver, string host)
         {
             if (dnsResolver == null)

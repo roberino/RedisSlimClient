@@ -1,5 +1,7 @@
 ﻿using RedisSlimClient.Configuration;
 using RedisSlimClient.Io;
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -43,6 +45,57 @@ namespace RedisSlimClient.IntegrationTests
                 }
 
                 Assert.True(wasThrown);
+            }
+        }
+
+        [Theory]
+        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
+        public async Task PingAsync_ViaProxy_ReturnsOk(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
+        {
+            var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine);
+
+            using (var client = await config.CreateProxiedClientAsync(r => r.ForwardResponse()))
+            {
+                var result = await client.PingAsync();
+
+                Assert.True(result);
+            }
+        }
+
+        [Theory]
+        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
+        public async Task PingAsync_WithNetworkError_WillReconnect(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
+        {
+            var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine);
+
+            using (var client = await config.CreateProxiedClientAsync(r =>
+            {
+                if (r.Sequence == 7)
+                {
+                    throw new Exception();
+                }
+
+                return r.ForwardResponse();
+            }))
+            {
+                var results = new List<bool>();
+
+                foreach (var x in Enumerable.Range(1, 25))
+                {
+                    try
+                    {
+                        var result = await client.PingAsync();
+
+                        results.Add(result);
+
+                        _output.WriteLine("OK");
+                    }
+                    catch (Exception ex)
+                    {
+                        results.Add(false);
+                        _output.WriteLine(ex.Message.ToString());
+                    }
+                }
             }
         }
 

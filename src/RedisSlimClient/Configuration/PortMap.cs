@@ -18,12 +18,14 @@ namespace RedisSlimClient.Configuration
             _map = new Dictionary<int, int>();
         }
 
-        public void Import(string portMappings)
+        public PortMap Import(string portMappings)
         {
             foreach(var pair in portMappings.Split(',').Select(p => p.Split(':')).Select(a => (from : int.Parse(a[0]), to : int.Parse(a[1]))))
             {
                 _map[pair.from] = pair.to;
             }
+
+            return this;
         }
 
         public PortMap Map(int fromPort, int toPort)
@@ -43,7 +45,11 @@ namespace RedisSlimClient.Configuration
             return fromPort;
         }
 
+        public PortMap Clone() => new PortMap().Import(ToString());
+
         public IEnumerator<(int From, int To)> GetEnumerator() => _map.Select(m => (m.Key, m.Value)).GetEnumerator();
+
+        public override string ToString() => string.Join(",", _map.Select(m => $"{m.Key}:{m.Value}"));
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }

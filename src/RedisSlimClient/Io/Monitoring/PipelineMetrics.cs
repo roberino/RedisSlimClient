@@ -1,4 +1,6 @@
-﻿namespace RedisSlimClient.Io.Monitoring
+﻿using System;
+
+namespace RedisSlimClient.Io.Monitoring
 {
     readonly struct PipelineMetrics
     {

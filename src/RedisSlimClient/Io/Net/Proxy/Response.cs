@@ -1,6 +1,6 @@
-﻿namespace RedisSlimClient.Io.Server
+﻿namespace RedisSlimClient.Io.Net.Proxy
 {
-    class Response
+    public readonly struct Response
     {
         public Response(byte[] data)
         {

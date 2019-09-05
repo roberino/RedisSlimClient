@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace RedisSlimClient.Io.Net
 {
-    class SslSocket : SocketFacade
+    class SslSocket : SocketContainer, IManagedSocket
     {
         readonly SslConfiguration _configuration;
         readonly byte[] _writeBuffer;
@@ -39,7 +39,7 @@ namespace RedisSlimClient.Io.Net
             _sslStream = await CreateStream();
         }
 
-        public override async ValueTask<int> ReceiveAsync(Memory<byte> memory)
+        public async ValueTask<int> ReceiveAsync(Memory<byte> memory)
         {
             if (_sslStream == null)
             {
@@ -49,6 +49,69 @@ namespace RedisSlimClient.Io.Net
             var read = 0;
 
             OnReceiving(ReceiveStatus.Awaiting);
+
+            try
+            {
+                read = await ReceiveAsyncImpl(memory);
+            }
+            catch (Exception ex)
+            {
+                OnReceiving(ReceiveStatus.Faulted);
+                State.ReadError(ex);
+                throw;
+            }
+
+            OnReceiving(ReceiveStatus.Completed);
+
+            OnTrace(() => (nameof(ReceiveAsync), memory.Slice(0, read).ToArray()));
+
+            return read;
+        }
+
+        public async ValueTask<int> SendAsync(ReadOnlySequence<byte> buffer)
+        {
+            if (_sslStream == null)
+            {
+                throw new InvalidOperationException();
+            }
+
+            var len = (int)buffer.Length;
+
+            buffer.CopyTo(_writeBuffer);
+
+            try
+            {
+                await _sslStream.WriteAsync(_writeBuffer, 0, len);
+            }
+            catch (Exception ex)
+            {
+                State.WriteError(ex);
+                throw;
+            }
+
+            OnTrace(() => (nameof(SendAsync), buffer.Slice(0, len).ToArray()));
+
+            return len;
+        }
+
+        protected override void OnDisposing()
+        {
+            base.OnDisposing();
+
+            if (_sslStream != null)
+            {
+                try
+                {
+                    _sslStream.Dispose();
+                }
+                catch { }
+                _sslStream = null;
+            }
+        }
+
+        async ValueTask<int> ReceiveAsyncImpl(Memory<byte> memory)
+        {
+            var read = 0;
 
 #if NET_CORE
             read = await _sslStream.ReadAsync(memory, CancellationToken);
@@ -69,44 +132,7 @@ namespace RedisSlimClient.Io.Net
             }
 #endif
 
-            OnReceiving(ReceiveStatus.Completed);
-
-            OnTrace(() => (nameof(ReceiveAsync), memory.Slice(0, read).ToArray()));
-
             return read;
-        }
-
-        public override async ValueTask<int> SendAsync(ReadOnlySequence<byte> buffer)
-        {
-            if (_sslStream == null)
-            {
-                throw new InvalidOperationException();
-            }
-
-            var len = (int)buffer.Length;
-
-            buffer.CopyTo(_writeBuffer);
-
-            await _sslStream.WriteAsync(_writeBuffer, 0, len);
-
-            OnTrace(() => (nameof(SendAsync), buffer.Slice(0, len).ToArray()));
-
-            return len;
-        }
-
-        protected override void OnDisposing()
-        {
-            base.OnDisposing();
-
-            if (_sslStream != null)
-            {
-                try
-                {
-                    _sslStream.Dispose();
-                }
-                catch { }
-                _sslStream = null;
-            }
         }
     }
 }

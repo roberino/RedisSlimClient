@@ -2,7 +2,6 @@
 using RedisSlimClient.Io.Monitoring;
 using RedisSlimClient.Io.Net;
 using RedisSlimClient.Io.Scheduling;
-using RedisSlimClient.Io.Server;
 using RedisSlimClient.Serialization;
 using RedisSlimClient.Serialization.Protocol;
 using RedisSlimClient.Types;
@@ -22,18 +21,18 @@ namespace RedisSlimClient.Io
         readonly IManagedSocket _socket;
         readonly IWorkScheduler _scheduler;
         readonly IEnumerable<RedisObjectPart> _reader;
+        readonly CancellationTokenSource _cancellation;
 
-        bool _disposed;
         int _pendingWrites;
         int _pendingReads;
 
         Stream _writeStream;
 
         volatile PipelineStatus _status;
-        volatile int _reconnectAttempts;
 
         SyncCommandPipeline(Stream networkStream, IManagedSocket socket, IWorkScheduler scheduler = null)
         {
+            _cancellation = new CancellationTokenSource();
             _writeStream = networkStream;
             _socket = socket;
             _scheduler = new TimeThrottledScheduler(scheduler ?? ThreadPoolScheduler.Instance, TimeSpan.FromMilliseconds(500));
@@ -61,7 +60,6 @@ namespace RedisSlimClient.Io
             return new SyncCommandPipeline(stream, socket);
         }
 
-
         public PipelineMetrics Metrics => new PipelineMetrics(_pendingWrites, _pendingReads);
 
         public PipelineStatus Status => _status;
@@ -74,13 +72,17 @@ namespace RedisSlimClient.Io
 
         public void Dispose()
         {
-            _disposed = true;
-            _socket.Dispose();
+            if (!_cancellation.IsCancellationRequested)
+            {
+                _cancellation.Cancel();
+                _socket.Dispose();
+                _cancellation.Dispose();
+            }
         }
 
         async Task<T> ExecuteInternal<T>(IRedisResult<T> command, CancellationToken cancellation = default, bool isAdmin = false)
         {
-            if (_disposed)
+            if (_cancellation.IsCancellationRequested)
             {
                 throw new ObjectDisposedException(nameof(SyncCommandPipeline));
             }
@@ -105,6 +107,8 @@ namespace RedisSlimClient.Io
 
             lock (_lockObj)
             {
+                cancellation.ThrowIfCancellationRequested();
+
                 _pendingWrites++;
 
                 try
@@ -146,35 +150,31 @@ namespace RedisSlimClient.Io
             return result;
         }
 
-        async Task Reconnect(long id)
+        async Task Reconnect(long sequence)
         {
-            if (_status == PipelineStatus.Reinitializing || _disposed || _reconnectAttempts > 10 || _socket.State.Id > id)
+            if (_status == PipelineStatus.Reinitializing || _cancellation.IsCancellationRequested || _socket.State.Sequence > sequence)
             {
                 return;
             }
 
             _status = PipelineStatus.Reinitializing;
-            _reconnectAttempts++;
 
             var currentStream = _writeStream;
 
+            currentStream?.Dispose();
+
             _writeStream = null;
 
-            try
+            await Attempt.WithExponentialBackoff(async () =>
             {
+
                 await _socket.ConnectAsync();
                 _writeStream = await _socket.CreateStream();
 
                 await ((AsyncEvent<ICommandPipeline>)Initialising).PublishAsync(this);
+            }, TimeSpan.FromSeconds(5), cancellation: _cancellation.Token);
 
-                _status = PipelineStatus.Ok;
-            }
-            catch
-            {
-                _status = PipelineStatus.Broken;
-            }
-
-            currentStream?.Dispose();
+            _status = PipelineStatus.Ok;
         }
     }
 }

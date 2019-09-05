@@ -32,11 +32,11 @@ namespace RedisSlimClient.UnitTests.Io.Net
         {
             var state = new SocketState(() => true);
 
-            var id = state.Id;
+            var id = state.Sequence;
 
             await state.DoConnect(() => Task.CompletedTask);
 
-            var newId = state.Id;
+            var newId = state.Sequence;
 
             Assert.Equal(id + 1, newId);
         }

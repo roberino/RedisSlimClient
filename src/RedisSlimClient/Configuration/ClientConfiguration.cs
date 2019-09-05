@@ -2,6 +2,7 @@
 using RedisSlimClient.Serialization;
 using RedisSlimClient.Telemetry;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
@@ -31,7 +32,6 @@ namespace RedisSlimClient.Configuration
 
         public string Password { get; set; }
 
-
         readonly NonNullable<IWorkScheduler> _scheduler = ThreadPoolScheduler.Instance;
         public IWorkScheduler Scheduler { get => _scheduler.Value; set => _scheduler.Value = value; }
 
@@ -60,6 +60,47 @@ namespace RedisSlimClient.Configuration
 
         public int WriteBufferSize { get; set; } = 1024;
 
+        public override string ToString()
+        {
+            var props = GetType()
+                .GetProperties(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public)
+                .Where(p => p.CanRead && (p.PropertyType.IsValueType || p.PropertyType == typeof(string)));
+
+            var str = new StringBuilder();
+
+            foreach (var uri in ServerEndpoints)
+            {
+                if (str.Length > 0)
+                {
+                    str.Append("|");
+                }
+
+                str.Append($"{uri}");
+            }
+
+            str.Append(";");
+
+            foreach (var prop in props)
+            {
+                str.Append($"{prop.Name}={prop.GetValue(this)};");
+            }
+
+            if (SslConfiguration.UseSsl)
+            {
+                str.Append($"{nameof(SslConfiguration.UseSsl)}={SslConfiguration.UseSsl};{nameof(SslConfiguration.SslHost)}={SslConfiguration.SslHost}");
+            }
+
+            return str.ToString();
+        }
+
+        internal ClientConfiguration Clone(IEnumerable<Uri> newEndpoints)
+        {
+            return new ClientConfiguration(ToString(), NetworkConfiguration.Clone())
+            {
+                ServerEndpoints = newEndpoints.ToArray()
+            };
+        }
+
         void Parse(string connectionOptions)
         {
             var endPoints = string.Empty;
@@ -71,6 +112,11 @@ namespace RedisSlimClient.Configuration
 
                 if (kv.Length == 1)
                 {
+                    if (string.IsNullOrEmpty(kv[0]))
+                    {
+                        continue;
+                    }
+
                     endPoints = kv[0];
                 }
                 else
@@ -124,11 +170,16 @@ namespace RedisSlimClient.Configuration
                 }
             }
 
-            ServerEndpoints = endPoints.Split(';').Select(ParseUri).ToArray();
+            ServerEndpoints = endPoints.Split('|').Select(ParseUri).ToArray();
+
+            if (!ServerEndpoints.Any())
+            {
+                throw new ArgumentException("No host supplied");
+            }
 
             if (string.IsNullOrEmpty(SslConfiguration.SslHost))
             {
-                SslConfiguration.SslHost = ServerEndpoints.SingleOrDefault()?.Host;
+                SslConfiguration.SslHost = ServerEndpoints.FirstOrDefault()?.Host;
             }
 
             if (string.IsNullOrEmpty(Password))

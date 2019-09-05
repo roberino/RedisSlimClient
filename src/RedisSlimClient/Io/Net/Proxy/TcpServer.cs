@@ -1,15 +1,18 @@
-﻿using System;
+﻿using RedisSlimClient.Configuration;
+using RedisSlimClient.Io.Server;
+using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace RedisSlimClient.Io.Server
+namespace RedisSlimClient.Io.Net.Proxy
 {
     sealed class TcpServer : IDisposable
     {
         readonly EndPoint _local;
         readonly EndPoint _target;
+        readonly ManualResetEvent _listenWaiter;
 
         Socket _mainSocket;
 
@@ -22,7 +25,21 @@ namespace RedisSlimClient.Io.Server
             _local = local;
             _target = target;
             _disposed = new CancellationTokenSource();
+            _listenWaiter = new ManualResetEvent(false);
+            LocalEndPoint = local;
+            ForwardingEndPoint = _target ?? _local;
         }
+
+        public static TcpServer CreateLocalProxy(EndPoint target, int proxyPort)
+        {
+            return new TcpServer(EndpointUtility.CreateLoopbackEndpoint(proxyPort), target);
+        }
+
+        public EndPoint LocalEndPoint { get; }
+
+        public EndPoint ForwardingEndPoint { get; }
+
+        public event Action<Exception> Error;
 
         public Task StartAsync(RequestHandler handler)
         {
@@ -34,7 +51,11 @@ namespace RedisSlimClient.Io.Server
             _mainSocket.Bind(_local);
             _mainSocket.Listen(10);
 
+            _listenWaiter.Reset();
+
             _worker = Task.Run(async () => await StartAsync(handler, _disposed.Token), _disposed.Token);
+
+            _listenWaiter.WaitOne();
 
             return Task.CompletedTask;
         }
@@ -43,39 +64,56 @@ namespace RedisSlimClient.Io.Server
         {
             while (!cancellationToken.IsCancellationRequested)
             {
-                var source = await _mainSocket.AcceptAsync();
-
-                ClientConnection destination;
-                State state;
-
-                if (_target != null)
+                try
                 {
-                    destination = new ClientConnection(handler);
+                    Task.Run(async () =>
+                    {
+                        await Task.Delay(100);
 
-                    state = new State(source, destination.DestinationSocket);
+                        _listenWaiter.Set();
+                    });
 
-                    await destination.ConnectAsync(source, _target);
+                    var source = await _mainSocket.AcceptAsync();
+
+                    ClientConnection destination;
+                    State state;
+
+                    if (_target != null)
+                    {
+                        destination = new ClientConnection(handler);
+
+                        state = new State(source, destination.DestinationSocket);
+
+                        await destination.ConnectAsync(source, _target);
+                    }
+                    else
+                    {
+                        destination = new ClientConnection(handler, source);
+
+                        state = new State(source, destination.DestinationSocket);
+
+                        await destination.ConnectAsync(source);
+                    }
+
+                    source.BeginReceive(state.Buffer, 0, state.Buffer.Length, 0, destination.OnDataReceive, state);
                 }
-                else
+                catch (Exception ex)
                 {
-                    destination = new ClientConnection(handler, source);
-
-                    state = new State(source, destination.DestinationSocket);
-
-                    await destination.ConnectAsync(source);
+                    Error?.Invoke(ex);
+                    throw;
                 }
-
-                source.BeginReceive(state.Buffer, 0, state.Buffer.Length, 0, destination.OnDataReceive, state);
             }
         }
 
         class ClientConnection
         {
             readonly RequestHandler _requestHandler;
+            readonly CancellationToken _cancellation;
 
-            public ClientConnection(RequestHandler requestHandler, Socket socket = null)
+            public ClientConnection(RequestHandler requestHandler, Socket socket = null, CancellationToken cancellation = default)
             {
                 DestinationSocket = socket ?? CreateSocket(AddressFamily.InterNetwork);
+                _cancellation = cancellation;
                 _requestHandler = requestHandler;
             }
 
@@ -99,11 +137,13 @@ namespace RedisSlimClient.Io.Server
 
                 try
                 {
+                    _cancellation.ThrowIfCancellationRequested();
+
                     var bytesRead = state.SourceSocket.EndReceive(result);
 
                     if (bytesRead > 0)
                     {
-                        var response = _requestHandler.Handle(state.Buffer, bytesRead);
+                        var response = _requestHandler.Handle(state.DestinationSocket.RemoteEndPoint, state.Buffer, bytesRead);
 
                         if (response.Data.Length > 0)
                         {
@@ -126,6 +166,7 @@ namespace RedisSlimClient.Io.Server
 
         public void Dispose()
         {
+            _listenWaiter.Dispose();
             _disposed.Cancel();
             _mainSocket?.Close();
         }

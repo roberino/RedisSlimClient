@@ -13,5 +13,7 @@ namespace RedisSlimClient.Configuration
         IPAddress Resolve(IPAddress ipAddress);
 
         IPHostEntry Resolve(string host);
+
+        IHostAddressResolver Clone();
     }
 }

@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using RedisSlimClient.Configuration;
 using RedisSlimClient.Io.Net;
 using RedisSlimClient.Io.Scheduling;
+using RedisSlimClient.Util;
 
 namespace RedisSlimClient.Io.Pipelines
 {
@@ -40,23 +41,12 @@ namespace RedisSlimClient.Io.Pipelines
             scheduler.Schedule(RunAsync);
         }
 
-        public async Task ResetAsync(CancellationToken cancellation = default)
+        public async Task ResetAsync()
         {
             using (await ((IResetable)Sender).ResetAsync())
             using (await ((IResetable)Receiver).ResetAsync())
             {
-                while (!cancellation.IsCancellationRequested)
-                {
-                    try
-                    {
-                        await _socket.ConnectAsync();
-                        break;
-                    }
-                    catch
-                    {
-                        await Task.Delay(1000, cancellation);
-                    }
-                }
+                await Attempt.WithExponentialBackoff(_socket.ConnectAsync, TimeSpan.FromSeconds(5), cancellation: _cancellationTokenSource.Token);
             }
         }
 

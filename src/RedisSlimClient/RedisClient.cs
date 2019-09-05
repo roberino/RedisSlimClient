@@ -1,13 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using RedisSlimClient.Configuration;
+﻿using RedisSlimClient.Configuration;
 using RedisSlimClient.Io;
 using RedisSlimClient.Io.Commands;
 using RedisSlimClient.Io.Server;
 using RedisSlimClient.Types;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace RedisSlimClient
 {
@@ -15,18 +15,16 @@ namespace RedisSlimClient
     {
         readonly ClientConfiguration _configuration;
         readonly ICommandRouter _connection;
+        readonly Action _disposing;
 
-        RedisClient(ClientConfiguration configuration) : this(configuration, e => new ConnectionFactory().Create(e))
-        {
-        }
-
-        internal RedisClient(ClientConfiguration configuration, Func<ClientConfiguration, ICommandRouter> connectionFactory)
+        internal RedisClient(ClientConfiguration configuration, Func<ClientConfiguration, ICommandRouter> connectionFactory, Action onDisposing = null)
         {
             _configuration = configuration;
             _connection = connectionFactory(_configuration);
+            _disposing = onDisposing ?? (() => { });
         }
 
-        internal static IRedisClient Create(ClientConfiguration configuration) => new RedisClient(configuration);
+        internal static IRedisClient Create(ClientConfiguration configuration, Action onDisposing = null) => new RedisClient(configuration, e => new ConnectionFactory().Create(e), onDisposing);
 
         public Task<bool> PingAsync(CancellationToken cancellation = default)
         {
@@ -79,7 +77,7 @@ namespace RedisSlimClient
 
             var cmdPipe = await RouteCommandAsync(cmd);
 
-            var rstr = (RedisString) await cmdPipe.ExecuteWithCancellation(cmd, cancellation, _configuration.DefaultOperationTimeout);
+            var rstr = (RedisString)await cmdPipe.ExecuteWithCancellation(cmd, cancellation, _configuration.DefaultOperationTimeout);
 
             return rstr.Value;
         }
@@ -112,6 +110,12 @@ namespace RedisSlimClient
 
         public void Dispose()
         {
+            try
+            {
+                _disposing();
+            }
+            catch { }
+
             _connection.Dispose();
         }
 
@@ -122,7 +126,7 @@ namespace RedisSlimClient
             return await cmdPipe.ExecuteWithCancellation(cmd, cancellation, _configuration.DefaultOperationTimeout);
         }
 
-        async Task<TResult[]> GetResponses<TCmd, TResult>(Func<IRedisResult<TCmd>> cmdFactory, Func<TCmd, Uri, TResult> translator, Func<Exception, Uri, TResult> errorTranslator,  ConnectionTarget target, CancellationToken cancellation = default)
+        async Task<TResult[]> GetResponses<TCmd, TResult>(Func<IRedisResult<TCmd>> cmdFactory, Func<TCmd, Uri, TResult> translator, Func<Exception, Uri, TResult> errorTranslator, ConnectionTarget target, CancellationToken cancellation = default)
         {
             var cmd0 = cmdFactory();
 

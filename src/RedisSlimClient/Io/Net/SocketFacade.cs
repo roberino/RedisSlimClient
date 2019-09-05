@@ -1,86 +1,30 @@
-﻿using RedisSlimClient.Telemetry;
-using System;
+﻿using System;
 using System.Buffers;
-using System.IO;
-using System.Net;
 using System.Net.Sockets;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace RedisSlimClient.Io.Net
 {
-    class SocketFacade : IManagedSocket, ITraceable
+    class SocketFacade : SocketContainer, IManagedSocket
     {
-        readonly CancellationTokenSource _cancellationTokenSource;
         readonly AwaitableSocketAsyncEventArgs _readEventArgs;
         readonly AwaitableSocketAsyncEventArgs _writeEventArgs;
-        readonly EndPoint _endPoint;
-        readonly IServerEndpointFactory _endPointFactory;
-        readonly TimeSpan _timeout;
 
-        public SocketFacade(IServerEndpointFactory endPointFactory, TimeSpan timeout)
+        public SocketFacade(IServerEndpointFactory endPointFactory, TimeSpan timeout) : base(endPointFactory, timeout)
         {
-            _cancellationTokenSource = new CancellationTokenSource();
-            _endPoint = endPointFactory.CreateEndpoint();
-
             var scheduler = Scheduling.ThreadPoolScheduler.Instance;
 
             _readEventArgs = new AwaitableSocketAsyncEventArgs()
             {
-                RemoteEndPoint = _endPoint,
+                RemoteEndPoint = EndPointAddress,
                 CompletionHandler = w => scheduler.Schedule(() => { w(); return Task.CompletedTask; })
             };
 
             _writeEventArgs = new AwaitableSocketAsyncEventArgs()
             {
-                RemoteEndPoint = _endPoint,
+                RemoteEndPoint = EndPointAddress,
                 CompletionHandler = w => scheduler.Schedule(() => { w(); return Task.CompletedTask; })
             };
-
-            _endPointFactory = endPointFactory;
-            _timeout = timeout;
-
-            State = new SocketState(CheckConnected);
-        }
-
-        protected CancellationToken CancellationToken => _cancellationTokenSource.Token;
-
-        public Uri EndpointIdentifier => _endPointFactory.EndpointIdentifier;
-
-        public Socket Socket { get; private set; }
-
-        public virtual async Task<Stream> CreateStream()
-        {
-            if (!State.IsConnected)
-            {
-                await InitSocketAndNotifyAsync();
-            }
-
-            return new NetworkStream(Socket, FileAccess.ReadWrite)
-            {
-                ReadTimeout = (int)_timeout.TotalMilliseconds,
-                WriteTimeout = (int)_timeout.TotalMilliseconds
-            };
-        }
-
-        public SocketState State { get; }
-
-        public event Action<ReceiveStatus> Receiving;
-
-        public event Action<(string Action, byte[] Data)> Trace;
-
-        public virtual Task ConnectAsync()
-        {
-            return InitSocketAndNotifyAsync();
-        }
-
-        public async Task AwaitAvailableSocket(CancellationToken cancellation)
-        {
-            while (!State.IsAvailable && !cancellation.IsCancellationRequested)
-            {
-                Console.WriteLine($"Status: {State.Status}");
-                await Task.Delay(5, cancellation);
-            }
         }
 
         public virtual async ValueTask<int> SendAsync(ReadOnlySequence<byte> buffer)
@@ -113,42 +57,6 @@ namespace RedisSlimClient.Io.Net
 #else
             return ReceiveImplAsync(memory);
 #endif
-        }
-
-        public void Dispose()
-        {
-            if (_cancellationTokenSource.IsCancellationRequested)
-            {
-                return;
-            }
-
-            Receiving = null;
-
-            State.Terminated();
-
-            _cancellationTokenSource.Cancel();
-
-            ShutdownSocket();
-
-            _cancellationTokenSource.Dispose();
-
-            State.Dispose();
-
-            OnDisposing();
-        }
-
-        protected void OnReceiving(ReceiveStatus status)
-        {
-            Receiving?.Invoke(status);
-        }
-
-        protected void OnTrace(Func<(string name, byte[] data)> traceAction)
-        {
-            Trace?.Invoke(traceAction());
-        }
-
-        protected virtual void OnDisposing()
-        {
         }
 
 #if NET_CORE
@@ -190,7 +98,7 @@ namespace RedisSlimClient.Io.Net
 
         async ValueTask<int> ReceiveImplAsync(Memory<byte> memory)
         {
-            if (_cancellationTokenSource.IsCancellationRequested)
+            if (Cancellation.IsCancellationRequested)
             {
                 return 0;
             }
@@ -244,7 +152,7 @@ namespace RedisSlimClient.Io.Net
 
             OnReceiving(ReceiveStatus.Completed);
 
-            Trace?.Invoke((nameof(ReceiveAsync), memory.Slice(0, bytesRead).ToArray()));
+            OnTrace(() => (nameof(ReceiveAsync), memory.Slice(0, bytesRead).ToArray()));
 
             return bytesRead;
         }
@@ -268,7 +176,7 @@ namespace RedisSlimClient.Io.Net
             {
                 var result = await Socket.SendAsync(buffer, flags, CancellationToken);
 
-                Trace?.Invoke(($"{nameof(SendToSocket)},flags:{flags}", buffer.Slice(0, result).ToArray()));
+                OnTrace(() => ($"{nameof(SendToSocket)},flags:{flags}", buffer.Slice(0, result).ToArray()));
 
                 return result;
             }
@@ -281,7 +189,7 @@ namespace RedisSlimClient.Io.Net
 #else
         async ValueTask<int> SendToSocket(ReadOnlyMemory<byte> buffer, SocketFlags flags = SocketFlags.None)
         {
-            if (_cancellationTokenSource.IsCancellationRequested)
+            if (Cancellation.IsCancellationRequested)
             {
                 return 0;
             }
@@ -312,7 +220,7 @@ namespace RedisSlimClient.Io.Net
 
             var result = await _writeEventArgs;
 
-            Trace?.Invoke(($"{nameof(SendToSocket)},flags:{flags}", buffer.Slice(0, result).ToArray()));
+            OnTrace(() => ($"{nameof(SendToSocket)},flags:{flags}", buffer.Slice(0, result).ToArray()));
 
             return result;
         }
@@ -320,60 +228,10 @@ namespace RedisSlimClient.Io.Net
 
         bool CheckConnected() => (Socket?.Connected).GetValueOrDefault();
 
-        void ShutdownSocket()
+        protected override void BeforeShutdown()
         {
-            var socket = Socket;
-
-            Socket = null;
             _readEventArgs.Abandon();
             _writeEventArgs.Abandon();
-
-            Try(() => socket.Shutdown(SocketShutdown.Send));
-            Try(() => socket.Shutdown(SocketShutdown.Receive));
-            Try(socket.Close);
-            Try(socket.Dispose);
         }
-
-        Task InitSocketAndNotifyAsync()
-        {
-            if (_cancellationTokenSource.IsCancellationRequested)
-            {
-                throw new ObjectDisposedException(nameof(SocketFacade));
-            }
-
-            InitialiseSocket();
-
-            return State.DoConnect(() => Socket.ConnectAsync(_endPoint));
-        }
-
-        void InitialiseSocket()
-        {
-            if (Socket != null)
-            {
-                ShutdownSocket();
-            }
-
-            var socket = new Socket(_endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp)
-            {
-                ReceiveTimeout = (int)_timeout.TotalMilliseconds,
-                SendTimeout = (int)_timeout.TotalMilliseconds,
-                ReceiveBufferSize = 8192,
-                SendBufferSize = 8192,
-                NoDelay = true,
-                ExclusiveAddressUse = true
-            };
-
-            socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
-
-            Socket = socket;
-        }
-
-        void Try(Action act)
-        {
-            try { act(); }
-            catch { }
-        }
-
-        ~SocketFacade() { Dispose(); }
     }
 }

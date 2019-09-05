@@ -9,11 +9,17 @@ namespace RedisSlimClient.Configuration
         readonly IDictionary<string, IPHostEntry> _hostLookup;
         readonly IList<(IpSubnet subnet, IPAddress address)> _ipMapping;
 
-        public HostAddressResolver()
+        public HostAddressResolver() : this(new Dictionary<string, IPHostEntry>(), new List<(IpSubnet subnet, IPAddress address)>())
         {
-            _hostLookup = new Dictionary<string, IPHostEntry>();
-            _ipMapping = new List<(IpSubnet subnet, IPAddress address)>();
         }
+
+        HostAddressResolver(IDictionary<string, IPHostEntry> hostLookup, IList<(IpSubnet subnet, IPAddress address)> ipMappings)
+        {
+            _hostLookup = hostLookup;
+            _ipMapping = ipMappings;
+        }
+
+        public static string LocalHost => nameof(LocalHost).ToLower();
 
         public IHostAddressResolver Register(IPHostEntry ip)
         {
@@ -64,6 +70,11 @@ namespace RedisSlimClient.Configuration
             }
 
             return Dns.GetHostEntry(host);
+        }
+
+        public IHostAddressResolver Clone()
+        {
+            return new HostAddressResolver(_hostLookup.ToDictionary(k => k.Key, v => v.Value), _ipMapping.ToList());
         }
     }
 }
