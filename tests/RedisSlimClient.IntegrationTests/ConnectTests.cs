@@ -62,7 +62,7 @@ namespace RedisSlimClient.IntegrationTests
             }
         }
 
-        [Theory(Skip = "WIP")]
+        [Theory]
         [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
         public async Task PingAsync_WithNetworkError_WillReconnect(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
         {
@@ -70,7 +70,7 @@ namespace RedisSlimClient.IntegrationTests
 
             using (var client = await config.CreateProxiedClientAsync(r =>
             {
-                if (r.Sequence == 7)
+                if (r.Sequence == 40)
                 {
                     throw new Exception();
                 }
@@ -78,24 +78,35 @@ namespace RedisSlimClient.IntegrationTests
                 return r.ForwardResponse();
             }))
             {
+                await client.PingAllAsync();
+
                 var results = new List<bool>();
 
                 foreach (var x in Enumerable.Range(1, 25))
                 {
                     try
                     {
-                        var result = await client.PingAsync();
+                        using (var cancel = new CancellationTokenSource(200))
+                        {
+                            var result = await client.PingAsync(cancel.Token);
 
-                        results.Add(result);
+                            results.Add(result);
+                        }
 
                         _output.WriteLine("OK");
                     }
                     catch (Exception ex)
                     {
                         results.Add(false);
+                        _output.WriteLine("Error");
                         _output.WriteLine(ex.Message.ToString());
                     }
                 }
+
+                var compactedResults = results.SequentialDedupe();
+
+                Assert.Equal(3, compactedResults.Count);
+                Assert.True(compactedResults[0]);
             }
         }
 

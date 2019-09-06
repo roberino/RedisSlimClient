@@ -92,6 +92,8 @@ namespace RedisSlimClient.Configuration
                 str.Append($"{prop.Name}={val};");
             }
 
+            str.Append($"{nameof(Encoding)}={Encoding.WebName};");
+
             if (SslConfiguration.UseSsl)
             {
                 str.Append($"{nameof(SslConfiguration.UseSsl)}={SslConfiguration.UseSsl};{nameof(SslConfiguration.SslHost)}={SslConfiguration.SslHost}");
@@ -104,7 +106,10 @@ namespace RedisSlimClient.Configuration
         {
             return new ClientConfiguration(ToString(), NetworkConfiguration.Clone())
             {
-                ServerEndpoints = newEndpoints.ToArray()
+                ServerEndpoints = newEndpoints.ToArray(),
+                TelemetryWriter = TelemetryWriter,
+                SerializerFactory = SerializerFactory,
+                Encoding = Encoding
             };
         }
 

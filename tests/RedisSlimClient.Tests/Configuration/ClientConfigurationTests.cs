@@ -1,5 +1,6 @@
 ﻿using RedisSlimClient.Configuration;
 using System.Linq;
+using System.Text;
 using Xunit;
 
 namespace RedisSlimClient.UnitTests.Configuration
@@ -54,6 +55,21 @@ namespace RedisSlimClient.UnitTests.Configuration
             var configStr = config.ToString();
 
             var config2 = new ClientConfiguration(configStr);
+        }
+
+        [Fact]
+        public void ToString_ConfigWithEncoding_ReturnsValidEncoding()
+        {
+            var config = new ClientConfiguration("host1:1234|host2:4567;ClientName=client1")
+            {
+                Encoding = Encoding.GetEncoding("ISO-8859-1")
+            };
+
+            var configStr = config.ToString();
+
+            var config2 = new ClientConfiguration(configStr);
+
+            Assert.Equal(config.Encoding.CodePage, config2.Encoding.CodePage);
         }
     }
 }
