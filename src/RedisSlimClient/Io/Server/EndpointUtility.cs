@@ -3,6 +3,7 @@ using System;
 using System.Collections;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 
 namespace RedisSlimClient.Io.Server
 {
@@ -49,7 +50,7 @@ namespace RedisSlimClient.Io.Server
 
             var ips = dnsResolver.Resolve(host);
 
-            return ips.AddressList.First();
+            return ips.AddressList.OrderBy(x => x.AddressFamily == AddressFamily.InterNetwork ? 0 : 1).First();
         }
 
         public static bool AreIpEquivalent(this IHostAddressResolver dnsResolver, string host1, string host2)

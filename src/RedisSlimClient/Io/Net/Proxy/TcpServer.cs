@@ -66,7 +66,7 @@ namespace RedisSlimClient.Io.Net.Proxy
             {
                 try
                 {
-                    Task.Run(async () =>
+                    var _ = Task.Run(async () =>
                     {
                         await Task.Delay(100);
 

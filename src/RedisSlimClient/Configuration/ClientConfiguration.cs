@@ -82,7 +82,14 @@ namespace RedisSlimClient.Configuration
 
             foreach (var prop in props)
             {
-                str.Append($"{prop.Name}={prop.GetValue(this)};");
+                var val = prop.GetValue(this);
+
+                if (val == null)
+                {
+                    continue;
+                }
+
+                str.Append($"{prop.Name}={val};");
             }
 
             if (SslConfiguration.UseSsl)
