@@ -1,4 +1,5 @@
 ﻿using RedisSlimClient.Configuration;
+using RedisSlimClient.Io.Monitoring;
 using RedisSlimClient.Io.Net;
 using RedisSlimClient.Io.Net.Proxy;
 using RedisSlimClient.Io.Server;
@@ -14,12 +15,18 @@ namespace RedisSlimClient
     {
         public static IRedisReader CreateReader(this ClientConfiguration configuration)
         {
-            return RedisClient.Create(configuration);
+            return CreateClient(configuration);
         }
 
         public static IRedisClient CreateClient(this ClientConfiguration configuration)
         {
-            return RedisClient.Create(configuration);
+            DefaultMonitoringStrategy mon = null;
+
+            var client = RedisClient.Create(configuration, () => mon?.Dispose());
+
+            mon = new DefaultMonitoringStrategy(client);
+
+            return client;
         }
 
         public static async Task<IRedisClient> CreateProxiedClientAsync(this ClientConfiguration configuration, Func<Request, Response> networkInterceptor)
@@ -55,13 +62,21 @@ namespace RedisSlimClient
                 await proxy.StartAsync(new RequestHandler(networkInterceptor));
             }
 
-            return RedisClient.Create(proxyConfig, () =>
+
+            DefaultMonitoringStrategy mon = null;
+
+            var client = RedisClient.Create(proxyConfig, () =>
             {
+                mon?.Dispose();
                 foreach(var proxy in proxies)
                 {
                     proxy.Dispose();
                 }
             });
+
+            mon = new DefaultMonitoringStrategy(client);
+
+            return client;
         }
     }
 }

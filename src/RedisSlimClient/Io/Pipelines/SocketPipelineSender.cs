@@ -140,6 +140,7 @@ namespace RedisSlimClient.Io.Pipelines
                     error = ex;
                     StateChanged?.Invoke(PipelineStatus.Faulted);
                     Error?.Invoke(error);
+                    await Task.Delay(10);
                 }
             }
 

@@ -1,8 +1,9 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 
 namespace RedisSlimClient.Io.Monitoring
 {
-    class DefaultMonitoringStrategy
+    class DefaultMonitoringStrategy : IDisposable
     {
         readonly Timer _timer;
 
@@ -21,6 +22,11 @@ namespace RedisSlimClient.Io.Monitoring
             {
 
             }
+        }
+
+        public void Dispose()
+        {
+            _timer.Dispose();
         }
     }
 }

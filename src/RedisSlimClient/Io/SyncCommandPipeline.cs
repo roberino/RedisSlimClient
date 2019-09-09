@@ -17,16 +17,16 @@ namespace RedisSlimClient.Io
 {
     class SyncCommandPipeline : ICommandPipeline
     {
-        readonly object _lockObj = new object();
         readonly IManagedSocket _socket;
         readonly IWorkScheduler _scheduler;
-        readonly IEnumerable<RedisObjectPart> _reader;
         readonly CancellationTokenSource _cancellation;
+        readonly AsyncLock _lock;
 
         int _pendingWrites;
         int _pendingReads;
 
         Stream _writeStream;
+        IEnumerable<RedisObjectPart> _reader;
 
         volatile PipelineStatus _status;
 
@@ -37,6 +37,7 @@ namespace RedisSlimClient.Io
             _socket = socket;
             _scheduler = new TimeThrottledScheduler(scheduler ?? ThreadPoolScheduler.Instance, TimeSpan.FromMilliseconds(500));
             _reader = new ArraySegmentToRedisObjectReader(new StreamIterator(networkStream));
+            _lock = new AsyncLock();
 
             _status = PipelineStatus.Uninitialized;
 
@@ -46,9 +47,7 @@ namespace RedisSlimClient.Io
             {
                 if (x.Status == SocketStatus.WriteFault || x.Status == SocketStatus.ReadFault)
                 {
-                    _status = PipelineStatus.Broken;
-
-                    _scheduler.Schedule(() => Reconnect(x.Id));
+                    BeginReconnect(x);
                 }
             };
         }
@@ -87,16 +86,6 @@ namespace RedisSlimClient.Io
                 throw new ObjectDisposedException(nameof(SyncCommandPipeline));
             }
 
-            if (_writeStream == null)
-            {
-                throw new ConnectionUnavailableException();
-            }
-
-            if (_status != PipelineStatus.Ok && !isAdmin)
-            {
-                throw new ConnectionUnavailableException();
-            }
-
             command.AssignedEndpoint = _socket.EndpointIdentifier;
 
             command.OnExecute = args =>
@@ -105,15 +94,33 @@ namespace RedisSlimClient.Io
                 return Task.CompletedTask;
             };
 
-            lock (_lockObj)
+            while (_status == PipelineStatus.Broken || (_status == PipelineStatus.Reinitializing && !isAdmin))
             {
-                cancellation.ThrowIfCancellationRequested();
+                await Task.Delay(10, cancellation);
+            }
+
+            Action postActions = () => { };
+
+            using (await _lock.LockAsync(cancellation))
+            {
+                if (_writeStream == null || (_status != PipelineStatus.Ok && !isAdmin))
+                {
+                    throw new ConnectionUnavailableException();
+                }
 
                 _pendingWrites++;
 
                 try
                 {
-                    command.Execute().GetAwaiter().GetResult();
+                    await command.Execute();
+                }
+                catch (IOException ex)
+                {
+                    postActions = () =>
+                    {
+                        _socket.State.WriteError(ex);
+                        throw ex;
+                    };
                 }
                 finally
                 {
@@ -132,10 +139,13 @@ namespace RedisSlimClient.Io
 
                     command.Complete(redisResult);
                 }
-                catch
+                catch (IOException ex)
                 {
-                    _status = PipelineStatus.Broken;
-                    throw;
+                    postActions = () =>
+                    {
+                        _socket.State.ReadError(ex);
+                        throw ex;
+                    };
                 }
                 finally
                 {
@@ -143,11 +153,20 @@ namespace RedisSlimClient.Io
                 }
             }
 
+            postActions();
+
             var result = await command;
 
             _status = PipelineStatus.Ok;
 
             return result;
+        }
+
+        private void BeginReconnect((SocketStatus Status, long Id) x)
+        {
+            _status = PipelineStatus.Broken;
+
+            _scheduler.Schedule(() => Reconnect(x.Id));
         }
 
         async Task Reconnect(long sequence)
@@ -161,15 +180,19 @@ namespace RedisSlimClient.Io
 
             var currentStream = _writeStream;
 
-            currentStream?.Dispose();
-
             _writeStream = null;
+            _reader = null;
+
+            currentStream?.Dispose();
 
             await Attempt.WithExponentialBackoff(async () =>
             {
-
-                await _socket.ConnectAsync();
-                _writeStream = await _socket.CreateStream();
+                using (await _lock.LockAsync())
+                {
+                    await _socket.ConnectAsync();
+                    _writeStream = await _socket.CreateStream();
+                    _reader = new ArraySegmentToRedisObjectReader(new StreamIterator(_writeStream));
+                }
 
                 await ((AsyncEvent<ICommandPipeline>)Initialising).PublishAsync(this);
             }, TimeSpan.FromSeconds(5), cancellation: _cancellation.Token);

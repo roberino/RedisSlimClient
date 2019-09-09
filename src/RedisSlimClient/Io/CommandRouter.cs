@@ -76,9 +76,9 @@ namespace RedisSlimClient.Io
 
         public async Task<ICommandExecutor> RouteCommandAsync(ICommandIdentity command)
         {
-            var connections = await GetAvailableConnections(command, s => s == PipelineStatus.Ok || s == PipelineStatus.Uninitialized);
+            var connections = await GetAvailableConnections(command, s => true);
 
-            foreach (var match in connections)
+            foreach (var match in connections.OrderBy(x => HealthPriority(x.Status)))
             {
                 try
                 {
@@ -95,6 +95,20 @@ namespace RedisSlimClient.Io
         public void Dispose()
         {
             _subConnections.Dispose();
+        }
+
+        int HealthPriority(PipelineStatus status)
+        {
+            switch (status)
+            {
+                case PipelineStatus.Broken: return 2;
+                case PipelineStatus.Reinitializing: return 1;
+                case PipelineStatus.Ok:
+                case PipelineStatus.Uninitialized:
+                    return 0;
+            }
+
+            return 100;
         }
 
         async Task<IEnumerable<ICommandExecutor>> Select(IOrderedEnumerable<IConnectionSubordinate> connections, Func<ServerRoleType, bool> filter, bool includeBroken = false)

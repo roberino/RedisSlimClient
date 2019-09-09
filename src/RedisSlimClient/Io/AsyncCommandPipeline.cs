@@ -33,7 +33,7 @@ namespace RedisSlimClient.Io
 
             new CompletionHandler(_pipeline.Receiver, _commandQueue, workScheduler).AttachTelemetry(telemetryWriter, Severity.Diagnostic);
 
-            var throttledScheduler = new TimeThrottledScheduler(workScheduler, TimeSpan.FromMilliseconds(500));
+            var throttledScheduler = new TimeThrottledScheduler(ThreadPoolScheduler.Instance, TimeSpan.FromMilliseconds(500));
 
             _pipeline.Faulted += () =>
             {
@@ -45,7 +45,7 @@ namespace RedisSlimClient.Io
                 }, nameof(Reconnect));
             };
 
-            _pipeline.Schedule(workScheduler);
+            _pipeline.Schedule(ThreadPoolScheduler.Instance);
 
             _status = PipelineStatus.Uninitialized;
             Initialising = new AsyncEvent<ICommandPipeline>();

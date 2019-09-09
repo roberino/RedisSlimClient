@@ -2,6 +2,7 @@
 using RedisSlimClient.Io;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -50,6 +51,7 @@ namespace RedisSlimClient.IntegrationTests
 
         [Theory]
         [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
+        [InlineData(PipelineMode.Sync, ConfigurationScenario.NonSslBasic)]
         public async Task PingAsync_ViaProxy_ReturnsOk(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
         {
             var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine);
@@ -64,6 +66,7 @@ namespace RedisSlimClient.IntegrationTests
 
         [Theory]
         [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
+        [InlineData(PipelineMode.Sync, ConfigurationScenario.NonSslBasic)]
         public async Task PingAsync_WithNetworkError_WillReconnect(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
         {
             var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine);
