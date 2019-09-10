@@ -164,16 +164,15 @@ namespace RedisSlimClient.UnitTests.Io
         }
 
         [Fact]
-        public void RouteCommandAsync_AllConnectionsBroken_ThrowsNoAvailableConnectionException()
+        public async Task RouteCommandAsync_AllConnectionsBroken_ReturnsBrokenConnection()
         {
             using (var connection = CreateConnection())
             {
                 WhenAllConnectionsBroken();
 
-                Assert.Throws<NoAvailableConnectionException>(() =>
-                {
-                    connection.RouteCommandAsync(Substitute.For<ICommandIdentity>()).GetAwaiter().GetResult();
-                });
+                var selected = await connection.RouteCommandAsync(Substitute.For<ICommandIdentity>());
+
+                Assert.NotNull(selected);
             }
         }
 

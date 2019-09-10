@@ -1,26 +1,30 @@
-﻿using System;
+﻿using RedisSlimClient.Telemetry;
+using System;
 using System.Threading;
 
 namespace RedisSlimClient.Io.Monitoring
 {
     class DefaultMonitoringStrategy : IDisposable
     {
-        readonly Timer _timer;
+        TimeSpan DefaultInterval => TimeSpan.FromSeconds(1);
 
-        public DefaultMonitoringStrategy(IRedisDiagnosticClient client, int heartbeatInterval = 1000)
+        readonly Timer _timer;
+        readonly ITelemetryWriter _telemetryWriter;
+
+        public DefaultMonitoringStrategy(IRedisDiagnosticClient client, ITelemetryWriter telemetryWriter, TimeSpan? heartbeatInterval)
         {
-            _timer = new Timer(x => OnHeartbeat((IRedisDiagnosticClient)x), client, heartbeatInterval, heartbeatInterval);
+            _timer = new Timer(x => OnHeartbeat((IRedisDiagnosticClient)x), client, heartbeatInterval.GetValueOrDefault(DefaultInterval), heartbeatInterval.GetValueOrDefault(DefaultInterval));
+            _telemetryWriter = telemetryWriter;
         }
 
-        static void OnHeartbeat(IRedisDiagnosticClient client)
+        void OnHeartbeat(IRedisDiagnosticClient client)
         {
             try
             {
-                var results = client.PingAllAsync();
+                _telemetryWriter.ExecuteAsync(c => client.PingAllAsync(), nameof(OnHeartbeat), Severity.Diagnostic).GetAwaiter().GetResult();
             }
             catch
             {
-
             }
         }
 

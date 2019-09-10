@@ -43,7 +43,7 @@ namespace RedisSlimClient.UnitTests
                 SerializerFactory = SetupSerializer(arg)
             };
 
-            var client = new RedisClient(config, _ => connection);
+            var client = new RedisClient(new RedisController(config, _ => connection));
 
             var result = await client.SetObjectAsync("x", arg);
             

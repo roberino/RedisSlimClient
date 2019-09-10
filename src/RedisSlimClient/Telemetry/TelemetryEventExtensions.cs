@@ -15,7 +15,7 @@ namespace RedisSlimClient.Telemetry
             }, name).GetAwaiter().GetResult();
         }
 
-        public static async Task<T> ExecuteAsync<T>(this ITelemetryWriter writer, Func<TelemetricContext, Task<T>> act, string name = null)
+        public static async Task<T> ExecuteAsync<T>(this ITelemetryWriter writer, Func<TelemetricContext, Task<T>> act, string name = null, Severity severity = Severity.Info)
         {
             var timer = new Stopwatch();
 
@@ -26,9 +26,12 @@ namespace RedisSlimClient.Telemetry
 
             var ev = TelemetryEvent.CreateStart(name);
 
+            ev.Severity = severity;
+
             var endEv = ev.CreateChild(name);
 
             endEv.Action = "End";
+            endEv.Severity = severity;
 
             var ctx = new TelemetricContext(writer, ev, endEv.Dimensions);
 

@@ -24,7 +24,10 @@ namespace RedisSlimClient
 
             var client = RedisClient.Create(configuration, () => mon?.Dispose());
 
-            mon = new DefaultMonitoringStrategy(client);
+            if (configuration.HealthCheckInterval != TimeSpan.Zero)
+            {
+                mon = new DefaultMonitoringStrategy(client, configuration.TelemetryWriter, configuration.HealthCheckInterval);
+            }
 
             return client;
         }
@@ -74,7 +77,10 @@ namespace RedisSlimClient
                 }
             });
 
-            mon = new DefaultMonitoringStrategy(client);
+            if (configuration.HealthCheckInterval != TimeSpan.Zero)
+            {
+                mon = new DefaultMonitoringStrategy(client, configuration.TelemetryWriter, configuration.HealthCheckInterval);
+            }
 
             return client;
         }

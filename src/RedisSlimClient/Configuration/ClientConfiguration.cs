@@ -46,6 +46,8 @@ namespace RedisSlimClient.Configuration
 
         public Uri[] ServerEndpoints { get; private set; }
 
+        public TimeSpan HealthCheckInterval { get; set; } = TimeSpan.FromSeconds(1);
+
         public TimeSpan DefaultOperationTimeout { get; set; } = TimeSpan.FromSeconds(5);
 
         public TimeSpan ConnectTimeout { get; set; } = TimeSpan.FromSeconds(5);

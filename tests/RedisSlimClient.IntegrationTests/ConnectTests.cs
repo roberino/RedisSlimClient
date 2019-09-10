@@ -83,33 +83,34 @@ namespace RedisSlimClient.IntegrationTests
             {
                 await client.PingAllAsync();
 
-                var results = new List<bool>();
-
-                foreach (var x in Enumerable.Range(1, 25))
-                {
-                    try
-                    {
-                        using (var cancel = new CancellationTokenSource(200))
-                        {
-                            var result = await client.PingAsync(cancel.Token);
-
-                            results.Add(result);
-                        }
-
-                        _output.WriteLine("OK");
-                    }
-                    catch (Exception ex)
-                    {
-                        results.Add(false);
-                        _output.WriteLine("Error");
-                        _output.WriteLine(ex.Message.ToString());
-                    }
-                }
-
-                var compactedResults = results.SequentialDedupe();
+                var compactedResults = await ExecuteMultipleRequests(client);
 
                 Assert.Equal(3, compactedResults.Count);
                 Assert.True(compactedResults[0]);
+            }
+        }
+
+        [Theory]
+        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
+        [InlineData(PipelineMode.Sync, ConfigurationScenario.NonSslBasic)]
+        public async Task PingAsync_WithInitialNetworkError_WillReconnect(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
+        {
+            var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine);
+
+            using (var client = await config.CreateProxiedClientAsync(r =>
+            {
+                if (r.Sequence < 2)
+                {
+                    throw new Exception();
+                }
+
+                return r.ForwardResponse();
+            }))
+            {
+                var compactedResults = await ExecuteMultipleRequests(client);
+
+                Assert.Equal(2, compactedResults.Count);
+                Assert.True(compactedResults[1]);
             }
         }
 
@@ -267,5 +268,36 @@ namespace RedisSlimClient.IntegrationTests
                 Assert.Equal("abcdefg", dataString);
             }
         }
+
+
+        private async Task<IList<bool>> ExecuteMultipleRequests(IRedisClient client, int numberOfRequests = 25)
+        {
+            var results = new List<bool>();
+
+            foreach (var x in Enumerable.Range(1, numberOfRequests))
+            {
+                try
+                {
+                    using (var cancel = new CancellationTokenSource(200))
+                    {
+                        var result = await client.PingAsync(cancel.Token);
+
+                        results.Add(result);
+                    }
+
+                    _output.WriteLine("OK");
+                }
+                catch (Exception ex)
+                {
+                    results.Add(false);
+                    _output.WriteLine("Error");
+                    _output.WriteLine(ex.Message.ToString());
+                }
+            }
+
+            var compactedResults = results.SequentialDedupe();
+            return compactedResults;
+        }
+
     }
 }
