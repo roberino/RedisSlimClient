@@ -97,6 +97,8 @@ namespace RedisSlimClient.IntegrationTests
         {
             var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine);
 
+            config.ConnectTimeout = TimeSpan.FromSeconds(1);
+
             using (var client = await config.CreateProxiedClientAsync(r =>
             {
                 if (r.Sequence < 2)
