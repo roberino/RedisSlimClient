@@ -133,7 +133,12 @@ namespace RedisSlimClient.Io
 
                 try
                 {
-                    var redisResult = _reader.ToObjects().First();
+                    var redisResult = _reader.ToObjects().FirstOrDefault();
+
+                    if (redisResult == null)
+                    {
+                        throw new IOException("No data received");
+                    }
 
                     cancellation.ThrowIfCancellationRequested();
 
