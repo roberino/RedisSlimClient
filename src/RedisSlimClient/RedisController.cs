@@ -12,6 +12,8 @@ namespace RedisSlimClient
 {
     class RedisController : IDisposable
     {
+        const int ProactiveDelay = 100;
+
         readonly ICommandRouter _connection;
         readonly Action _disposing;
 
@@ -29,6 +31,34 @@ namespace RedisSlimClient
             var cmdPipe = await RouteCommandAsync(cmd);
 
             return await cmdPipe.ExecuteWithCancellation(cmd, cancellation, Configuration.DefaultOperationTimeout);
+        }
+
+        public async Task<TResult> GetResponse<T, TResult>(Func<IRedisResult<T>> cmdFactory, CancellationToken cancellation, Func<T, ISerializerSettings, TResult> resultConverter)
+        {
+            if (Configuration.FallbackStrategy == FallbackStrategy.None)
+            {
+                return resultConverter(await GetResponse(cmdFactory(), cancellation), Configuration);
+            }
+
+            if (cancellation == default)
+            {
+                using (var cancellationSource = new CancellationTokenSource(Configuration.DefaultOperationTimeout))
+                {
+                    if (Configuration.FallbackStrategy == FallbackStrategy.ProactiveRetry)
+                    {
+                        return resultConverter(await GetResponseWithRetryProactive(cmdFactory, cancellationSource.Token), Configuration);
+                    }
+
+                    return resultConverter(await GetResponseWithRetry(cmdFactory, cancellationSource.Token), Configuration);
+                }
+            }
+
+            if (Configuration.FallbackStrategy == FallbackStrategy.ProactiveRetry)
+            {
+                return resultConverter(await GetResponseWithRetryProactive(cmdFactory, cancellation), Configuration);
+            }
+
+            return resultConverter(await GetResponseWithRetry(cmdFactory, cancellation), Configuration);
         }
 
         public async Task<TResult[]> GetResponses<TCmd, TResult>(Func<IRedisResult<TCmd>> cmdFactory, Func<IRedisResult<TCmd>, TCmd, TResult> translator, Func<IRedisResult<TCmd>, Exception, TResult> errorTranslator, ConnectionTarget target, CancellationToken cancellation = default)
@@ -83,6 +113,15 @@ namespace RedisSlimClient
             return rstr.Value;
         }
 
+        public async Task<byte[]> GetFirstAvailableResponse(IRedisResult<IRedisObject> cmd, CancellationToken cancellation = default)
+        {
+            var cmdPipe = await RouteCommandAsync(cmd);
+
+            var rstr = (RedisString)await cmdPipe.ExecuteWithCancellation(cmd, cancellation, Configuration.DefaultOperationTimeout);
+
+            return rstr.Value;
+        }
+
         public async Task<IReadOnlyCollection<TCmd>> GetMultikeyResultAsync<TCmd>(IReadOnlyCollection<string> keys, Func<RedisKey[], IRedisResult<TCmd>> cmdFactory,  CancellationToken cancellation = default)
         {
             var cmd = new MGetCommand(RedisKeys.FromStrings(keys));
@@ -107,6 +146,106 @@ namespace RedisSlimClient
             catch { }
 
             _connection.Dispose();
+        }
+
+        async Task<T> GetResponseWithRetry<T>(Func<IRedisResult<T>> cmdFactory, CancellationToken cancellation)
+        {
+            var attempt = 1;
+            IRedisResult<T> currentResult = null;
+
+            while (!cancellation.IsCancellationRequested)
+            {
+                currentResult = cmdFactory();
+
+                currentResult.AttemptSequence = attempt++;
+
+                try
+                {
+                    var cmdPipe = await RouteCommandAsync(currentResult);
+
+                    return await cmdPipe.ExecuteWithCancellation(currentResult, cancellation, Configuration.DefaultOperationTimeout);
+                }
+                catch (TaskCanceledException)
+                {
+                    throw;
+                }
+                catch (Exception)
+                {
+                    if (cancellation.IsCancellationRequested)
+                    {
+                        throw;
+                    }
+                }
+            }
+
+            throw new TaskCanceledException();
+        }
+
+        async Task<T> GetResponseWithRetryProactive<T>(Func<IRedisResult<T>> cmdFactory, CancellationToken cancellation)
+        {
+            var attempt = 1;
+
+            while (!cancellation.IsCancellationRequested)
+            {
+                try
+                {
+                    ICommandExecutor currentPipe = null;
+
+                    async Task<(T value, bool success)> GetResult()
+                    {
+                        var currentResult = cmdFactory();
+
+                        currentResult.AttemptSequence = attempt++;
+
+                        var nextPipe = await RouteCommandAsync(currentResult);
+
+                        if (ReferenceEquals(nextPipe, currentPipe))
+                        {
+                            return (default, false);
+                        }
+
+                        currentPipe = nextPipe;
+
+                        return (await currentPipe.ExecuteWithCancellation(currentResult, cancellation, Configuration.DefaultOperationTimeout), true);
+                    }
+
+                    var resultTask = GetResult();
+
+                    await Task.WhenAny(resultTask, Task.Delay(ProactiveDelay, cancellation));
+
+                    if (!resultTask.IsCompleted)
+                    {
+                        var resultTaskFallback = GetResult();
+
+                        await Task.WhenAny(resultTask, resultTaskFallback);
+    
+                        if (resultTaskFallback.IsCompleted && resultTaskFallback.Result.success)
+                        {
+                            return resultTaskFallback.Result.value;
+                        }
+
+                        return (await resultTask).value;
+                    }
+
+                    if (resultTask.IsCompleted && resultTask.Result.success)
+                    {
+                        return resultTask.Result.value;
+                    }
+                }
+                catch (TaskCanceledException)
+                {
+                    throw;
+                }
+                catch (Exception)
+                {
+                    if (cancellation.IsCancellationRequested)
+                    {
+                        throw;
+                    }
+                }
+            }
+
+            throw new TaskCanceledException();
         }
 
         async Task<ICommandExecutor> RouteCommandAsync(IRedisCommand cmd)

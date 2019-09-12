@@ -37,6 +37,7 @@ namespace RedisSlimClient.Io.Commands
 
     interface IRedisCommand : ICommandIdentity
     {
+        int AttemptSequence { get; set; }
         Action<CommandState> OnStateChanged { set; }
         Func<object[], Task> OnExecute { set; }
         bool CanBeCompleted { get; }

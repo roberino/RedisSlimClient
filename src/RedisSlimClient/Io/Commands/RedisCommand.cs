@@ -67,6 +67,8 @@ namespace RedisSlimClient.Io.Commands
 
         public string CommandText { get; }
 
+        public int AttemptSequence { get; set; }
+
         public async Task Execute()
         {
             if (OnExecute != null)

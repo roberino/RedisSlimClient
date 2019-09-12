@@ -7,6 +7,7 @@ using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace RedisSlimClient
@@ -27,6 +28,23 @@ namespace RedisSlimClient
             if (configuration.HealthCheckInterval != TimeSpan.Zero)
             {
                 mon = new DefaultMonitoringStrategy(client, configuration.TelemetryWriter, configuration.HealthCheckInterval);
+            }
+
+            return client;
+        }
+
+        public static async Task<IRedisClient> ConnectAsync(this IRedisClient client, CancellationToken cancellation = default)
+        {
+            var errors = (await client.PingAllAsync(cancellation)).Where(r => !r.Ok).ToArray();
+
+            if (errors.Length > 0)
+            {
+                if (errors.Length == 1)
+                {
+                    throw errors[0].Error;
+                }
+
+                throw new AggregateException(errors.Select(e => e.Error));
             }
 
             return client;

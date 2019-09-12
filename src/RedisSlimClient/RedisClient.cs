@@ -38,11 +38,14 @@ namespace RedisSlimClient
 
         public Task<bool> SetObjectAsync<T>(string key, T obj, CancellationToken cancellation = default) => _controller.GetResponse(new ObjectSetCommand<T>(key, _controller.Configuration, obj), cancellation);
 
-        public Task<T> GetObjectAsync<T>(string key, CancellationToken cancellation = default) => _controller.GetResponse<T>(new ObjectGetCommand<T>(key, _controller.Configuration), cancellation);
+        public Task<T> GetObjectAsync<T>(string key, CancellationToken cancellation = default) 
+            => _controller.GetResponse<T, T>(() => new ObjectGetCommand<T>(key, _controller.Configuration), cancellation, (x, _) => x);
 
-        public Task<byte[]> GetBytesAsync(string key, CancellationToken cancellation = default) => _controller.GetBinaryResponse(new GetCommand(key));
+        public Task<byte[]> GetBytesAsync(string key, CancellationToken cancellation = default)
+            => _controller.GetResponse(() => new GetCommand(key), cancellation, ResultConvertion.AsBytes);
 
-        public Task<string> GetStringAsync(string key, CancellationToken cancellation = default) => _controller.GetTextResponse(new GetCommand(key), cancellation);
+        public Task<string> GetStringAsync(string key, CancellationToken cancellation = default) 
+            => _controller.GetResponse(() => new GetCommand(key), cancellation, ResultConvertion.AsString);
 
         public async Task<IReadOnlyCollection<string>> GetStringsAsync(IReadOnlyCollection<string> keys, CancellationToken cancellation = default)
         {

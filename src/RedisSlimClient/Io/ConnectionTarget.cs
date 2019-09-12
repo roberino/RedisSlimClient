@@ -3,6 +3,7 @@
     enum ConnectionTarget
     {
         FirstAvailable,
+        AllAvailableNodes,
         AllAvailableMasters,
         AllNodes
     }

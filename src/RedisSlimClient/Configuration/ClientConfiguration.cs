@@ -46,6 +46,8 @@ namespace RedisSlimClient.Configuration
 
         public Uri[] ServerEndpoints { get; private set; }
 
+        public FallbackStrategy FallbackStrategy { get; set; } = FallbackStrategy.Retry;
+
         public TimeSpan HealthCheckInterval { get; set; } = TimeSpan.FromSeconds(5);
 
         public TimeSpan DefaultOperationTimeout { get; set; } = TimeSpan.FromSeconds(5);
@@ -164,6 +166,9 @@ namespace RedisSlimClient.Configuration
                             case nameof(WriteBufferSize):
                                 WriteBufferSize = int.Parse(kv[1]);
                                 break;
+                            case nameof(FallbackStrategy):
+                                FallbackStrategy = ParseEnum<FallbackStrategy>(kv[1]);
+                                break;
                             case nameof(SslConfiguration.SslHost):
                                 SslConfiguration.SslHost = kv[1];
                                 break;
@@ -174,7 +179,7 @@ namespace RedisSlimClient.Configuration
                                 SslConfiguration.CertificatePath = kv[1];
                                 break;
                             case nameof(PipelineMode):
-                                PipelineMode = (PipelineMode)Enum.Parse(typeof(PipelineMode), kv[1], true);
+                                PipelineMode = ParseEnum<PipelineMode>(kv[1]);
                                 break;
                             case nameof(NetworkConfiguration.PortMappings):
                                 NetworkConfiguration.PortMappings.Import(kv[1]);
@@ -212,6 +217,15 @@ namespace RedisSlimClient.Configuration
                     ClientName = parts[0];
                 }
             }
+        }
+
+        static T ParseEnum<T>(string value) where T : struct
+        {
+            if (Enum.TryParse(value, true, out T result))
+            {
+                return result;
+            }
+            throw new ArgumentException(value);
         }
 
         Uri ParseUri(string uri)

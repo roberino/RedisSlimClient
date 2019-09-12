@@ -59,19 +59,20 @@ namespace RedisSlimClient.Io
 
         public async Task<IEnumerable<ICommandExecutor>> RouteCommandAsync(ICommandIdentity command, ConnectionTarget target)
         {
-            var connections = await GetAvailableConnections(command, s => target == ConnectionTarget.AllNodes || s == PipelineStatus.Ok || s == PipelineStatus.Uninitialized);
+            var connections = (await GetAvailableConnections(command, s => target == ConnectionTarget.AllNodes || s == PipelineStatus.Ok || s == PipelineStatus.Uninitialized))
+                .OrderBy(x => HealthPriority(x.Status));
 
-            if (target == ConnectionTarget.AllAvailableMasters)
+            switch (target)
             {
-                return await Select(connections, r => r == ServerRoleType.Master);
+                case ConnectionTarget.AllAvailableNodes:
+                    return await Select(connections, _ => true);
+                case ConnectionTarget.AllAvailableMasters:
+                    return await Select(connections, r => r == ServerRoleType.Master);
+                case ConnectionTarget.FirstAvailable:
+                    return (await Select(connections, _ => true)).Take(1);
+                default:
+                    return await Select(connections, _ => true, true);
             }
-
-            if (target == ConnectionTarget.FirstAvailable)
-            {
-                return (await Select(connections, _ => true)).Take(1);
-            }
-
-            return await Select(connections, _ => true, true);
         }
 
         public async Task<ICommandExecutor> RouteCommandAsync(ICommandIdentity command)

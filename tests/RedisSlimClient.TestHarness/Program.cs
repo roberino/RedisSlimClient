@@ -14,7 +14,7 @@ namespace RedisSlimClient.TestHarness
                 TelemetryWriter = new TextTelemetryWriter(Console.WriteLine, Severity.All)
             };
 
-            using (var client = config.CreateClient())
+            using (var client = await config.CreateClient().ConnectAsync())
             {
                 int i = 0;
 

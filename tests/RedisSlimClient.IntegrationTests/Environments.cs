@@ -21,7 +21,8 @@ namespace RedisSlimClient.IntegrationTests
             {
                 PipelineMode = pipelineMode,
                 DefaultOperationTimeout = TimeSpan.FromMilliseconds(10000),
-                ConnectTimeout = TimeSpan.FromMilliseconds(15000)
+                ConnectTimeout = TimeSpan.FromMilliseconds(15000),
+                FallbackStrategy = FallbackStrategy.ProactiveRetry
             };
 
             if (output != null)
