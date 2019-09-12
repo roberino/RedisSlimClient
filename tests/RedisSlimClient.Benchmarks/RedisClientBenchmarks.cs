@@ -22,11 +22,17 @@ namespace RedisSlimClient.Benchmarks
         [Params(PipelineMode.AsyncPipeline, PipelineMode.Sync)]
         public PipelineMode PipelineMode { get; set; }
 
+        [Params(FallbackStrategy.None, FallbackStrategy.ProactiveRetry, FallbackStrategy.Retry)]
+        public FallbackStrategy FallbackStrategy { get; set; }
+
         [Params(1, 4)]
         public int ConnectionPoolSize { get; set; }
 
         [Params(5, 10)]
         public int DataCollectionSize { get; set; }
+
+        [Params(true, false)]
+        public bool TelemetryOn { get; set; }
 
         [Params(1, 4)]
         public int ParallelOps { get; set; }
@@ -49,7 +55,8 @@ namespace RedisSlimClient.Benchmarks
                     PipelineMode = PipelineMode,
                     ConnectTimeout = TimeSpan.FromMilliseconds(500),
                     DefaultOperationTimeout = TimeSpan.FromMilliseconds(500),
-                    TelemetryWriter = new TextTelemetryWriter(Console.WriteLine, Severity.Error)
+                    FallbackStrategy = FallbackStrategy,
+                    TelemetryWriter = TelemetryOn ? new TextTelemetryWriter(Console.WriteLine, Severity.Error | Severity.Warn | Severity.Info) : NullTelemetry.Instance
                 }.CreateClient()
             );
         }

@@ -16,12 +16,7 @@ namespace RedisSlimClient.Configuration
             get => _value;
             set
             {
-                if (value == null)
-                {
-                    throw new ArgumentNullException(typeof(T).Name);
-                }
-
-                _value = value;
+                _value = value ?? throw new ArgumentNullException(typeof(T).Name);
             }
         }
 
