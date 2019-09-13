@@ -8,9 +8,9 @@ init:
 install:
 before_build:
   - cmd: dotnet --version
-  - cmd: dotnet restore ./RedisSlimClient.sln --verbosity m
+  - cmd: dotnet restore ./RedisTribute.sln --verbosity m
 build_script:
-  - cmd: dotnet build ./RedisSlimClient.sln
+  - cmd: dotnet build ./RedisTribute.sln
 after_build:
 test_script:
-  - cmd: dotnet test ./tests/RedisSlimClient.Tests/RedisSlimClient.UnitTests.csproj --filter TestCategory!=BuildOmit
+  - cmd: dotnet test ./tests/RedisTribute.Tests/RedisTribute.UnitTests.csproj --filter TestCategory!=BuildOmit

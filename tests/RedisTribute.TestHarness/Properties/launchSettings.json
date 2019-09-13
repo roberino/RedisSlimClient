@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "RedisTribute.TestHarness": {
+      "commandName": "Project",
+      "commandLineArgs": "localhost:6379"
+    }
+  }
+}

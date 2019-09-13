@@ -1,10 +1,10 @@
-[![Build status](https://ci.appveyor.com/api/projects/status/0eagkgc04t1jvg1m?svg=true)](https://ci.appveyor.com/project/roberino/redisslimclient)
+[![Build status](https://ci.appveyor.com/api/projects/status/0eagkgc04t1jvg1m?svg=true)](https://ci.appveyor.com/project/roberino/RedisTribute)
 
-[![Build Status](https://travis-ci.org/roberino/RedisSlimClient.svg?branch=master)](https://travis-ci.org/roberino/RedisSlimClient)
+[![Build Status](https://travis-ci.org/roberino/RedisTribute.svg?branch=master)](https://travis-ci.org/roberino/RedisTribute)
 
-# RedisSlimClient
+# RedisTribute
 
-A work in progress. RedisSlimClient is a dotnet standard client for Redis, written from the ground up.
+A work in progress. RedisTribute is a dotnet standard client for Redis, written from the ground up.
 
 The main aims of the client are:
 
@@ -51,15 +51,17 @@ localhost:6379;Password=p@ssw0rd
 * Flexible thread management
 * Support for clusters and replica configurations
 * Support for master/slave configurations
+* Keep alive & socket monitoring
+* Retry logic
 
 # Benchmarks
 
-[See benchmarks here](docs/benchmarks/RedisSlimClient.Benchmarks.RedisClientBenchmarks-report-github.md)
+[See benchmarks here](docs/benchmarks/RedisTribute.Benchmarks.RedisClientBenchmarks-report-github.md)
 
 # TODO
 
 * Support for clustering redirection
-* Keep alive & socket monitoring
+* Azure comaptibility
 * Better memory management
 * Slimmer object serialization
 * Retry and TRYAGAIN response handling
