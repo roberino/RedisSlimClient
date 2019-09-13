@@ -71,6 +71,8 @@ namespace RedisTribute.IntegrationTests
         {
             var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine);
 
+            config.FallbackStrategy = FallbackStrategy.None;
+
             using (var client = await config.CreateProxiedClientAsync(r =>
             {
                 if (r.Sequence == 40)
@@ -272,7 +274,7 @@ namespace RedisTribute.IntegrationTests
         }
 
 
-        private async Task<IList<bool>> ExecuteMultipleRequests(IRedisClient client, int numberOfRequests = 25)
+        private async Task<IList<bool>> ExecuteMultipleRequests(IRedisClient client, int numberOfRequests = 30)
         {
             var results = new List<bool>();
 
