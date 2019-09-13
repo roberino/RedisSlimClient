@@ -12,8 +12,6 @@ namespace RedisTribute
 {
     class RedisController : IDisposable
     {
-        const int ProactiveDelay = 100;
-
         readonly ICommandRouter _connection;
         readonly Action _disposing;
 
@@ -211,7 +209,7 @@ namespace RedisTribute
 
                     var resultTask = GetResult();
 
-                    await Task.WhenAny(resultTask, Task.Delay(ProactiveDelay, cancellation));
+                    await Task.WhenAny(resultTask, Task.Delay(Configuration.OptimisticOperationTimeout, cancellation));
 
                     if (!resultTask.IsCompleted)
                     {

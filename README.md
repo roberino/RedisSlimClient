@@ -36,7 +36,7 @@ localhost:6379;Password=p@ssw0rd
 | UseSsl                  | When true, communication will be performed over a SSL connection                                                                                  | Bool                           | Optional (required if an SSL channel is required)               |
 | SslHost                 | Sets the host name used for the SSL connection                                                                                                    | String                         | Optional (will default to the Redis server host name)           |
 | CertificatePath         | Sets the path to the SSL certificate used to communicate with Redis                                                                               | String                         | Optional (required if SSL enabled)                              |
-| DefaultOperationTimeout | Sets the default timeout for Redis commands                                                                                                       | Timespan                       | Optional                                                        |
+| DefaultOperationTimeout | Sets the default timeout for Redis commands (see timeout behaviour below)                                                                         | Timespan                       | Optional                                                        |
 | ConnectTimeout          | Sets the timeout for connecting to a single Redis node (includes auth and initialising commands)                                                  | Timespan                       | Optional                                                        |
 | HealthCheckInterval	  | Sets the interval between health checks from the client to the server                                                                             | Timespan                       | Optional                                                        |
 | ConnectionPoolSize      | Sets a number which creates a pool of available connections                                                                                       | Integer (> 0)                  | Optional (will default to 1)                                    |
@@ -44,6 +44,16 @@ localhost:6379;Password=p@ssw0rd
 | WriteBufferSize         | Sets the size of the network write buffer                                                                                                         | Integer                        | Optional                                                        |
 | PipelineMode            | Sets the mode of retrieval from the TCP connection (AsyncPipeline will pipeline multiple commands, Sync will send one command at a time)          | AsyncPipeline|Sync             | Optional (defaults to AsyncPipeline)                            |
 | PortMappings            | Used to apply a set of port mappings from an external port to an internal Redis port (e.g. when using a container environment with port mappings) | CSV (e.g. from1:to1,from2:to2) | Optional                                                        |
+| FallbackStrategy        | Determines the retry behaviour of the client                                                                                                      | None|Retry|ProactiveRetry      | Optional (defaults to Retry)                                    |
+
+### Timeouts and retry behaviour
+
+Each client method supports the use of cancellation tokens. If provided, the cancellation token will determine when an operation is cancelled. If not provided, then the DefaultOperationTimeout value will be used to determing the timeout.
+
+The DefaultOperationTimeout should be set reasonably high to cater for the cost of reconnecting during operations.
+
+If Retry is enabled, the client will retry the request on another connection if possible until cancellation is requested. 
+ProactiveRetry will begin to retry the operation on another connection if the previous request takes too long, returning the first available response.
 
 # Features
 

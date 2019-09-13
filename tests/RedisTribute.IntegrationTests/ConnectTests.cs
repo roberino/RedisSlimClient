@@ -277,11 +277,13 @@ namespace RedisTribute.IntegrationTests
         private async Task<IList<bool>> ExecuteMultipleRequests(IRedisClient client, int numberOfRequests = 30)
         {
             var results = new List<bool>();
-
+            
             foreach (var x in Enumerable.Range(1, numberOfRequests))
             {
                 try
                 {
+                    _output.WriteLine($"Attempting request {x}");
+
                     using (var cancel = new CancellationTokenSource(200))
                     {
                         var result = await client.PingAsync(cancel.Token);

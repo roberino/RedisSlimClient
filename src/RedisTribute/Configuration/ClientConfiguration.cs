@@ -52,6 +52,8 @@ namespace RedisTribute.Configuration
 
         public TimeSpan DefaultOperationTimeout { get; set; } = TimeSpan.FromSeconds(5);
 
+        public TimeSpan OptimisticOperationTimeout { get; set; } = TimeSpan.FromMilliseconds(250);
+
         public TimeSpan ConnectTimeout { get; set; } = TimeSpan.FromSeconds(5);
 
         public Encoding Encoding { get; set; } = Encoding.UTF8;
@@ -153,6 +155,9 @@ namespace RedisTribute.Configuration
                                 break;
                             case nameof(DefaultOperationTimeout):
                                 DefaultOperationTimeout = TimeSpan.Parse(kv[1]);
+                                break;
+                            case nameof(OptimisticOperationTimeout):
+                                OptimisticOperationTimeout = TimeSpan.Parse(kv[1]);
                                 break;
                             case nameof(ConnectTimeout):
                                 ConnectTimeout = TimeSpan.Parse(kv[1]);

@@ -47,7 +47,7 @@ namespace RedisTribute.Io.Server
 
                 if (pipelines.Any(p => p.EndPointInfo.IsCluster))
                 {
-                    return pipelines.Select(p => (IConnectionSubordinate)new RedirectingConnection(p, pipelines, OnChangeDetected)).ToList();
+                    return pipelines.Select(p => (IConnectionSubordinate)new RedirectingConnection(p, pipelines, OnChangeDetected)).ToArray();
                 }
 
                 return pipelines;

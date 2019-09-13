@@ -9,6 +9,8 @@ namespace RedisTribute.Io
 {
     interface ICommandExecutor
     {
+        PipelineStatus Status { get; }
+
         PipelineMetrics Metrics { get; }
 
         Task<T> Execute<T>(IRedisResult<T> command, CancellationToken cancellation = default);
@@ -17,8 +19,6 @@ namespace RedisTribute.Io
     interface ICommandPipeline : ICommandExecutor, IDisposable
     {
         IAsyncEvent<ICommandPipeline> Initialising { get; }
-
-        PipelineStatus Status { get; }
 
         Task<T> ExecuteAdmin<T>(IRedisResult<T> command, CancellationToken cancellation = default);
     }

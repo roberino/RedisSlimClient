@@ -105,7 +105,7 @@ namespace RedisTribute.Io
             {
                 if (_writeStream == null || (_status != PipelineStatus.Ok && !isAdmin))
                 {
-                    throw new ConnectionUnavailableException();
+                    throw new ConnectionUnavailableException(_socket.EndpointIdentifier);
                 }
 
                 _pendingWrites++;

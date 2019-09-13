@@ -124,7 +124,7 @@ namespace RedisTribute.Io
                 {
                     if (includeBroken)
                     {
-                        return BrokenPipeline.Create(c.EndPointInfo, ex);
+                        return BrokenPipeline.CreateBrokenPipeline(c.EndPointInfo, ex);
                     }
 
                     return null;

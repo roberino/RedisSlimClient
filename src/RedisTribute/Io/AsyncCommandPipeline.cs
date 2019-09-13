@@ -82,7 +82,7 @@ namespace RedisTribute.Io
 
             if (Status != PipelineStatus.Ok && !isAdmin)
             {
-                command.Abandon(new ConnectionUnavailableException());
+                command.Abandon(new ConnectionUnavailableException(_socket.EndpointIdentifier));
 
                 return await command;
             }
