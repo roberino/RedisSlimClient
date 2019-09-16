@@ -21,7 +21,11 @@ namespace RedisTribute.Configuration
             ClientName = $"RSC{Process.GetCurrentProcess().Id}-{Environment.MachineName}-{Id}";
             NetworkConfiguration = networkConfiguration ?? new NetworkConfiguration();
 
-            Parse(connectionOptions);
+            var parser = CreateParser();
+
+            parser.Parse(connectionOptions, this);
+
+            PostParse(false);
         }
 
         public int Id { get; }
@@ -119,83 +123,22 @@ namespace RedisTribute.Configuration
             };
         }
 
-        void Parse(string connectionOptions)
+        ConfigurationParser<ClientConfiguration> CreateParser()
         {
-            var endPoints = string.Empty;
-            var clientNameSet = false;
+            var parser = new ConfigurationParser<ClientConfiguration>();
 
-            foreach (var item in connectionOptions.Split(',', ';'))
-            {
-                var kv = item.Split('=');
+            parser.RegisterDefault<string>((i, v) => i.ServerEndpoints = v.Split('|').Select(ParseUri).ToArray());
+            parser.Register<string>(nameof(NetworkConfiguration.PortMappings), (i, v) => NetworkConfiguration.PortMappings.Import(v));
+            parser.Register<string>(nameof(SslConfiguration.SslHost), (i, v) => SslConfiguration.SslHost = v);
+            parser.Register<string>(nameof(SslConfiguration.CertificatePath), (i, v) => SslConfiguration.CertificatePath = v);
+            parser.Register<bool>(nameof(SslConfiguration.UseSsl), (i, v) => SslConfiguration.UseSsl = v);
+            parser.RegisterAlias("ssl", nameof(SslConfiguration.UseSsl));
 
-                if (kv.Length == 1)
-                {
-                    if (string.IsNullOrEmpty(kv[0]))
-                    {
-                        continue;
-                    }
+            return parser;
+        }
 
-                    endPoints = kv[0];
-                }
-                else
-                {
-                    if (kv.Length == 2)
-                    {
-                        switch (kv[0])
-                        {
-                            case nameof(ClientName):
-                                ClientName = ValidateSpaceFree(kv[1], nameof(ClientName));
-                                clientNameSet = true;
-                                break;
-                            case nameof(Password):
-                                Password = kv[1];
-                                break;
-                            case nameof(Encoding):
-                                Encoding = Encoding.GetEncoding(kv[1]);
-                                break;
-                            case nameof(DefaultOperationTimeout):
-                                DefaultOperationTimeout = TimeSpan.Parse(kv[1]);
-                                break;
-                            case nameof(OptimisticOperationTimeout):
-                                OptimisticOperationTimeout = TimeSpan.Parse(kv[1]);
-                                break;
-                            case nameof(ConnectTimeout):
-                                ConnectTimeout = TimeSpan.Parse(kv[1]);
-                                break;
-                            case nameof(ConnectionPoolSize):
-                                ConnectionPoolSize = int.Parse(kv[1]);
-                                break;
-                            case nameof(ReadBufferSize):
-                                ReadBufferSize = int.Parse(kv[1]);
-                                break;
-                            case nameof(WriteBufferSize):
-                                WriteBufferSize = int.Parse(kv[1]);
-                                break;
-                            case nameof(FallbackStrategy):
-                                FallbackStrategy = ParseEnum<FallbackStrategy>(kv[1]);
-                                break;
-                            case nameof(SslConfiguration.SslHost):
-                                SslConfiguration.SslHost = kv[1];
-                                break;
-                            case nameof(SslConfiguration.UseSsl):
-                                SslConfiguration.UseSsl = bool.Parse(kv[1].ToLower());
-                                break;
-                            case nameof(SslConfiguration.CertificatePath):
-                                SslConfiguration.CertificatePath = kv[1];
-                                break;
-                            case nameof(PipelineMode):
-                                PipelineMode = ParseEnum<PipelineMode>(kv[1]);
-                                break;
-                            case nameof(NetworkConfiguration.PortMappings):
-                                NetworkConfiguration.PortMappings.Import(kv[1]);
-                                break;
-                        }
-                    }
-                }
-            }
-
-            ServerEndpoints = endPoints.Split('|').Select(ParseUri).ToArray();
-
+        void PostParse(bool clientNameSet)
+        {
             if (!ServerEndpoints.Any())
             {
                 throw new ArgumentException("No host supplied");

@@ -18,6 +18,37 @@ namespace RedisTribute.UnitTests.Configuration
         }
 
         [Fact]
+        public void Ctr_SslConfig_ReturnsValidConfiguration()
+        {
+            var config = new ClientConfiguration("host1:1234;ssl=true;sslHost=host2");
+
+            Assert.Equal("host2", config.SslConfiguration.SslHost);
+            Assert.True(config.SslConfiguration.UseSsl);
+        }
+
+        [Fact]
+        public void Ctr_PasswordWithEqualsChar_ParsesCorrectly()
+        {
+            var config = new ClientConfiguration("host1:1234;password=abc=123");
+
+            Assert.Equal("abc=123", config.Password);
+        }
+
+        [Fact]
+        public void Ctr_PipelineMode_ReturnsValidConfiguration()
+        {
+            var config = new ClientConfiguration($"host1:1234;PipelineMode={PipelineMode.AsyncPipeline}");
+
+            Assert.Equal(PipelineMode.AsyncPipeline, config.PipelineMode);
+        }
+
+        [Fact]
+        public void Ctr_UnknownKeyValue_IsIgnored()
+        {
+            var config = new ClientConfiguration($"host1:1234;xyz123=55434");
+        }
+
+        [Fact]
         public void Ctr_BasicConfigWithCommaDelimiter_ReturnsValidConfiguration()
         {
             var config = new ClientConfiguration("host1:1234;ClientName=client1");

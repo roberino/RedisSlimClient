@@ -2,7 +2,6 @@
 using RedisTribute.Io;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -20,6 +19,25 @@ namespace RedisTribute.IntegrationTests
         public ConnectTests(ITestOutputHelper output)
         {
             _output = output;
+        }
+
+        [Fact]
+        public async Task PingAsync_AzureConnection_ReturnsOkResult()
+        {
+            var config = Environments.GetAzureConfig();
+
+            if (config != null)
+            {
+                using (var client = config.CreateClient())
+                {
+                    var results = await client.PingAllAsync();
+
+                    Assert.All(results, x => Assert.True(x.Ok));
+                }
+
+                return;
+            }
+            _output.WriteLine("Azure test not configured");
         }
 
         [Theory]

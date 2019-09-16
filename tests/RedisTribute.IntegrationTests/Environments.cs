@@ -15,6 +15,19 @@ namespace RedisTribute.IntegrationTests
             return conf;
         }
 
+        public static ClientConfiguration GetAzureConfig()
+        {
+            var pwd = Environment.GetEnvironmentVariable("AZ_PASSWORD");
+            var host = Environment.GetEnvironmentVariable("AZ_HOST");
+
+            if (!string.IsNullOrEmpty(host))
+            {
+                return new ClientConfiguration($"{host}.redis.cache.windows.net:6380,password={pwd},ssl=True,abortConnect=False");
+            }
+
+            return null;
+        }
+
         public static ClientConfiguration GetConfiguration(ConfigurationScenario scenario, PipelineMode pipelineMode, Action<string> output = null)
         {
             var config = new ClientConfiguration($"redis://localhost:{(int)scenario}")
