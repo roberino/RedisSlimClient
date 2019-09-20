@@ -33,6 +33,18 @@ namespace RedisTribute.Io.Pipelines
             return true;
         }
 
+        public async ValueTask<bool> Write(ArraySegment<byte> data)
+        {
+            var mem = await GetMemory(data.Count);
+
+            for (var i = data.Offset; i < data.Count; i++)
+            {
+                mem.Span[_position++] = data.Array[i];
+            }
+
+            return true;
+        }
+
         public async ValueTask<bool> Write(byte data)
         {
             var mem = await GetMemory(1);

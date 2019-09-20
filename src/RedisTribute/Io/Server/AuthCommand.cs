@@ -14,7 +14,7 @@ namespace RedisTribute.Io.Server
             _password = password;
         }
 
-        public override object[] GetArgs() => new object[] { CommandText, _password };
+        protected override CommandParameters GetArgs() => new object[] { CommandText, _password };
 
         protected override Exception TranslateError(RedisError err)
         {

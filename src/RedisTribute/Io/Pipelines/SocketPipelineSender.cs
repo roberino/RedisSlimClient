@@ -128,12 +128,9 @@ namespace RedisTribute.Io.Pipelines
                 {
                     break;
                 }
-                catch (AggregateException ex)
+                catch (AggregateException ex) when (ex.InnerException is TaskCanceledException)
                 {
-                    if (ex.InnerException is TaskCanceledException)
-                    {
-                        break;
-                    }
+                    break;
                 }
                 catch (Exception ex)
                 {

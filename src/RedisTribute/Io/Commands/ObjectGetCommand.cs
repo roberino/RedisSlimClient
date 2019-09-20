@@ -1,14 +1,14 @@
 ﻿using RedisTribute.Configuration;
 using RedisTribute.Serialization;
-using RedisTribute.Serialization.Protocol;
 using RedisTribute.Types;
 using System;
-using System.IO;
 
 namespace RedisTribute.Io.Commands
 {
     class ObjectGetCommand<T> : RedisCommand<T>
     {
+        static readonly bool IsPrimative = typeof(T).IsValueType;
+
         readonly ISerializerSettings _configuration;
         readonly IObjectSerializer<T> _serializer;
 
@@ -20,6 +20,16 @@ namespace RedisTribute.Io.Commands
 
         protected override T TranslateResult(IRedisObject result)
         {
+            if (result.Type == RedisType.Null)
+            {
+                if (IsPrimative)
+                {
+                    return default;
+                }
+
+                throw new KeyNotFoundException();
+            }
+
             if (result is RedisString strData)
             {
                 var byteSeq = new ArraySegmentToRedisObjectReader(new StreamIterator(strData.ToStream()));

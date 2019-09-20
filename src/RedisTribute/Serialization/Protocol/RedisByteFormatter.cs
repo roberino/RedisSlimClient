@@ -29,6 +29,11 @@ namespace RedisTribute.Serialization.Protocol
                 case TypeCode.Int64:
                     return Write((long)item);
                 case TypeCode.Object:
+                    if (item is ArraySegment<byte>)
+                    {
+                        return Write((ArraySegment<byte>)item);
+                    }
+
                     return Write((byte[])item);
                 default:
                     throw new NotSupportedException(tc.ToString());
@@ -76,6 +81,17 @@ namespace RedisTribute.Serialization.Protocol
         {
             await Write(ResponseType.BulkStringType);
             await WriteRaw(data.Length.ToString());
+            await WriteEnd();
+
+            await _memory.Write(data);
+
+            await WriteEnd();
+        }
+
+        public async ValueTask Write(ArraySegment<byte> data)
+        {
+            await Write(ResponseType.BulkStringType);
+            await WriteRaw(data.Count.ToString());
             await WriteEnd();
 
             await _memory.Write(data);

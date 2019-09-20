@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 
 namespace RedisTribute.Types.Primatives
 {
@@ -8,5 +9,6 @@ namespace RedisTribute.Types.Primatives
 
         ValueTask<bool> Write(byte data);
         ValueTask<bool> Write(byte[] data);
+        ValueTask<bool> Write(ArraySegment<byte> data);
     }
 }

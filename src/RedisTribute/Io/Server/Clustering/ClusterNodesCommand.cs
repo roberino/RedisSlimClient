@@ -19,7 +19,7 @@ namespace RedisTribute.Io.Server.Clustering
             _args = CommandText.Split(' ');
         }
 
-        public override object[] GetArgs() => _args;
+        protected override CommandParameters GetArgs() => _args;
 
         protected override IList<ClusterNode> TranslateResult(IRedisObject redisObject)
         {

@@ -30,9 +30,9 @@ namespace RedisTribute.Serialization
             _stream.WriteStartArray(itemCount);
         }
 
-        public void Raw(byte[] data)
+        public void Raw(byte[] data, int? length = null)
         {
-            _stream.WriteBytes(data);
+            _stream.WriteBytes(data, length);
         }
 
         public void WriteItem(string name, string data)

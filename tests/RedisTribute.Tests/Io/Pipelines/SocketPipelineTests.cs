@@ -42,12 +42,17 @@ namespace RedisTribute.UnitTests.Io.Pipelines
                     TestOutput.WriteLine(e.ToString());
                 };
 
-                await pipe.Sender.SendAsync(m =>
+                await pipe.Sender.SendAsync(async m =>
                 {
                     var command = new PingCommand();
                     var formatter = new RedisByteFormatter(m);
 
-                    return formatter.Write(command.GetArgs());
+                    command.OnExecute = async a =>
+                    {
+                        await formatter.Write(a);
+                    };
+
+                    await command.Execute();
                 });
 
                 pipe.ScheduleOnThreadpool();

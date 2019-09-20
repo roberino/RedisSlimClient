@@ -101,9 +101,9 @@ namespace RedisTribute.Benchmarks
 
             try
             {
-                await _currentClient.SetObjectAsync(key, data, cancel.Token);
+                await _currentClient.SetAsync(key, data, cancel.Token);
 
-                await _currentClient.GetObjectAsync<T>(key, cancel.Token);
+                await _currentClient.GetAsync<T>(key, cancel.Token);
 
                 await _currentClient.DeleteAsync(key, cancel.Token);
             }

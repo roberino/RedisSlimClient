@@ -27,11 +27,13 @@ namespace RedisTribute.UnitTests
             
             connection.RouteCommandAsync(Arg.Any<ICommandIdentity>()).Returns(pipeline);
             pipeline.Execute(Arg.Any<ObjectSetCommand<MyData>>(), Arg.Any<CancellationToken>())
-                .Returns(call =>
+                .Returns(async call =>
                 {
                     var cmd = call.Arg<ObjectSetCommand<MyData>>();
 
-                    cmd.GetArgs();
+                    cmd.OnExecute = x => Task.CompletedTask;
+
+                    await cmd.Execute();
 
                     return true;
                 });
@@ -45,7 +47,7 @@ namespace RedisTribute.UnitTests
 
             var client = new RedisClient(new RedisController(config, _ => connection));
 
-            var result = await client.SetObjectAsync("x", arg);
+            var result = await client.SetAsync("x", arg);
             
             Assert.Same(_store[0], arg);
         }

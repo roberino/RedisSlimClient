@@ -33,11 +33,11 @@ namespace RedisTribute.IntegrationTests
                 {
                     var data = ObjectGeneration.CreateObjectGraph(5);
 
-                    var ok = await client.SetObjectAsync(data.Id, data);
+                    var ok = await client.SetAsync(data.Id, data);
 
                     Assert.True(ok);
 
-                    var data2 = await client.GetObjectAsync<TestDtoWithGenericCollection<TestComplexDto>>(data.Id);
+                    var data2 = (TestDtoWithGenericCollection<TestComplexDto>)await client.GetAsync<TestDtoWithGenericCollection<TestComplexDto>>(data.Id);
 
                     Assert.Equal(data.Id, data2.Id);
                     Assert.Equal(data.Items.Count, data2.Items.Count);

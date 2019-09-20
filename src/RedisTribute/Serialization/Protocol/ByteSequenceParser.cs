@@ -30,6 +30,18 @@ namespace RedisTribute.Serialization
                 switch (_currentType.type)
                 {
                     case ResponseType.BulkStringType:
+                        if (_currentType.length < 0)
+                        {
+                            var part = YieldObjectPart(RedisNull.Value);
+
+                            if (!part.IsEmpty)
+                            {
+                                yield return part;
+                            }
+
+                            yield break;
+                        }
+
                         _currentState = ReadState.Value;
                         yield break;
                     case ResponseType.ArrayType:

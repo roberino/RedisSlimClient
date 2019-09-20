@@ -93,7 +93,7 @@ namespace RedisTribute.IntegrationTests
 
             using (var client = await config.CreateProxiedClientAsync(r =>
             {
-                if (r.Sequence == 40)
+                if (r.Sequence == 50)
                 {
                     throw new Exception();
                 }
@@ -219,7 +219,7 @@ namespace RedisTribute.IntegrationTests
             {
                 var data = Encoding.ASCII.GetBytes("abcdefg");
 
-                var result = await client.SetBytesAsync("key1", data);
+                var result = await client.SetAsync("key1", data);
 
                 var data2 = await client.GetBytesAsync("key1");
 
@@ -238,7 +238,7 @@ namespace RedisTribute.IntegrationTests
             {
                 var data = Encoding.ASCII.GetBytes("abcdefg");
 
-                await client.SetBytesAsync("key1", data);
+                await client.SetAsync("key1", data);
 
                 var data2 = await client.GetBytesAsync("key1");
                 var data3 = await client.GetBytesAsync("key1");
@@ -263,7 +263,7 @@ namespace RedisTribute.IntegrationTests
             {
                 var data = Encoding.ASCII.GetBytes("abcdefg");
 
-                await client.SetBytesAsync("key1", data);
+                await client.SetAsync("key1", data);
 
                 await client.GetBytesAsync("key1")
 

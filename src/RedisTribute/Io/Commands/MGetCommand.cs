@@ -30,7 +30,7 @@ namespace RedisTribute.Io.Commands
             return arr.Cast<RedisString>();
         }
 
-        public override object[] GetArgs() => _args;
+        protected override CommandParameters GetArgs() => _args;
 
         public IReadOnlyCollection<RedisKey> Keys { get; }
     }

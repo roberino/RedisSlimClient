@@ -31,9 +31,9 @@ namespace RedisTribute.TestHarness
 
                         var k = i % 100;
 
-                        await client.SetStringAsync($"x{k}", Guid.NewGuid().ToString());
+                        await client.SetAsync($"x{k}", Guid.NewGuid().ToString());
 
-                        await client.SetObjectAsync($"y{k}", new MyDto()
+                        await client.SetAsync($"y{k}", new MyDto()
                         {
                             Stuff = Guid.NewGuid().ToString()
                         });

@@ -75,6 +75,27 @@ namespace RedisTribute.Io.Net
                 throw new InvalidOperationException();
             }
 
+            int len = 0;
+
+#if NET_CORE
+            len = await SendCoreAsync(buffer);
+#else
+
+            if (buffer.Length > _writeBuffer.Length)
+            {
+                throw new NotSupportedException();
+            }
+
+            len = await SendBufferedAsync(buffer);
+#endif
+
+            OnTrace(() => (nameof(SendAsync), buffer.Slice(0, len).ToArray()));
+
+            return len;
+        }
+
+        async ValueTask<int> SendBufferedAsync(ReadOnlySequence<byte> buffer)
+        {
             var len = (int)buffer.Length;
 
             buffer.CopyTo(_writeBuffer);
@@ -89,10 +110,35 @@ namespace RedisTribute.Io.Net
                 throw;
             }
 
-            OnTrace(() => (nameof(SendAsync), buffer.Slice(0, len).ToArray()));
-
             return len;
         }
+
+#if NET_CORE
+        async ValueTask<int> SendCoreAsync(ReadOnlySequence<byte> buffer)
+        {
+            try
+            {
+                if (buffer.IsSingleSegment)
+                {
+                    await _sslStream.WriteAsync(buffer.First);
+                }
+                else
+                {
+                    foreach (var span in buffer)
+                    {
+                        await _sslStream.WriteAsync(span);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                State.WriteError(ex);
+                throw;
+            }
+
+            return (int)buffer.Length;
+        }
+#endif
 
         protected override void OnDisposing()
         {

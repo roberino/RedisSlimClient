@@ -32,14 +32,26 @@ namespace RedisTribute
 
         public Task<long> DeleteAsync(string key, CancellationToken cancellation = default) => _controller.GetNumericResponse(new DeleteCommand(key), cancellation);
 
-        public Task<bool> SetBytesAsync(string key, byte[] data, CancellationToken cancellation = default) => _controller.GetResponse(new SetCommand(key, data), cancellation);
+        public Task<bool> SetAsync(string key, byte[] data, CancellationToken cancellation = default) => _controller.GetResponse(new SetCommand(key, data), cancellation);
 
-        public Task<bool> SetStringAsync(string key, string data, CancellationToken cancellation = default) => _controller.GetResponse(new SetCommand(key, _controller.Configuration.Encoding.GetBytes(data)), cancellation);
+        public Task<bool> SetAsync(string key, string data, CancellationToken cancellation = default) => _controller.GetResponse(new SetCommand(key, _controller.Configuration.Encoding.GetBytes(data)), cancellation);
 
-        public Task<bool> SetObjectAsync<T>(string key, T obj, CancellationToken cancellation = default) => _controller.GetResponse(new ObjectSetCommand<T>(key, _controller.Configuration, obj), cancellation);
+        public Task<bool> SetAsync<T>(string key, T obj, CancellationToken cancellation = default) => _controller.GetResponse(new ObjectSetCommand<T>(key, _controller.Configuration, obj), cancellation);
 
-        public Task<T> GetObjectAsync<T>(string key, CancellationToken cancellation = default) 
-            => _controller.GetResponse<T, T>(() => new ObjectGetCommand<T>(key, _controller.Configuration), cancellation, (x, _) => x);
+        public async Task<Result<T>> GetAsync<T>(string key, CancellationToken cancellation = default)
+        {
+            try
+            {
+                var value = await GetInternalAsync<T>(key, cancellation);
+
+
+                return value == null ? Result<T>.NotFound() : Result<T>.Found(value);
+            }
+            catch (Io.Commands.KeyNotFoundException)
+            {
+                return Result<T>.NotFound();
+            }
+        }
 
         public Task<byte[]> GetBytesAsync(string key, CancellationToken cancellation = default)
             => _controller.GetResponse(() => new GetCommand(key), cancellation, ResultConvertion.AsBytes);
@@ -59,6 +71,20 @@ namespace RedisTribute
         public void Dispose()
         {
             _controller.Dispose();
+        }
+
+        Task<T> GetInternalAsync<T>(string key, CancellationToken cancellation = default)
+        {
+            if (typeof(T) == typeof(byte[]))
+            {
+                return (Task<T>)(object)GetBytesAsync(key, cancellation);
+            }
+            if (typeof(T) == typeof(string))
+            {
+                return (Task<T>)(object)GetStringAsync(key, cancellation);
+            }
+
+            return _controller.GetResponse(() => new ObjectGetCommand<T>(key, _controller.Configuration), cancellation, (x, _) => x);
         }
     }
 }

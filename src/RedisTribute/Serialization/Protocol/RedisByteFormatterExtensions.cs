@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.IO;
 
 namespace RedisTribute.Serialization.Protocol
@@ -21,7 +22,14 @@ namespace RedisTribute.Serialization.Protocol
                     output.Write((long)item);
                     break;
                 case TypeCode.Object:
-                    output.WriteBytes((byte[])item);
+                    if (item is ArraySegment<byte>)
+                    {
+                        output.WriteBytes((ArraySegment<byte>)item);
+                    }
+                    else
+                    {
+                        output.WriteBytes((byte[])item);
+                    }
                     break;
                 default:
                     throw new NotSupportedException(tc.ToString());
@@ -65,12 +73,21 @@ namespace RedisTribute.Serialization.Protocol
             output.WriteEnd();
         }
 
-        public static void WriteBytes(this Stream output, byte[] data)
+        public static void WriteBytes(this Stream output, byte[] data, int? length = null)
         {
             output.Write(ResponseType.BulkStringType);
             output.WriteRaw(data.Length.ToString());
             output.WriteEnd();
-            output.Write(data, 0, data.Length);
+            output.Write(data, 0, length.GetValueOrDefault(data.Length));
+            output.WriteEnd();
+        }
+
+        public static void WriteBytes(this Stream output, ArraySegment<byte> segment)
+        {
+            output.Write(ResponseType.BulkStringType);
+            output.WriteRaw(segment.Count.ToString());
+            output.WriteEnd();
+            output.Write(segment.Array, segment.Offset, segment.Count);
             output.WriteEnd();
         }
 

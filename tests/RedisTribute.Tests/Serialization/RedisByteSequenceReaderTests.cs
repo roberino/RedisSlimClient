@@ -22,6 +22,19 @@ namespace RedisTribute.UnitTests.Serialization
             Assert.Equal(RedisType.String, parsedObject.Type);
         }
 
+
+        [Fact]
+        public void Read_EmptyBulkString_ReturnsNull()
+        {
+            var reader = GetReader("$-1\r\n");
+
+            var parsedObject = (RedisNull)reader.ToObjects().Single();
+            var value = parsedObject.ToString();
+
+            Assert.Equal(string.Empty, value);
+            Assert.Equal(RedisType.Null, parsedObject.Type);
+        }
+
         [Fact]
         public void Read_Array_ReturnsExpectedMembers()
         {

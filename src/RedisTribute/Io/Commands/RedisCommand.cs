@@ -41,11 +41,6 @@ namespace RedisTribute.Io.Commands
 
         public Func<object[], Task> OnExecute { get; set; }
 
-        void FireStateChange(CommandStatus status)
-        {
-            _stateChanged?.Invoke(new CommandState(Elapsed, status, this));
-        }
-
         public Action<CommandState> OnStateChanged
         {
             set
@@ -74,12 +69,13 @@ namespace RedisTribute.Io.Commands
             if (OnExecute != null)
             {
                 FireStateChange(CommandStatus.Executing);
-                await OnExecute(GetArgs());
+                using (var parameters = GetArgs())
+                {
+                    await OnExecute(parameters.Values);
+                }
                 FireStateChange(CommandStatus.Executed);
             }
         }
-
-        public virtual object[] GetArgs() => Key.IsNull ? new[] { CommandText } : new[] { CommandText, (object)Key.Bytes };
 
         public virtual void Complete(IRedisObject redisObject)
         {
@@ -103,17 +99,6 @@ namespace RedisTribute.Io.Commands
             }
         }
 
-        protected virtual Exception TranslateError(RedisError err)
-        {
-            if (ObjectMovedException.TryParse(err.Message, out var ex))
-            {
-                return ex;
-            }
-
-            return new RedisServerException(err.Message);
-        }
-
-        protected abstract T TranslateResult(IRedisObject redisObject);
 
         public void Abandon(Exception ex)
         {
@@ -127,14 +112,33 @@ namespace RedisTribute.Io.Commands
                 FireStateChange(CommandStatus.Abandoned);
         }
 
-        public TaskAwaiter<T> GetAwaiter() => _completionSource.Task.GetAwaiter();
-
-        TaskAwaiter IRedisCommand.GetAwaiter() => ((Task)_completionSource.Task).GetAwaiter();
-
         public void Cancel()
         {
             if (_completionSource.TrySetCanceled())
                 FireStateChange(CommandStatus.Cancelled);
+        }
+
+        public TaskAwaiter<T> GetAwaiter() => _completionSource.Task.GetAwaiter();
+
+        TaskAwaiter IRedisCommand.GetAwaiter() => ((Task)_completionSource.Task).GetAwaiter();
+
+        protected virtual CommandParameters GetArgs() => Key.IsNull ? new[] { CommandText } : new[] { CommandText, (object)Key.Bytes };
+
+        protected virtual Exception TranslateError(RedisError err)
+        {
+            if (ObjectMovedException.TryParse(err.Message, out var ex))
+            {
+                return ex;
+            }
+
+            return new RedisServerException(err.Message);
+        }
+
+        protected abstract T TranslateResult(IRedisObject redisObject);
+
+        void FireStateChange(CommandStatus status)
+        {
+            _stateChanged?.Invoke(new CommandState(Elapsed, status, this));
         }
     }
 }

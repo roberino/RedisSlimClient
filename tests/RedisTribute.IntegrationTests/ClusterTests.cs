@@ -38,7 +38,7 @@ namespace RedisTribute.IntegrationTests
         {
             using (var client = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine).CreateClient())
             {
-                await client.SetStringAsync("key1", "abc");
+                await client.SetAsync("key1", "abc");
                 var result = await client.GetStringAsync("key1");
                 await client.DeleteAsync("key1");
 
@@ -60,7 +60,7 @@ namespace RedisTribute.IntegrationTests
                 {
                     var k = $"{keyBase}{i}";
 
-                    await client.SetStringAsync(k, $"val-{i}");
+                    await client.SetAsync(k, $"val-{i}");
                 }
 
                var mgetResult = (await client.GetStringsAsync(new[] {$"{keyBase}1", $"{keyBase}2", $"{keyBase}3", $"{keyBase}5"})).ToArray();

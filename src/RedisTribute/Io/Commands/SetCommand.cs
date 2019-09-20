@@ -14,7 +14,7 @@ namespace RedisTribute.Io.Commands
             _data = data;
         }
 
-        public override object[] GetArgs() => new object[] { CommandText, Key.Bytes, _data };
+        protected override CommandParameters GetArgs() => new object[] { CommandText, Key.Bytes, _data };
 
         protected override bool TranslateResult(IRedisObject redisObject) => string.Equals(redisObject.ToString(), SuccessResponse, StringComparison.OrdinalIgnoreCase);
     }

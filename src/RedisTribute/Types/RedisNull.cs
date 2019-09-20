@@ -8,6 +8,6 @@
         public bool IsNull => true;
         public RedisType Type => RedisType.Null;
 
-        public override string ToString() => Type.ToString();
+        public override string ToString() => string.Empty;
     }
 }

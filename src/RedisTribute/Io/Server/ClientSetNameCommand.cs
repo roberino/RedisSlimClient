@@ -13,7 +13,7 @@ namespace RedisTribute.Io.Server
             _name = name;
         }
 
-        public override object[] GetArgs() => new[] { CommandText, "SETNAME", _name };
+        protected override CommandParameters GetArgs() => new[] { CommandText, "SETNAME", _name };
 
         protected override bool TranslateResult(IRedisObject redisObject)
         {
