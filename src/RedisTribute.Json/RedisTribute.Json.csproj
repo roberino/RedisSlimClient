@@ -7,11 +7,17 @@
     <Company />
     <Description>JSON serialization extensions for RedisTribute</Description>
     <Copyright>R Eyres</Copyright>
-    <PackageLicenseUrl>https://github.com/roberino/RedisSlimClient/blob/master/LICENCE</PackageLicenseUrl>
+    <PackageLicenseFile>LICENCE</PackageLicenseFile>
     <PackageProjectUrl>https://github.com/roberino/RedisSlimClient/</PackageProjectUrl>
     <RepositoryUrl>https://github.com/roberino/RedisSlimClient/</RepositoryUrl>
     <PackageTags>Redis Client Cache JSON</PackageTags>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="LICENSE">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />

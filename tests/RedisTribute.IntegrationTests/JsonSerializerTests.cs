@@ -35,7 +35,9 @@ namespace RedisTribute.IntegrationTests
 
                 Assert.True(ok);
 
-                var data2 = (TestDtoWithGenericCollection<TestComplexDto>)await client.GetAsync<TestDtoWithGenericCollection<TestComplexDto>>(data.Id);
+                var result = await client.GetAsync<TestDtoWithGenericCollection<TestComplexDto>>(data.Id);
+
+                var data2 = result.AsValue();
 
                 Assert.Equal(data.Id, data2.Id);
                 Assert.Equal(data.Items.Count, data2.Items.Count);
