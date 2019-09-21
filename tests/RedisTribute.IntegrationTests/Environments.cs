@@ -30,7 +30,14 @@ namespace RedisTribute.IntegrationTests
 
         public static ClientConfiguration GetConfiguration(ConfigurationScenario scenario, PipelineMode pipelineMode, Action<string> output = null)
         {
-            var config = new ClientConfiguration($"redis://localhost:{(int)scenario}")
+            var pwdString = string.Empty;
+
+            if (scenario.ToString().Contains("Password"))
+            {
+                pwdString = ";password=p@ssw0rd";
+            }
+
+            var config = new ClientConfiguration($"redis://localhost:{(int)scenario}{pwdString}")
             {
                 PipelineMode = pipelineMode,
                 DefaultOperationTimeout = TimeSpan.FromMilliseconds(10000),
@@ -59,11 +66,6 @@ namespace RedisTribute.IntegrationTests
             {
                 config.SslConfiguration.UseSsl = true;
                 config.SslConfiguration.CertificatePath = "ca.pem";
-            }
-
-            if (scenario.ToString().Contains("Password"))
-            {
-                config.Password = "p@ssw0rd";
             }
 
             return config;

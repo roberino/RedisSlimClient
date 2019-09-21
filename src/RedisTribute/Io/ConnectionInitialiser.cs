@@ -58,7 +58,7 @@ namespace RedisTribute.Io.Server
             }
         }
 
-        AuthCommand AuthCommand => new AuthCommand(_clientCredentials.Password).AttachTelemetry(_telemetryWriter);
+        AuthCommand AuthCommand(string password) => new AuthCommand(password).AttachTelemetry(_telemetryWriter);
 
         ClientSetNameCommand ClientSetName => new ClientSetNameCommand(_clientCredentials.ClientName).AttachTelemetry(_telemetryWriter);
 
@@ -67,7 +67,6 @@ namespace RedisTribute.Io.Server
         InfoCommand InfoCommand => new InfoCommand().AttachTelemetry(_telemetryWriter);
 
         ClusterNodesCommand ClusterCommand => new ClusterNodesCommand(_networkConfiguration).AttachTelemetry(_telemetryWriter);
-
 
         void OnChangeDetected(IRedirectionInfo redirectionInfo)
         {
@@ -152,9 +151,11 @@ namespace RedisTribute.Io.Server
 
                         var subPipe = await _pipelineFactory(endPointInfo);
 
-                        await Auth(subPipe);
+                        var password = _clientCredentials.PasswordManager.GetPassword(endPointInfo);
 
-                        subPipe.Initialising.Subscribe(Auth);
+                        await Auth(subPipe, password);
+
+                        subPipe.Initialising.Subscribe(p => Auth(p, password));
 
                         return subPipe;
                     }, nameof(CreatePipelineConnection));
@@ -168,11 +169,11 @@ namespace RedisTribute.Io.Server
             }));
         }
 
-        async Task<ICommandPipeline> Auth(ICommandPipeline pipeline)
+        async Task<ICommandPipeline> Auth(ICommandPipeline pipeline, string password)
         {
-            if (_clientCredentials.Password != null)
+            if (password != null)
             {
-                if (!await pipeline.ExecuteAdminWithTimeout(AuthCommand, _timeout))
+                if (!await pipeline.ExecuteAdminWithTimeout(AuthCommand(password), _timeout))
                 {
                     throw new AuthenticationException();
                 }

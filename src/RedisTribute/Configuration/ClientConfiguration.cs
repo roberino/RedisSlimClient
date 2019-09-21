@@ -34,7 +34,9 @@ namespace RedisTribute.Configuration
 
         public string ClientName { get; private set; }
 
-        public string Password { get; set; }
+
+        readonly NonNullable<IPasswordManager> _passwords = new PasswordManager();
+        public IPasswordManager PasswordManager { get => _passwords.Value; set => _passwords.Value = value; }
 
         readonly NonNullable<IWorkScheduler> _scheduler = ThreadPoolScheduler.Instance;
         public IWorkScheduler Scheduler { get => _scheduler.Value; set => _scheduler.Value = value; }
@@ -132,6 +134,15 @@ namespace RedisTribute.Configuration
             parser.Register<string>(nameof(SslConfiguration.SslHost), (i, v) => SslConfiguration.SslHost = v);
             parser.Register<string>(nameof(SslConfiguration.CertificatePath), (i, v) => SslConfiguration.CertificatePath = v);
             parser.Register<bool>(nameof(SslConfiguration.UseSsl), (i, v) => SslConfiguration.UseSsl = v);
+            parser.Register<string>("password", (i, v) => {
+                if (i.PasswordManager is PasswordManager pwds)
+                {
+                    pwds.SetDefaultPassword(v);
+                    return;
+                }
+
+                throw new NotSupportedException(PasswordManager.GetType().FullName);
+            });
             parser.RegisterAlias("ssl", nameof(SslConfiguration.UseSsl));
 
             return parser;
@@ -149,20 +160,23 @@ namespace RedisTribute.Configuration
                 SslConfiguration.SslHost = ServerEndpoints.FirstOrDefault()?.Host;
             }
 
-            if (string.IsNullOrEmpty(Password))
+            if (PasswordManager is PasswordManager pwds)
             {
-                var userNamePwd = ServerEndpoints.FirstOrDefault()?.UserInfo;
-
-                var parts = userNamePwd.Split(':');
-
-                if (parts.Length == 2)
+                foreach (var endpoint in ServerEndpoints)
                 {
-                    Password = parts[1];
-                }
+                    var userNamePwd = endpoint.UserInfo;
 
-                if (!clientNameSet && !string.IsNullOrEmpty(parts[0]))
-                {
-                    ClientName = parts[0];
+                    var parts = userNamePwd.Split(':');
+
+                    if (parts.Length == 2)
+                    {
+                        pwds.SetPassword(endpoint.Host, endpoint.Port, parts[1]);
+                    }
+
+                    if (!clientNameSet && !string.IsNullOrEmpty(parts[0]))
+                    {
+                        ClientName = parts[0];
+                    }
                 }
             }
         }
