@@ -40,7 +40,7 @@ namespace RedisTribute.UnitTests.Io.Commands
 
             Assert.Equal("SET", args[0]);
             Assert.Equal((byte)'x', ((byte[])args[1])[0]);
-            Assert.Equal(1009, data.Count); // 1000 + 9 bytes of additional metadata
+            Assert.Equal(1000, data.Count);
         }
     }
 }

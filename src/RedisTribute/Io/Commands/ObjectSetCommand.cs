@@ -10,7 +10,7 @@ namespace RedisTribute.Io.Commands
     class ObjectSetCommand<T> : RedisCommand<bool>
     {
         static readonly object _lockObj = new object();
-        static int _maxBufferSize = 512;
+        static int _maxBufferSize = 1024 * 4;
 
         readonly ISerializerSettings _configuration;
         readonly IObjectSerializer<T> _serializer;

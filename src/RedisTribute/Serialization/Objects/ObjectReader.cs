@@ -11,6 +11,7 @@ namespace RedisTribute.Serialization
     {
         readonly IObjectSerializerFactory _serializerFactory;
         readonly IEnumerator<RedisObjectPart> _enumerator;
+        readonly byte[] _rawBytes;
         readonly IBinaryFormatter _dataFormatter;
         readonly Encoding _encoding;
 
@@ -24,6 +25,15 @@ namespace RedisTribute.Serialization
             IObjectSerializerFactory serializerFactory = null) :
             this(objectStream.GetEnumerator(), 0, encoding, dataFormatter, serializerFactory)
         {
+        }
+        public ObjectReader(IEnumerable<RedisObjectPart> objectStream,
+            byte[] rawBytes,
+            Encoding encoding = null,
+            IBinaryFormatter dataFormatter = null,
+            IObjectSerializerFactory serializerFactory = null) :
+            this(objectStream, encoding, dataFormatter, serializerFactory)
+        {
+            _rawBytes = rawBytes;
         }
 
         ObjectReader(IEnumerator<RedisObjectPart> objectStream,
@@ -67,6 +77,11 @@ namespace RedisTribute.Serialization
 
         public byte[] Raw()
         {
+            if (_rawBytes != null)
+            {
+                return _rawBytes;
+            }
+
             var obj = ReadNext();
 
             return ((RedisString)obj.ToObjects().Single()).Value;

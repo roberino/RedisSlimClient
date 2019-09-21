@@ -24,7 +24,7 @@ namespace RedisTribute.Types.Primatives
             CanWrite = !readOnly;
         }
 
-        internal Encoding DefaultEncoding { get; set; } = Encoding.ASCII;
+        internal Encoding DefaultEncoding { get; set; } = Encoding.UTF8;
 
         public byte[] ToArray()
         {
@@ -37,6 +37,8 @@ namespace RedisTribute.Types.Primatives
 
         public ArraySegment<byte> GetBuffer()
         {
+            _internalStream.Flush();
+
             return new ArraySegment<byte>(_buffer, 0, _actualLength);
         }
 

@@ -23,6 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\RedisTribute.Json\RedisTribute.Json.csproj" />
     <ProjectReference Include="..\..\src\RedisTribute\RedisTribute.csproj" />
     <ProjectReference Include="..\RedisTribute.Stubs\RedisTribute.Stubs.csproj" />
   </ItemGroup>

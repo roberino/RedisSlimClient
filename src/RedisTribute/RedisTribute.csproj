@@ -2,7 +2,7 @@
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;netcoreapp2.1;netcoreapp2.2</TargetFrameworks>
     <LangVersion>7.2</LangVersion>
-    <Version>0.1.0-beta0160</Version>
+    <Version>0.1.0-beta0161</Version>
     <Authors>Rob Eyres</Authors>
     <Company />
     <Description>A slim and configurable DotNet Standard client for Redis</Description>

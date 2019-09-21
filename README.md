@@ -16,7 +16,7 @@ The main aims of the client are:
 
 ## Minimum configuration
 
-The minimal configuration must include a host and/or port name. Each additional setting must be separated by semi-colon.
+The minimal configuration must include a host and/or port name. Each additional setting must be separated by semi-colon. Azure configuration strings (from the portal) are also supported.
 
 e.g.
 
@@ -63,6 +63,8 @@ ProactiveRetry will begin to retry the operation on another connection if the pr
 * Support for master/slave configurations
 * Keep alive & socket monitoring
 * Retry logic
+* Azure compatibility
+* Retry handling
 
 # Benchmarks
 
@@ -70,9 +72,8 @@ ProactiveRetry will begin to retry the operation on another connection if the pr
 
 # TODO
 
-* Support for clustering redirection
-* Azure comaptibility
+* Support for clustering redirection (requires more testing)
 * Better memory management
 * Slimmer object serialization
-* Retry and TRYAGAIN response handling
 * Support for GEO commands
+* Pub/sub
