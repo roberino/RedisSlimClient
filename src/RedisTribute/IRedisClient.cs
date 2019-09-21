@@ -8,7 +8,7 @@ namespace RedisTribute
 {
     public interface IRedisReader : IDisposable
     {
-        Task<byte[]> GetBytesAsync(string key, CancellationToken cancellation = default);
+        Task<byte[]> GetAsync(string key, CancellationToken cancellation = default);
         Task<string> GetStringAsync(string key, CancellationToken cancellation = default);
         Task<IReadOnlyCollection<string>> GetStringsAsync(IReadOnlyCollection<string> keys,
             CancellationToken cancellation = default);
@@ -27,13 +27,13 @@ namespace RedisTribute
         Task<bool> SetAsync(string key, string data, CancellationToken cancellation = default);
     }
 
-    public interface IRedisFluentReader
+    public interface IRedisMultiReaderWriter
     {
         Task<Result<T>> GetAsync<T>(string key, CancellationToken cancellation = default);
         Task<bool> SetAsync<T>(string key, T obj, CancellationToken cancellation = default);
     }
 
-    public interface IRedisClient : IRedisReaderWriter, IRedisFluentReader, IRedisDiagnosticClient
+    public interface IRedisClient : IRedisReaderWriter, IRedisMultiReaderWriter, IRedisDiagnosticClient
     {
     }
 }

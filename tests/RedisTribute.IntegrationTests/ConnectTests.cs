@@ -221,7 +221,7 @@ namespace RedisTribute.IntegrationTests
 
                 var result = await client.SetAsync("key1", data);
 
-                var data2 = await client.GetBytesAsync("key1");
+                var data2 = await client.GetAsync("key1");
 
                 var dataString = Encoding.ASCII.GetString(data2);
 
@@ -240,9 +240,9 @@ namespace RedisTribute.IntegrationTests
 
                 await client.SetAsync("key1", data);
 
-                var data2 = await client.GetBytesAsync("key1");
-                var data3 = await client.GetBytesAsync("key1");
-                var data4 = await client.GetBytesAsync("key1");
+                var data2 = await client.GetAsync("key1");
+                var data3 = await client.GetAsync("key1");
+                var data4 = await client.GetAsync("key1");
 
                 var dataString2 = Encoding.ASCII.GetString(data2);
                 var dataString3 = Encoding.ASCII.GetString(data3);
@@ -265,7 +265,7 @@ namespace RedisTribute.IntegrationTests
 
                 await client.SetAsync("key1", data);
 
-                await client.GetBytesAsync("key1")
+                await client.GetAsync("key1")
 
                     .ContinueWith(t =>
                     {
@@ -281,7 +281,7 @@ namespace RedisTribute.IntegrationTests
                     });
 
                 var data2 =
-                    await client.GetBytesAsync("key1");
+                    await client.GetAsync("key1");
 
                 _output.WriteLine("Item2");
 

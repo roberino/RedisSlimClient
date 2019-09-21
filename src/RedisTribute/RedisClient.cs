@@ -36,24 +36,13 @@ namespace RedisTribute
 
         public Task<bool> SetAsync(string key, string data, CancellationToken cancellation = default) => _controller.GetResponse(new SetCommand(key, _controller.Configuration.Encoding.GetBytes(data)), cancellation);
 
-        public Task<bool> SetAsync<T>(string key, T obj, CancellationToken cancellation = default) => _controller.GetResponse(new ObjectSetCommand<T>(key, _controller.Configuration, obj), cancellation);
+        public Task<bool> SetAsync<T>(string key, T obj, CancellationToken cancellation = default) 
+            =>  _controller.GetResponse(new ObjectSetCommand<T>(key, _controller.Configuration, obj), cancellation);
 
-        public async Task<Result<T>> GetAsync<T>(string key, CancellationToken cancellation = default)
-        {
-            try
-            {
-                var value = await GetInternalAsync<T>(key, cancellation);
+        public Task<Result<T>> GetAsync<T>(string key, CancellationToken cancellation = default) 
+            => Result<T>.FromOperation(() => GetInternalAsync<T>(key, cancellation));
 
-
-                return value == null ? Result<T>.NotFound() : Result<T>.Found(value);
-            }
-            catch (Io.Commands.KeyNotFoundException)
-            {
-                return Result<T>.NotFound();
-            }
-        }
-
-        public Task<byte[]> GetBytesAsync(string key, CancellationToken cancellation = default)
+        public Task<byte[]> GetAsync(string key, CancellationToken cancellation = default)
             => _controller.GetResponse(() => new GetCommand(key), cancellation, ResultConvertion.AsBytes);
 
         public Task<string> GetStringAsync(string key, CancellationToken cancellation = default) 
@@ -77,7 +66,7 @@ namespace RedisTribute
         {
             if (typeof(T) == typeof(byte[]))
             {
-                return (Task<T>)(object)GetBytesAsync(key, cancellation);
+                return (Task<T>)(object)GetAsync(key, cancellation);
             }
             if (typeof(T) == typeof(string))
             {

@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace RedisTribute
 {
-    public readonly struct Result<T>
+    public readonly struct Result<T> : IReadResult<T>
     {
         readonly T _value;
 
@@ -16,6 +16,24 @@ namespace RedisTribute
 
         public bool WasFound { get; }
         public bool WasCancelled { get; }
+
+        internal static async Task<Result<T>> FromOperation(Func<Task<T>> op)
+        {
+            try
+            {
+                var value = await op();
+
+                return value == null ? NotFound() : Found(value);
+            }
+            catch (TaskCanceledException)
+            {
+                return Cancelled();
+            }
+            catch (Io.Commands.KeyNotFoundException)
+            {
+                return NotFound();
+            }
+        }
 
         public static Result<T> Found(T value)
         {
@@ -32,7 +50,17 @@ namespace RedisTribute
             return new Result<T>(default, false, true);
         }
 
-        public static implicit operator T(Result<T> result) => result._value;
+        public T AsValue()
+        {
+            if (WasCancelled)
+            {
+                throw new TaskCanceledException();
+            }
+
+            return _value;
+        }
+
+        public static implicit operator T(Result<T> result) => result.AsValue();
 
         public Result<TTransform> IfFound<TTransform>(Func<T, TTransform> resultHandler)
         {
@@ -59,7 +87,7 @@ namespace RedisTribute
             return this;
         }
 
-        public Result<TTransform> IfNotFound<TTransform>(Func<TTransform> resultHandler)
+        public Result<TTransform> ResolveNotFound<TTransform>(Func<TTransform> resultHandler)
         {
             if (!WasFound && !WasCancelled)
             {
@@ -89,7 +117,7 @@ namespace RedisTribute
             return this;
         }
 
-        public Result<TTransform> IfCancelled<TTransform>(Func<TTransform> resultHandler)
+        public Result<TTransform> ResolveCancelled<TTransform>(Func<TTransform> resultHandler)
         {
             if (WasCancelled)
             {
@@ -113,29 +141,5 @@ namespace RedisTribute
 
             return this;
         }
-
-        //public async Task IfFound(Func<T, Task> resultHandler)
-        //{
-        //    if (WasFound)
-        //    {
-        //        await resultHandler(_value);
-        //    }
-        //}
-
-        //public async Task IfNotFound(Func<Task> resultHandler)
-        //{
-        //    if (!WasFound)
-        //    {
-        //        await resultHandler();
-        //    }
-        //}
-
-        //public async Task IfCancelled(Func<Task> resultHandler)
-        //{
-        //    if (!WasCancelled)
-        //    {
-        //        await resultHandler();
-        //    }
-        //}
     }
 }

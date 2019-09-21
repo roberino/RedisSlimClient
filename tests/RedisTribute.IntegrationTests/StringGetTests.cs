@@ -1,6 +1,7 @@
 ﻿using RedisTribute.Configuration;
 using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
@@ -18,6 +19,7 @@ namespace RedisTribute.IntegrationTests
 
         [Theory]
         [InlineData(PipelineMode.Sync, ConfigurationScenario.NonSslBasic)]
+        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
         public async Task GetStringAsync_NotFound_ReturnsNotFoundResult(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
         {
             var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine);
@@ -28,36 +30,71 @@ namespace RedisTribute.IntegrationTests
             {
                 await client.PingAsync();
 
-                var x = await client.GetAsync<string>(Guid.NewGuid().ToString());
+                var result = await client.GetAsync<string>(Guid.NewGuid().ToString());
 
                 var found = true;
 
-                var result = (string)x
+                var value = (string)result
                     .IfFound(_ => throw new Exception())
-                    .IfNotFound(() => found = false)
-                    .IfNotFound(() => "not-found");
+                    .IfNotFound(() => { found = false; })
+                    .ResolveNotFound(() => "not-found");
 
                 Assert.False(found);
-                Assert.Equal("not-found", result);
+                Assert.Equal("not-found", value);
             }
         }
 
         [Theory]
-        [InlineData(PipelineMode.Sync, ConfigurationScenario.NonSslBasic, 5)]
-        [InlineData(PipelineMode.Sync, ConfigurationScenario.SslBasic, 5)]
-        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic, 10)]
-        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.SslBasic, 10)]
-        public async Task x(PipelineMode pipelineMode, ConfigurationScenario configurationScenario, int iterations)
+        [InlineData(PipelineMode.Sync, ConfigurationScenario.NonSslBasic)]
+        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
+        public async Task GetStringAsync_FoundWithChainedTask_ReturnsResult(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
         {
             var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine);
+
+            config.HealthCheckInterval = TimeSpan.Zero;
 
             using (var client = config.CreateClient())
             {
                 await client.PingAsync();
 
-                foreach (var n in Enumerable.Range(1, iterations))
-                {
+                var id = Guid.NewGuid().ToString();
 
+                await client.SetAsync(id, "hello");
+
+                var value = (string)await client.GetAsync<string>(id).IfFound(async v =>
+                {
+                    await Task.Delay(1);
+                    return v + " there";
+                });
+
+                Assert.Equal("hello there", value);
+            }
+        }
+
+        [Theory]
+        [InlineData(PipelineMode.Sync, ConfigurationScenario.NonSslBasic)]
+        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
+        public async Task GetStringAsync_Cancelled_ReturnsTransformedResult(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
+        {
+            var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine);
+
+            config.HealthCheckInterval = TimeSpan.Zero;
+
+            using (var client = config.CreateClient())
+            {
+                using (var cancel = new CancellationTokenSource(2))
+                {
+                    var result = await client.GetAsync<string>(Guid.NewGuid().ToString(), cancel.Token);
+                    
+                    var cancelled = false;
+
+                    var value = (string)result
+                        .IfFound(_ => throw new Exception())
+                        .IfCancelled(() => { cancelled = true; })
+                        .ResolveCancelled(() => "timeout");
+
+                    Assert.True(cancelled);
+                    Assert.Equal("timeout", value);
                 }
             }
         }

@@ -12,20 +12,20 @@ namespace RedisTribute.UnitTests
 
             var value = (string)result
                 .IfFound(v => { found = true; })
-                .IfNotFound(() => "y");
+                .ResolveNotFound(() => "y");
 
             Assert.True(found);
             Assert.Equal("x", value);
         }
 
         [Fact]
-        public void FoundResult_IfNotFoundHandlerFollowedByFound_CallsHandler()
+        public void FoundResult_ResolveNotFoundTransformFollowedByFound_CallsHandler()
         {
             var result = Result<string>.Found("x");
             var found = false;
 
             var value = (string)result
-                .IfNotFound(() => "y")
+                .ResolveNotFound(() => "y")
                 .IfFound(v => { found = true; })
                 .IfFound(v => v + "z");
 
@@ -42,7 +42,7 @@ namespace RedisTribute.UnitTests
             var value = (byte)result
                 .IfFound(v => { found = true; })
                 .IfFound(v => (byte)v[0])
-                .IfNotFound(() => (byte)'y');
+                .ResolveNotFound(() => (byte)'y');
 
             Assert.True(found);
             Assert.Equal((byte)'x', value);
@@ -56,7 +56,7 @@ namespace RedisTribute.UnitTests
 
             var value = (string)result
                 .IfFound(v => found = true)
-                .IfNotFound(() => "y");
+                .ResolveNotFound(() => "y");
 
             Assert.False(found);
             Assert.Equal("y", value);
@@ -69,9 +69,9 @@ namespace RedisTribute.UnitTests
             var cancelled = false;
 
             var value = (string)result
-                .IfNotFound(() => "y")
+                .ResolveNotFound(() => "y")
                 .IfCancelled(() => { cancelled = true; })
-                .IfCancelled(() => "z");
+                .ResolveCancelled(() => "z");
 
             Assert.True(cancelled);
             Assert.Equal("z", value);
