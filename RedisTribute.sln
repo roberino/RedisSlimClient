@@ -17,10 +17,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{D58E4F13
 		docker-compose-runner.yml = docker-compose-runner.yml
 		docker-compose.yml = docker-compose.yml
 		Dockerfile = Dockerfile
+		package.cmd = package.cmd
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{9AC62569-0C1A-4367-864E-9CA9227BE2BC}"
 	ProjectSection(SolutionItems) = preProject
+		LICENSE = LICENSE
 		README.md = README.md
 	EndProjectSection
 EndProject

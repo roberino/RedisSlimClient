@@ -2,27 +2,22 @@
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;netcoreapp2.1;netcoreapp2.2</TargetFrameworks>
     <LangVersion>7.2</LangVersion>
-    <Version>0.1.0-beta0161</Version>
+    <Version>0.1.0-beta0163</Version>
     <Authors>Rob Eyres</Authors>
     <Company />
     <Description>A slim and configurable DotNet Standard client for Redis</Description>
     <Copyright>R Eyres</Copyright>
-    <PackageLicenseFile>LICENCE</PackageLicenseFile>
+    <PackageLicenseFile>LICENCE.txt</PackageLicenseFile>
     <PackageProjectUrl>https://github.com/roberino/RedisSlimClient/</PackageProjectUrl>
     <RepositoryUrl>https://github.com/roberino/RedisSlimClient/</RepositoryUrl>
     <PackageTags>Redis Client Cache</PackageTags>
   </PropertyGroup>
-  
   <PropertyGroup Condition="'$(TargetFramework)' == 'netcoreapp2.1' or '$(TargetFramework)' == 'netcoreapp2.2'">
     <DefineConstants>NET_CORE</DefineConstants>
   </PropertyGroup>
-  
   <ItemGroup>
-    <Content Include="LICENSE">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
+    <None Include="LICENSE.txt" Pack="true" PackagePath="$(PackageLicenseFile)"/>
   </ItemGroup>
-  
   <ItemGroup>
     <PackageReference Include="System.IO.Pipelines" Version="4.5.3" />
     <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
