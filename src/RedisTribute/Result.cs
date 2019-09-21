@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace RedisTribute
@@ -17,8 +19,13 @@ namespace RedisTribute
         public bool WasFound { get; }
         public bool WasCancelled { get; }
 
-        internal static async Task<Result<T>> FromOperation(Func<Task<T>> op)
+        internal static async Task<Result<T>> FromOperation(Func<Task<T>> op, CancellationToken cancellation)
         {
+            if (cancellation.IsCancellationRequested)
+            {
+                return Cancelled();
+            }
+
             try
             {
                 var value = await op();
@@ -26,6 +33,10 @@ namespace RedisTribute
                 return value == null ? NotFound() : Found(value);
             }
             catch (TaskCanceledException)
+            {
+                return Cancelled();
+            }
+            catch (AggregateException ex) when (ex.InnerExceptions.All(e => e is TaskCanceledException))
             {
                 return Cancelled();
             }

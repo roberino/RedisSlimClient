@@ -80,16 +80,28 @@ namespace RedisTribute.IntegrationTests
 
             config.HealthCheckInterval = TimeSpan.Zero;
 
-            using (var client = config.CreateClient())
+            using (var client = await config.CreateProxiedClientAsync(r =>
             {
-                using (var cancel = new CancellationTokenSource(2))
+                Thread.Sleep(5);
+                return r.ForwardResponse();
+            }))
+            {
+                var key = Guid.NewGuid().ToString();
+
+                await client.SetAsync(key, new byte[15000]);
+
+                using (var cancel = new CancellationTokenSource(1))
                 {
-                    var result = await client.GetAsync<string>(Guid.NewGuid().ToString(), cancel.Token);
+                    var result = await client.GetAsync<string>(key, cancel.Token);
                     
                     var cancelled = false;
 
                     var value = (string)result
-                        .IfFound(_ => throw new Exception())
+                        .IfFound(v =>
+                        {
+                            _output.WriteLine(v);
+                            throw new Exception("Not cancelled");
+                        })
                         .IfCancelled(() => { cancelled = true; })
                         .ResolveCancelled(() => "timeout");
 

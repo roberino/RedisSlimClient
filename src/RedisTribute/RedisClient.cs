@@ -40,7 +40,7 @@ namespace RedisTribute
             =>  _controller.GetResponse(new ObjectSetCommand<T>(key, _controller.Configuration, obj), cancellation);
 
         public Task<Result<T>> GetAsync<T>(string key, CancellationToken cancellation = default) 
-            => Result<T>.FromOperation(() => GetInternalAsync<T>(key, cancellation));
+            => Result<T>.FromOperation(() => GetInternalAsync<T>(key, cancellation), cancellation);
 
         public Task<byte[]> GetAsync(string key, CancellationToken cancellation = default)
             => _controller.GetResponse(() => new GetCommand(key), cancellation, ResultConvertion.AsBytes);
