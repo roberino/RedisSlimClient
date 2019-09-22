@@ -91,9 +91,11 @@ namespace RedisTribute.IntegrationTests
 
             config.FallbackStrategy = FallbackStrategy.None;
 
+            var errorOn = false;
+
             using (var client = await config.CreateProxiedClientAsync(r =>
             {
-                if (r.Sequence == 50)
+                if (errorOn)
                 {
                     throw new Exception();
                 }
@@ -103,7 +105,18 @@ namespace RedisTribute.IntegrationTests
             {
                 await client.PingAllAsync();
 
-                var compactedResults = await ExecuteMultipleRequests(client);
+                var compactedResults = await ExecuteMultipleRequests(client, 30, (n, r) =>
+                {
+                    if (n == 15)
+                    {
+                        errorOn = true;
+                        return;
+                    }
+                    if (!r)
+                    {
+                        errorOn = false;
+                    }
+                });
 
                 Assert.Equal(3, compactedResults.Count);
                 Assert.True(compactedResults[0]);
@@ -292,7 +305,7 @@ namespace RedisTribute.IntegrationTests
         }
 
 
-        private async Task<IList<bool>> ExecuteMultipleRequests(IRedisClient client, int numberOfRequests = 30)
+        private async Task<IList<bool>> ExecuteMultipleRequests(IRedisClient client, int numberOfRequests = 30, Action<int, bool> callback = null)
         {
             var results = new List<bool>();
             
@@ -310,12 +323,15 @@ namespace RedisTribute.IntegrationTests
                     }
 
                     _output.WriteLine("OK");
+
+                    callback?.Invoke(x, true);
                 }
                 catch (Exception ex)
                 {
                     results.Add(false);
                     _output.WriteLine("Error");
                     _output.WriteLine(ex.Message.ToString());
+                    callback?.Invoke(x, false);
                 }
             }
 

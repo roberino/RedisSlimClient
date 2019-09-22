@@ -1,5 +1,6 @@
 ﻿using RedisTribute.Telemetry;
 using System;
+using System.Threading;
 
 namespace RedisTribute.Io.Commands
 {
@@ -32,6 +33,14 @@ namespace RedisTribute.Io.Commands
                             Data = cmd.AssignedEndpoint.ToString(),
                             Severity = level
                         };
+
+                        if (level == Severity.Error)
+                        {
+                            ThreadPool.GetAvailableThreads(out var wt, out var cpt);
+
+                            childEvent.Dimensions["WT"] = wt;
+                            childEvent.Dimensions["CPT"] = cpt;
+                        }
 
                         childEvent.Dimensions[$"{nameof(Uri.Host)}"] = cmd.AssignedEndpoint.Host;
                         childEvent.Dimensions[$"{nameof(Uri.Port)}"] = cmd.AssignedEndpoint.Port;

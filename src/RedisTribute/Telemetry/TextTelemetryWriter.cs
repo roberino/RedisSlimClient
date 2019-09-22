@@ -26,6 +26,11 @@ namespace RedisTribute.Telemetry
                 {
                     _writeMethod(telemetryEvent.Exception.Message);
                 }
+
+                foreach(var dim in telemetryEvent.Dimensions)
+                {
+                    _writeMethod($"\t-{dim.Key}={dim.Value}");
+                }
             }
         }
     }

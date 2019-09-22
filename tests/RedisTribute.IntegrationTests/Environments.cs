@@ -1,6 +1,7 @@
 ﻿using RedisTribute.Configuration;
 using RedisTribute.Telemetry;
 using System;
+using System.Threading;
 
 namespace RedisTribute.IntegrationTests
 {
@@ -30,6 +31,8 @@ namespace RedisTribute.IntegrationTests
 
         public static ClientConfiguration GetConfiguration(ConfigurationScenario scenario, PipelineMode pipelineMode, Action<string> output = null)
         {
+            ThreadPool.SetMaxThreads(512, 512);
+
             var pwdString = string.Empty;
 
             if (scenario.ToString().Contains("Password"))
