@@ -1,7 +1,6 @@
-﻿using System;
+﻿using RedisTribute.Configuration;
+using System;
 using System.Linq;
-using RedisTribute.Configuration;
-using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
@@ -10,7 +9,6 @@ namespace RedisTribute.IntegrationTests
 {
     public class ClusterTests
     {
-        const int defaultTimeout = 6000;
         readonly ITestOutputHelper _output;
 
         public ClusterTests(ITestOutputHelper output)
@@ -25,8 +23,7 @@ namespace RedisTribute.IntegrationTests
         {
             using (var client = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine).CreateClient())
             {
-                var cancel = new CancellationTokenSource(defaultTimeout);
-                var result = await client.PingAsync(cancel.Token);
+                var result = await client.PingAsync();
 
                 Assert.True(result);
             }
@@ -34,9 +31,10 @@ namespace RedisTribute.IntegrationTests
 
         [Theory]
         [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslClusterSet)]
+        [InlineData(PipelineMode.Sync, ConfigurationScenario.NonSslClusterSet)]
         public async Task SetAndGetString(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
         {
-            using (var client = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine).CreateClient())
+            using (var client = await Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine).CreateClient().ConnectAsync())
             {
                 await client.SetAsync("key1", "abc");
                 var result = await client.GetStringAsync("key1");
@@ -48,6 +46,7 @@ namespace RedisTribute.IntegrationTests
 
         [Theory]
         [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslClusterSet)]
+        [InlineData(PipelineMode.Sync, ConfigurationScenario.NonSslClusterSet)]
         public async Task SetAndMGetString(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
         {
             using (var client = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine).CreateClient())

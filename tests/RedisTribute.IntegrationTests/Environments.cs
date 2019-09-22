@@ -31,7 +31,7 @@ namespace RedisTribute.IntegrationTests
 
         public static ClientConfiguration GetConfiguration(ConfigurationScenario scenario, PipelineMode pipelineMode, Action<string> output = null)
         {
-            ThreadPool.SetMaxThreads(512, 512);
+            ThreadPool.SetMaxThreads(1000, 1000);
 
             var pwdString = string.Empty;
 
@@ -45,7 +45,8 @@ namespace RedisTribute.IntegrationTests
                 PipelineMode = pipelineMode,
                 DefaultOperationTimeout = TimeSpan.FromMilliseconds(10000),
                 ConnectTimeout = TimeSpan.FromMilliseconds(15000),
-                FallbackStrategy = FallbackStrategy.ProactiveRetry
+                FallbackStrategy = FallbackStrategy.ProactiveRetry,
+                HealthCheckInterval = TimeSpan.Zero
             };
 
             if (output != null)
