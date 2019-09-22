@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "RedisSlimClient.TestHarness": {
-      "commandName": "Project",
-      "commandLineArgs": "localhost:9096"
-    }
-  }
-}

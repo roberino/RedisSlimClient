@@ -1,10 +1,10 @@
-[![Build status](https://ci.appveyor.com/api/projects/status/0eagkgc04t1jvg1m?svg=true)](https://ci.appveyor.com/project/roberino/redisslimclient)
+[![Build status](https://ci.appveyor.com/api/projects/status/0eagkgc04t1jvg1m?svg=true)](https://ci.appveyor.com/project/roberino/RedisTribute)
 
-[![Build Status](https://travis-ci.org/roberino/RedisSlimClient.svg?branch=master)](https://travis-ci.org/roberino/RedisSlimClient)
+[![Build Status](https://travis-ci.org/roberino/RedisTribute.svg?branch=master)](https://travis-ci.org/roberino/RedisTribute)
 
-# RedisSlimClient
+# RedisTribute
 
-A work in progress. RedisSlimClient is a dotnet standard client for Redis, written from the ground up.
+A work in progress. RedisTribute is a dotnet standard client for Redis, written from the ground up.
 
 The main aims of the client are:
 
@@ -16,7 +16,7 @@ The main aims of the client are:
 
 ## Minimum configuration
 
-The minimal configuration must include a host and/or port name. Each additional setting must be separated by semi-colon.
+The minimal configuration must include a host and/or port name. Each additional setting must be separated by semi-colon. Azure configuration strings (from the portal) are also supported.
 
 e.g.
 
@@ -36,13 +36,24 @@ localhost:6379;Password=p@ssw0rd
 | UseSsl                  | When true, communication will be performed over a SSL connection                                                                                  | Bool                           | Optional (required if an SSL channel is required)               |
 | SslHost                 | Sets the host name used for the SSL connection                                                                                                    | String                         | Optional (will default to the Redis server host name)           |
 | CertificatePath         | Sets the path to the SSL certificate used to communicate with Redis                                                                               | String                         | Optional (required if SSL enabled)                              |
-| DefaultOperationTimeout | Sets the default timeout for Redis commands                                                                                                       | Timespan                       | Optional                                                        |
+| DefaultOperationTimeout | Sets the default timeout for Redis commands (see timeout behaviour below)                                                                         | Timespan                       | Optional                                                        |
 | ConnectTimeout          | Sets the timeout for connecting to a single Redis node (includes auth and initialising commands)                                                  | Timespan                       | Optional                                                        |
+| HealthCheckInterval	  | Sets the interval between health checks from the client to the server                                                                             | Timespan                       | Optional                                                        |
 | ConnectionPoolSize      | Sets a number which creates a pool of available connections                                                                                       | Integer (> 0)                  | Optional (will default to 1)                                    |
 | ReadBufferSize          | Sets the size of the network read buffer                                                                                                          | Integer                        | Optional                                                        |
 | WriteBufferSize         | Sets the size of the network write buffer                                                                                                         | Integer                        | Optional                                                        |
 | PipelineMode            | Sets the mode of retrieval from the TCP connection (AsyncPipeline will pipeline multiple commands, Sync will send one command at a time)          | AsyncPipeline|Sync             | Optional (defaults to AsyncPipeline)                            |
 | PortMappings            | Used to apply a set of port mappings from an external port to an internal Redis port (e.g. when using a container environment with port mappings) | CSV (e.g. from1:to1,from2:to2) | Optional                                                        |
+| FallbackStrategy        | Determines the retry behaviour of the client                                                                                                      | None|Retry|ProactiveRetry      | Optional (defaults to Retry)                                    |
+
+### Timeouts and retry behaviour
+
+Each client method supports the use of cancellation tokens. If provided, the cancellation token will determine when an operation is cancelled. If not provided, then the DefaultOperationTimeout value will be used to determing the timeout.
+
+The DefaultOperationTimeout should be set reasonably high to cater for the cost of reconnecting during operations.
+
+If Retry is enabled, the client will retry the request on another connection if possible until cancellation is requested. 
+ProactiveRetry will begin to retry the operation on another connection if the previous request takes too long, returning the first available response.
 
 # Features
 
@@ -50,16 +61,19 @@ localhost:6379;Password=p@ssw0rd
 * Flexible thread management
 * Support for clusters and replica configurations
 * Support for master/slave configurations
+* Keep alive & socket monitoring
+* Retry logic
+* Azure compatibility
+* Retry handling
 
 # Benchmarks
 
-[See benchmarks here](docs/benchmarks/RedisSlimClient.Benchmarks.RedisClientBenchmarks-report-github.md)
+[See benchmarks here](docs/benchmarks/RedisTribute.Benchmarks.RedisClientBenchmarks-report-github.md)
 
 # TODO
 
-* Support for clustering redirection
-* Keep alive & socket monitoring
+* Support for clustering redirection (requires more testing)
 * Better memory management
 * Slimmer object serialization
-* Retry and TRYAGAIN response handling
 * Support for GEO commands
+* Pub/sub
