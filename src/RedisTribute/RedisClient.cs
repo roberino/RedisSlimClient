@@ -54,7 +54,7 @@ namespace RedisTribute
 
             var results = await _controller.GetMultikeyResultAsync(keys, k => new MGetCommand(k), cancellation);
 
-            return results.SelectMany(s => s.Select(r => r.ToString(_controller.Configuration.Encoding))).ToList();
+            return results.SelectMany(s => s.Select(r => { using (r) return r.ToString(_controller.Configuration.Encoding); })).ToList();
         }
 
         public void Dispose()

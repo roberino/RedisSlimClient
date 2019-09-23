@@ -84,7 +84,10 @@ namespace RedisTribute.Serialization
 
             var obj = ReadNext();
 
-            return ((RedisString)obj.ToObjects().Single()).Value;
+            var str = (RedisString)obj.ToObjects().Single();
+
+            using (str)
+                return str.Value;
         }
 
         public string ReadString(string name)
@@ -205,7 +208,8 @@ namespace RedisTribute.Serialization
                     {
                         var str = (RedisString)e.Current.Value;
 
-                        return (T)(object)str.ToString(_encoding);
+                        using (str)
+                            return (T)(object)str.ToString(_encoding);
                     }
 
                     return default;
@@ -220,7 +224,8 @@ namespace RedisTribute.Serialization
                 {
                     var str = (RedisString)e.Current.Value;
 
-                    return converter.GetValue(str.Value);
+                    using (str)
+                        return converter.GetValue(str.Value);
                 }
 
                 return default;

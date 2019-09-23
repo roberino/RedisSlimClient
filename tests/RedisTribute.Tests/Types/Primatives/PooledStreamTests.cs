@@ -13,7 +13,7 @@ namespace RedisTribute.UnitTests.Types.Primatives
         {
             var streamPool = StreamPool.Instance;
 
-            using (var stream = streamPool.GetStream(10))
+            using (var stream = streamPool.CreateWritable(10))
             {
                 Assert.Equal(0, stream.Position);
                 Assert.Equal(0, stream.Length);
@@ -25,7 +25,7 @@ namespace RedisTribute.UnitTests.Types.Primatives
         {
             var streamPool = StreamPool.Instance;
 
-            using (var stream = streamPool.GetStream(10))
+            using (var stream = streamPool.CreateWritable(10))
             {
                 await stream.WriteAsync(new byte[] { 1, 2, 3 });
 
@@ -40,7 +40,7 @@ namespace RedisTribute.UnitTests.Types.Primatives
 
             var data = new ReadOnlySequence<byte>(new byte[] { 1, 3, 5 });
 
-            using(var stream = streamPool.CopyFrom(data))
+            using(var stream = streamPool.CreateReadonlyCopy(data))
             {
                 Assert.Equal(0, stream.Position);
                 Assert.Equal(3, stream.Length);
@@ -57,7 +57,7 @@ namespace RedisTribute.UnitTests.Types.Primatives
 
             var data = new ReadOnlySequence<byte>(new byte[] { 1, 3, 5 });
 
-            using (var stream = streamPool.CopyFrom(data))
+            using (var stream = streamPool.CreateReadonlyCopy(data))
             {
                 bool exceptionThrown = false;
                 try
@@ -82,7 +82,7 @@ namespace RedisTribute.UnitTests.Types.Primatives
             var segEnd = segStart.Chain(7, 11, 17);
             var data = new ReadOnlySequence<byte>(segStart, 0, segEnd, 3);
 
-            using (var stream = streamPool.CopyFrom(data))
+            using (var stream = streamPool.CreateReadonlyCopy(data))
             {
                 Assert.Equal(0, stream.Position);
                 Assert.Equal(6, stream.Length);

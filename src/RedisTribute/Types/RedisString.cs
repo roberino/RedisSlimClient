@@ -1,23 +1,31 @@
-﻿using System.Buffers;
-using System.IO;
+﻿using RedisTribute.Types.Primatives;
+using System;
+using System.Buffers;
 using System.Text;
 
 namespace RedisTribute.Types
 {
-    readonly struct RedisString : IRedisObject
+    readonly struct RedisString : IRedisObject, IDisposable
     {
-        readonly ReadOnlySequence<byte> _sequence;
+        readonly PooledStream _dataStream;
+
+        readonly Lazy<byte[]> _materializedBytes;
 
         public RedisString(byte[] value)
         {
-            _sequence = new ReadOnlySequence<byte>(value);
+            _dataStream = StreamPool.Instance.CreateReadonly(value);
+            _materializedBytes = new Lazy<byte[]>(() => value);
         }
 
-        public RedisString(ReadOnlySequence<byte> sequence) : this(sequence.ToArray())
+        public RedisString(ReadOnlySequence<byte> sequence)
         {
+            var sharedStream = StreamPool.Instance.CreateReadonlyCopy(sequence);
+
+            _dataStream = sharedStream;
+            _materializedBytes = new Lazy<byte[]>(() => sharedStream.ToArray());
         }
 
-        public byte[] Value => _sequence.ToArray();
+        public byte[] Value => _materializedBytes.Value;
 
         public bool IsComplete => true;
 
@@ -27,25 +35,22 @@ namespace RedisTribute.Types
 
         public string ToString(Encoding encoding)
         {
-            if (_sequence.IsEmpty)
+            if (_dataStream.Length == 0)
             {
-                return null;
+                return string.Empty;
             }
 
-#if NET_CORE
-
-            if (_sequence.IsSingleSegment)
-            {
-                return encoding.GetString(_sequence.First.Span);
-            }
-#endif
-
-            return encoding.GetString(_sequence.ToArray());
+            return _dataStream.ToString(encoding);
         }
 
         public override string ToString() => ToString(Encoding.ASCII);
 
-        public Stream ToStream() => new MemoryStream(Value);
+        public PooledStream AsStream() => _dataStream;
+
+        public void Dispose()
+        {
+            _dataStream.Dispose();
+        }
 
         public static implicit operator string(RedisString x) => x.ToString(Encoding.UTF8);
     }

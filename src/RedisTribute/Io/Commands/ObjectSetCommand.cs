@@ -46,7 +46,7 @@ namespace RedisTribute.Io.Commands
 
         PooledStream GetObjectData()
         {
-            var ms = StreamPool.Instance.GetStream(_maxBufferSize);
+            var ms = StreamPool.Instance.CreateWritable(_maxBufferSize);
 
             try
             {

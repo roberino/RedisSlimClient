@@ -47,7 +47,7 @@ namespace RedisTribute.Json
                 {
                     try
                     {
-                        using (var stream = StreamPool.Instance.GetStream(bufferSize))
+                        using (var stream = StreamPool.Instance.CreateWritable(bufferSize))
                         {
                             using (var streamWriter = new StreamWriter(stream, Encoding.UTF8))
                             {
