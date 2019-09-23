@@ -152,7 +152,7 @@ namespace RedisTribute.UnitTests.Io.Pipelines
 
                 pipe.ScheduleOnThreadpool();
 
-                waitHandle.WaitOne(3000);
+                waitHandle.WaitOne(10000);
             }
 
             Assert.Equal(total, received.Count);

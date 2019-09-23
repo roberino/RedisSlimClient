@@ -28,6 +28,8 @@ namespace RedisTribute.Configuration
             PostParse(false);
         }
 
+        public static implicit operator ClientConfiguration(string configString) => new ClientConfiguration(configString);
+
         public int Id { get; }
 
         public NetworkConfiguration NetworkConfiguration { get; }
