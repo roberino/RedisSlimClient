@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
 
@@ -11,7 +12,7 @@ namespace RedisTribute.Serialization
     {
         readonly IObjectSerializerFactory _serializerFactory;
         readonly IEnumerator<RedisObjectPart> _enumerator;
-        readonly byte[] _rawBytes;
+        readonly Stream _rawData;
         readonly IBinaryFormatter _dataFormatter;
         readonly Encoding _encoding;
 
@@ -27,13 +28,13 @@ namespace RedisTribute.Serialization
         {
         }
         public ObjectReader(IEnumerable<RedisObjectPart> objectStream,
-            byte[] rawBytes,
+            Stream rawData,
             Encoding encoding = null,
             IBinaryFormatter dataFormatter = null,
             IObjectSerializerFactory serializerFactory = null) :
             this(objectStream, encoding, dataFormatter, serializerFactory)
         {
-            _rawBytes = rawBytes;
+            _rawData = rawData;
         }
 
         ObjectReader(IEnumerator<RedisObjectPart> objectStream,
@@ -75,11 +76,11 @@ namespace RedisTribute.Serialization
             _buffer.Clear();
         }
 
-        public byte[] Raw()
+        public Stream Raw()
         {
-            if (_rawBytes != null)
+            if (_rawData != null)
             {
-                return _rawBytes;
+                return _rawData;
             }
 
             var obj = ReadNext();
@@ -87,7 +88,7 @@ namespace RedisTribute.Serialization
             var str = (RedisString)obj.ToObjects().Single();
 
             using (str)
-                return str.Value;
+                return str.AsStream();
         }
 
         public string ReadString(string name)

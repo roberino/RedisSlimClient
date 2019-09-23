@@ -21,7 +21,16 @@ namespace RedisTribute.Io.Monitoring
         {
             try
             {
-                _telemetryWriter.ExecuteAsync(c => client.PingAllAsync(), nameof(OnHeartbeat), Severity.Diagnostic).GetAwaiter().GetResult();
+                _telemetryWriter.ExecuteAsync(c =>
+                {
+                    ThreadPool.GetAvailableThreads(out var wt, out var cpt);
+
+                    c.Dimensions["WT"] = wt;
+                    c.Dimensions["CPT"] = cpt;
+
+                    return client.PingAllAsync();
+
+                }, nameof(OnHeartbeat), Severity.Diagnostic).GetAwaiter().GetResult();
             }
             catch
             {

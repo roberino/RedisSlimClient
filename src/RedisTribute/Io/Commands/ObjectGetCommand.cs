@@ -35,7 +35,7 @@ namespace RedisTribute.Io.Commands
                 using (strData)
                 {
                     var byteSeq = new ArraySegmentToRedisObjectReader(new StreamIterator(strData.AsStream()));
-                    var objReader = new ObjectReader(byteSeq, strData.Value, _configuration.Encoding, null, _configuration.SerializerFactory);
+                    var objReader = new ObjectReader(byteSeq, strData.AsStream(), _configuration.Encoding, null, _configuration.SerializerFactory);
 
                     return _serializer.ReadData(objReader, default);
                 }

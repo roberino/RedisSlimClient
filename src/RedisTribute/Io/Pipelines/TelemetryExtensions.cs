@@ -50,35 +50,43 @@ namespace RedisTribute.Io.Pipelines
 
             component.StateChanged += s =>
             {
-                var childEvent = new TelemetryEvent()
+                var status = s == PipelineStatus.Faulted ? Severity.Error : Severity.Diagnostic;
+
+                if (writer.Severity.HasFlag(status))
                 {
-                    Name = $"{baseName}/{s}",
-                    Elapsed = sw.Elapsed,
-                    OperationId = opId,
-                    Data = component.EndpointIdentifier.ToString(),
-                    Severity = s == PipelineStatus.Faulted ? Severity.Error : Severity.Diagnostic
-                };
+                    var childEvent = new TelemetryEvent()
+                    {
+                        Name = $"{baseName}/{s}",
+                        Elapsed = sw.Elapsed,
+                        OperationId = opId,
+                        Data = component.EndpointIdentifier.ToString(),
+                        Severity = s == PipelineStatus.Faulted ? Severity.Error : Severity.Diagnostic
+                    };
 
-                childEvent.AddComponentInf(component);
+                    childEvent.AddComponentInf(component);
 
-                writer.Write(childEvent);
+                    writer.Write(childEvent);
+                }
             };
 
             component.Error += e =>
             {
-                var childEvent = new TelemetryEvent()
+                if (writer.Severity.HasFlag(Severity.Error))
                 {
-                    Name = nameof(component.Error),
-                    Elapsed = sw.Elapsed,
-                    OperationId = opId,
-                    Data = component.EndpointIdentifier.ToString(),
-                    Severity = Severity.Error,
-                    Exception = e
-                };
+                    var childEvent = new TelemetryEvent()
+                    {
+                        Name = nameof(component.Error),
+                        Elapsed = sw.Elapsed,
+                        OperationId = opId,
+                        Data = component.EndpointIdentifier.ToString(),
+                        Severity = Severity.Error,
+                        Exception = e
+                    };
 
-                childEvent.AddComponentInf(component);
+                    childEvent.AddComponentInf(component);
 
-                writer.Write(childEvent);
+                    writer.Write(childEvent);
+                }
             };
         }
 
