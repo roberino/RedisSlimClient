@@ -28,6 +28,8 @@ namespace RedisTribute.Configuration
             PostParse(false);
         }
 
+        public static implicit operator ClientConfiguration(string configString) => new ClientConfiguration(configString);
+
         public int Id { get; }
 
         public NetworkConfiguration NetworkConfiguration { get; }
@@ -62,7 +64,8 @@ namespace RedisTribute.Configuration
 
         public TimeSpan ConnectTimeout { get; set; } = TimeSpan.FromSeconds(5);
 
-        public Encoding Encoding { get; set; } = Encoding.UTF8;
+        readonly NonNullable<Encoding> _encoding = new NonNullable<Encoding>(Encoding.UTF8);
+        public Encoding Encoding { get => _encoding.Value; set => _encoding.Value = value; }
 
         public PipelineMode PipelineMode { get; set; } = PipelineMode.Default;
 

@@ -1,4 +1,6 @@
-﻿using System;
+﻿using RedisTribute.Types.Primatives;
+using System;
+using System.IO;
 
 namespace RedisTribute.Serialization
 {
@@ -44,9 +46,27 @@ namespace RedisTribute.Serialization
 
             public T GetValue(byte[] data) => _bytesToItem(data);
 
-            public T ReadData(IObjectReader reader, T defaulValue) => _bytesToItem(reader.Raw());
+            public T ReadData(IObjectReader reader, T defaulValue) => _bytesToItem(BytesFromStream(reader.Raw()));
 
             public void WriteData(T instance, IObjectWriter writer) => writer.Raw(_itemToBytes(instance));
+
+            byte[] BytesFromStream(Stream stream)
+            {
+                if (stream is PooledStream ps)
+                {
+                    return ps.ToArray();
+                }
+                if (stream is MemoryStream ms)
+                {
+                    return ms.ToArray();
+                }
+
+                using (var ms2 = new MemoryStream())
+                {
+                    stream.CopyTo(ms2);
+                    return ms2.ToArray();
+                }
+            }
         }
     }
 }

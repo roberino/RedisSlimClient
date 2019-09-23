@@ -1,5 +1,4 @@
-﻿using RedisTribute.Io.Commands;
-using RedisTribute.Io.Pipelines;
+﻿using RedisTribute.Io.Pipelines;
 using RedisTribute.Io.Scheduling;
 using RedisTribute.Io.Server;
 using RedisTribute.Serialization.Protocol;
@@ -152,7 +151,7 @@ namespace RedisTribute.UnitTests.Io.Pipelines
 
                 pipe.ScheduleOnThreadpool();
 
-                waitHandle.WaitOne(3000);
+                waitHandle.WaitOne(10000);
             }
 
             Assert.Equal(total, received.Count);

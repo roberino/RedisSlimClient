@@ -14,7 +14,7 @@ namespace RedisTribute.Io
 {
     class AsyncCommandPipeline : ICommandPipeline
     {
-        readonly SyncedCounter _pendingWrites = new SyncedCounter();
+        readonly SyncedCounter _pendingCommands = new SyncedCounter();
 
         readonly IDuplexPipeline _pipeline;
         readonly ISocket _socket;
@@ -53,7 +53,7 @@ namespace RedisTribute.Io
 
         public PipelineStatus Status => _status;
 
-        public PipelineMetrics Metrics => new PipelineMetrics((int)_pendingWrites.Value, _commandQueue.QueueSize);
+        public PipelineMetrics Metrics => new PipelineMetrics((int)_pendingCommands.Value, _commandQueue.QueueSize);
 
         public IAsyncEvent<ICommandPipeline> Initialising { get; }
 
@@ -99,28 +99,31 @@ namespace RedisTribute.Io
                 });
             };
 
-            _pendingWrites.Increment();
+            _pendingCommands.Increment();
 
             try
             {
-                cancellation.Register(command.Cancel);
+                try
+                {
+                    cancellation.Register(command.Cancel);
 
-                await _commandQueue.Enqueue(command, cancellation);
-            }
-            catch (Exception ex)
-            {
-                command.Abandon(ex);
+                    await _commandQueue.Enqueue(command, cancellation);
+                }
+                catch (Exception ex)
+                {
+                    command.Abandon(ex);
+                }
+
+                var result = await command;
+
+                _status = PipelineStatus.Ok;
+
+                return result;
             }
             finally
             {
-                _pendingWrites.Decrement();
+                _pendingCommands.Decrement();
             }
-
-            var result = await command;
-
-            _status = PipelineStatus.Ok;
-
-            return result;
         }
 
         async Task Reconnect()

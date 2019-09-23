@@ -93,33 +93,6 @@ namespace RedisTribute
             return msg.Value;
         }
 
-        public async Task<string> GetTextResponse(IRedisResult<IRedisObject> cmd, CancellationToken cancellation = default)
-        {
-            var cmdPipe = await RouteCommandAsync(cmd);
-
-            var rstr = (RedisString)await cmdPipe.ExecuteWithCancellation(cmd, cancellation, Configuration.DefaultOperationTimeout);
-
-            return rstr.ToString(Configuration.Encoding);
-        }
-
-        public async Task<byte[]> GetBinaryResponse(IRedisResult<IRedisObject> cmd, CancellationToken cancellation = default)
-        {
-            var cmdPipe = await RouteCommandAsync(cmd);
-
-            var rstr = (RedisString)await cmdPipe.ExecuteWithCancellation(cmd, cancellation, Configuration.DefaultOperationTimeout);
-
-            return rstr.Value;
-        }
-
-        public async Task<byte[]> GetFirstAvailableResponse(IRedisResult<IRedisObject> cmd, CancellationToken cancellation = default)
-        {
-            var cmdPipe = await RouteCommandAsync(cmd);
-
-            var rstr = (RedisString)await cmdPipe.ExecuteWithCancellation(cmd, cancellation, Configuration.DefaultOperationTimeout);
-
-            return rstr.Value;
-        }
-
         public async Task<IReadOnlyCollection<TCmd>> GetMultikeyResultAsync<TCmd>(IReadOnlyCollection<string> keys, Func<RedisKey[], IRedisResult<TCmd>> cmdFactory,  CancellationToken cancellation = default)
         {
             var cmd = new MGetCommand(RedisKeys.FromStrings(keys));

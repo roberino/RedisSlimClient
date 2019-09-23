@@ -14,6 +14,8 @@ namespace RedisTribute.Types.Primatives
 
         int _actualLength;
 
+        bool _disposed = false;
+
         public PooledStream(Action onDispose, bool readOnly, byte[] buffer, int size)
         {
             _onDispose = onDispose;
@@ -56,11 +58,16 @@ namespace RedisTribute.Types.Primatives
         protected override void Dispose(bool disposing)
         {
             base.Dispose(disposing);
-            if (disposing)
+            if (disposing && !_disposed)
+            {
+                _disposed = true;
                 _onDispose();
+            }
         }
 
-        public override string ToString() => DefaultEncoding.GetString(_buffer, 0, (int)Length);
+        public override string ToString() => ToString(DefaultEncoding);
+
+        public string ToString(Encoding encoding) => encoding.GetString(_buffer, 0, (int)Length);
 
         public override void Flush()
         {
@@ -95,6 +102,10 @@ namespace RedisTribute.Types.Primatives
             _internalStream.Write(buffer, offset, count);
             _actualLength += count;
         }
+        ~PooledStream()
+        {
+            Dispose();
+        }
     }
 
     sealed class StreamPool
@@ -108,13 +119,19 @@ namespace RedisTribute.Types.Primatives
 
         public static StreamPool Instance { get; } = new StreamPool();
 
-        public PooledStream GetStream(int size)
+        public PooledStream CreateWritable(int size)
         {
             var arr = _pool.Rent(size);
 
             return new PooledStream(() => _pool.Return(arr), false, arr, size);
         }
-        public PooledStream CopyFrom(ReadOnlySequence<byte> data)
+
+        public PooledStream CreateReadonly(byte[] data)
+        {
+            return new PooledStream(() => { }, true, data, data.Length);
+        }
+
+        public PooledStream CreateReadonlyCopy(ReadOnlySequence<byte> data)
         {
             var arr = _pool.Rent((int)data.Length);
 

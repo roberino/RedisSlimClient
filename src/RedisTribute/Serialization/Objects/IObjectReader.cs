@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 
 namespace RedisTribute.Serialization
 {
     public interface IObjectReader
     {
         void BeginRead(int itemCount);
-        byte[] Raw();
+        Stream Raw();
         bool ReadBool(string name);
         byte[] ReadBytes(string name);
         string ReadString(string name);

@@ -55,7 +55,7 @@ namespace RedisTribute.UnitTests.Io
         }
 
         [Fact]
-        public async Task Execute_SocketFailureAndConnectFailure_Dies()
+        public async Task Execute_SocketFailureAndConnectFailure_CallsReconnect()
         {
             using (var socket = new StubSocket())
             using (var socketPipe = new SocketPipeline(socket))
@@ -80,7 +80,7 @@ namespace RedisTribute.UnitTests.Io
                     }
                 }
 
-                Assert.Equal(1, socket.CallsToConnect);
+                Assert.True(socket.CallsToConnect > 0);
             }
         }
     }

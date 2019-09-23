@@ -12,6 +12,21 @@ The main aims of the client are:
 * To enable fast POCO to Redis mapping
 * To be performant with granular control over thread and socket usage
 
+# Basic usage
+
+```cs
+
+using (var client = ((ClientConfiguration)"localhost:6379").CreateClient())
+{
+    await client.SetAsync("key1", "Hello world!");
+
+    var result = await client.GetAsync<string>("key1");
+
+    result.IfFound(Console.WriteLine);
+}
+
+```
+
 # Configuration
 
 ## Minimum configuration

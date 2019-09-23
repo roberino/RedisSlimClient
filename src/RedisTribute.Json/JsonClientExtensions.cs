@@ -8,7 +8,7 @@ namespace RedisTribute
     {
         public static ClientConfiguration UseJsonSerialization(this ClientConfiguration configuration, JsonSerializerSettings settings = null)
         {
-            configuration.SerializerFactory = new JsonSerializerAdapter(settings);
+            configuration.SerializerFactory = new JsonSerializerAdapter(configuration.Encoding, settings);
 
             return configuration;
         }
