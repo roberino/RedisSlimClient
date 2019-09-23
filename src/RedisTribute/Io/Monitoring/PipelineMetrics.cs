@@ -1,18 +1,16 @@
-﻿using System;
-
-namespace RedisTribute.Io.Monitoring
+﻿namespace RedisTribute.Io.Monitoring
 {
     readonly struct PipelineMetrics
     {
-        public PipelineMetrics(int pendingWrites, int pendingReads)
+        public PipelineMetrics(int pendingCommands, int pendingReads)
         {
-            PendingWrites = pendingWrites;
+            PendingCommands = pendingCommands;
             PendingReads = pendingReads;
         }
 
-        public int PendingWrites { get; }
+        public int PendingCommands { get; }
         public int PendingReads { get; }
 
-        public float Workload => (PendingReads + PendingWrites);
+        public float Workload => (PendingReads + PendingCommands);
     }
 }

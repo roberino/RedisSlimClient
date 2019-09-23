@@ -1,5 +1,4 @@
-﻿using RedisTribute.Io.Commands;
-using RedisTribute.Io.Pipelines;
+﻿using RedisTribute.Io.Pipelines;
 using RedisTribute.Io.Scheduling;
 using RedisTribute.Io.Server;
 using RedisTribute.Serialization.Protocol;
