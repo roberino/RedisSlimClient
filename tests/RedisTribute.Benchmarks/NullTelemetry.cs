@@ -10,6 +10,8 @@ namespace RedisTribute.Benchmarks
 
         public Severity Severity => Severity.None;
 
+        public TelemetryCategory Category => TelemetryCategory.None;
+
         public bool Enabled => false;
 
         public void Write(TelemetryEvent telemetryEvent)
