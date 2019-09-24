@@ -15,10 +15,8 @@ namespace RedisTribute.Telemetry
             }, name).GetAwaiter().GetResult();
         }
 
-        public static async Task<T> ExecuteAsync<T>(this ITelemetryWriter writer, Func<TelemetricContext, Task<T>> act, string name = null, Severity severity = Severity.Info)
+        public static async Task<T> ExecuteAsync<T>(this ITelemetryWriter writer, Func<TelemetricContext, Task<T>> act, string name = null, Severity severity = Severity.Info, TelemetryCategory category = TelemetryCategory.Internal)
         {
-            var timer = new Stopwatch();
-
             if (name == null)
             {
                 name = act.Method.Name;
@@ -27,13 +25,22 @@ namespace RedisTribute.Telemetry
             var ev = TelemetryEvent.CreateStart(name);
 
             ev.Severity = severity;
+            ev.Category = category;
 
             var endEv = ev.CreateChild(name);
 
-            endEv.Action = "End";
+            endEv.Category = category;
+            endEv.Sequence = TelemetrySequence.End;
             endEv.Severity = severity;
 
             var ctx = new TelemetricContext(writer, ev, endEv.Dimensions);
+
+            if (!writer.Enabled || !writer.Severity.HasFlag(severity) || !writer.Category.HasFlag(category))
+            {
+                return await act(ctx);
+            }
+
+            var timer = new Stopwatch();
 
             writer.Write(ev);
 

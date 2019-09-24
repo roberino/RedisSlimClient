@@ -9,28 +9,38 @@ namespace RedisTribute.Io.Commands
         public static T AttachTelemetry<T>(this T cmd, ITelemetryWriter writer)
             where T : IRedisCommand
         {
-            if (writer.Enabled)
+            if (writer.Enabled && writer.Category.HasFlag(TelemetryCategory.Request))
             {
+                var cmdName = cmd.GetType().Name;
+                var cmdData = cmd.CommandText + (cmd.Key.IsNull ? string.Empty : $"/{cmd.Key}");
+
                 var telemetryEvent = new TelemetryEvent()
                 {
-                    Name = nameof(cmd.Execute),
-                    Action = cmd.CommandText
+                    Name = cmdName,
+                    Data = cmdData,
+                    Sequence = TelemetrySequence.Start,
+                    Category = TelemetryCategory.Request,
+                    Severity = Severity.Info
                 };
 
                 writer.Write(telemetryEvent);
 
                 cmd.OnStateChanged = s =>
                 {
-                    var level = s.Status == CommandStatus.Faulted ? Severity.Error : Severity.Info;
+                    var level = (s.Status == CommandStatus.Faulted || s.Status == CommandStatus.Abandoned) ? Severity.Error : Severity.Info;
 
                     if (writer.Severity.HasFlag(level))
                     {
+                        var end = s.Status == CommandStatus.Completed || s.Status == CommandStatus.Cancelled || s.Status == CommandStatus.Faulted || s.Status == CommandStatus.Abandoned;
+
                         var childEvent = new TelemetryEvent()
                         {
-                            Name = s.Status.ToString(),
+                            Name = $"{cmdName}/{s.Status}",
+                            Data = cmdData,
+                            Category = TelemetryCategory.Request,
+                            Sequence = end ? TelemetrySequence.End : TelemetrySequence.Transitioning,
                             Elapsed = s.Elapsed,
                             OperationId = telemetryEvent.OperationId,
-                            Data = cmd.AssignedEndpoint.ToString(),
                             Severity = level
                         };
 

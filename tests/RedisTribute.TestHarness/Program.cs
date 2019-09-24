@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using RedisTribute.Configuration;
+using RedisTribute.Stubs;
 using RedisTribute.Telemetry;
 
 namespace RedisTribute.TestHarness
@@ -16,38 +18,41 @@ namespace RedisTribute.TestHarness
 
             using (var client = await config.CreateClient().ConnectAsync())
             {
-                int i = 0;
+                long i = 0;
 
                 while (true)
                 {
-                    try
-                    {
-                        var result = await client.PingAllAsync();
+                    var tasks = Enumerable.Range(1, 10).Select(n => Operation(client, n * i)).ToList();
 
-                        foreach (var response in result)
-                        {
-                            Console.WriteLine($"PING {response.Endpoint}{response.Ok}: {response.Error}");
-                        }
+                    await Task.WhenAll(tasks);
 
-                        var k = i % 100;
-
-                        await client.SetAsync($"x{k}", Guid.NewGuid().ToString());
-
-                        await client.SetAsync($"y{k}", new MyDto()
-                        {
-                            Stuff = Guid.NewGuid().ToString()
-                        });
-
-                        await client.GetStringAsync($"x{k}");
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine(ex.Message);
-                    }
-
-                    await Task.Delay(10);
+                    i++;
                 }
             }
+        }
+
+        static async Task Operation(IRedisClient client, long i)
+        {
+            try
+            {
+                var obj = ObjectGeneration.CreateObjectGraph();
+
+                var k = i % 100;
+
+                await client.SetAsync($"x{k}", obj);
+
+                var dto = await client.GetAsync<TestDtoWithGenericCollection<TestComplexDto>>($"x{k}");
+
+                await Task.Delay(10);
+
+                Console.WriteLine($"{DateTime.UtcNow.ToString()}: op {i}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+
+            await Task.Delay(10);
         }
     }
 

@@ -9,16 +9,19 @@ namespace RedisTribute.Telemetry
 
         public static string CreateId() => Guid.NewGuid().ToString("N").Substring(0, 8).ToUpper();
 
-        public static TelemetryEvent CreateStart(string name) => new TelemetryEvent() { Name = name, Action = "Start" };
-        public static TelemetryEvent CreateEnd(string name) => new TelemetryEvent() { Name = name, Action = "End" };
+        public static TelemetryEvent CreateStart(string name) => new TelemetryEvent() { Name = name, Sequence = TelemetrySequence.Start };
+
+        public static TelemetryEvent CreateEnd(string name) => new TelemetryEvent() { Name = name, Sequence = TelemetrySequence.End };
 
         public DateTime Timestamp { get; set; } = DateTime.UtcNow;
 
         public string Name { get; set; }
 
+        public TelemetryCategory Category { get; set; } = TelemetryCategory.Internal;
+
         public Severity Severity { get; set; } = Severity.Info;
 
-        public string Action { get; set; }
+        public TelemetrySequence Sequence { get; set; } = TelemetrySequence.Start;
 
         public string OperationId { get; set; } = CreateId();
 
@@ -39,6 +42,24 @@ namespace RedisTribute.Telemetry
         public IDictionary<string, object> Dimensions { get; } = new Dictionary<string, object>();
 
         public TelemetryEvent CreateChild(string name) => new TelemetryEvent() { Name = name, OperationId = OperationId };
+    }
+
+    [Flags]
+    public enum TelemetrySequence : byte
+    {
+        None = 0,
+        Start = 1,
+        Transitioning = 2,
+        End = 4
+    }
+
+    [Flags]
+    public enum TelemetryCategory : byte
+    {
+        None = 0,
+        Internal = 1,
+        Request = 2,
+        Health = 4
     }
 
     [Flags]

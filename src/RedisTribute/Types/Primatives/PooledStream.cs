@@ -2,6 +2,7 @@
 using System.Buffers;
 using System.IO;
 using System.Text;
+using System.Threading;
 
 namespace RedisTribute.Types.Primatives
 {
@@ -112,6 +113,8 @@ namespace RedisTribute.Types.Primatives
     {
         readonly ArrayPool<byte> _pool;
 
+        long _bytesRented;
+
         StreamPool()
         {
             _pool = ArrayPool<byte>.Create();
@@ -119,11 +122,13 @@ namespace RedisTribute.Types.Primatives
 
         public static StreamPool Instance { get; } = new StreamPool();
 
+        public long PooledMemory => _bytesRented;
+
         public PooledStream CreateWritable(int size)
         {
-            var arr = _pool.Rent(size);
+            var arr = Rent(size);
 
-            return new PooledStream(() => _pool.Return(arr), false, arr, size);
+            return new PooledStream(() => Release(arr), false, arr, size);
         }
 
         public PooledStream CreateReadonly(byte[] data)
@@ -133,7 +138,7 @@ namespace RedisTribute.Types.Primatives
 
         public PooledStream CreateReadonlyCopy(ReadOnlySequence<byte> data)
         {
-            var arr = _pool.Rent((int)data.Length);
+            var arr = Rent((int)data.Length);
 
             if (data.IsSingleSegment)
             {
@@ -154,11 +159,27 @@ namespace RedisTribute.Types.Primatives
                 }
             }
 
-            return new PooledStream(() => _pool.Return(arr), true, arr, (int)data.Length);
+            return new PooledStream(() => Release(arr), true, arr, (int)data.Length);
         }
 
         public void Dispose()
         {
+        }
+
+        byte[] Rent(int minSize)
+        {
+            var arr = _pool.Rent(minSize);
+
+            Interlocked.Add(ref _bytesRented, arr.Length);
+
+            return arr;
+        }
+
+        void Release(byte[] arr)
+        {
+            _pool.Return(arr);
+
+            Interlocked.Add(ref _bytesRented, -arr.Length);
         }
     }
 }

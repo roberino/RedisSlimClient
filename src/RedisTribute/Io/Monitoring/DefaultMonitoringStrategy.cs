@@ -1,4 +1,5 @@
 ﻿using RedisTribute.Telemetry;
+using RedisTribute.Types.Primatives;
 using System;
 using System.Threading;
 
@@ -21,16 +22,30 @@ namespace RedisTribute.Io.Monitoring
         {
             try
             {
-                _telemetryWriter.ExecuteAsync(c =>
+                var start = TelemetryEvent.CreateStart(nameof(OnHeartbeat));
+
+                ThreadPool.GetAvailableThreads(out var wt, out var cpt);
+
+                foreach (var result in client.PingAllAsync().ConfigureAwait(false).GetAwaiter().GetResult())
                 {
-                    ThreadPool.GetAvailableThreads(out var wt, out var cpt);
+                    if (_telemetryWriter.Enabled && _telemetryWriter.Category.HasFlag(TelemetryCategory.Health))
+                    {
+                        var endEv = start.CreateChild(nameof(OnHeartbeat));
 
-                    c.Dimensions["WT"] = wt;
-                    c.Dimensions["CPT"] = cpt;
+                        endEv.Dimensions["WT"] = wt;
+                        endEv.Dimensions["CPT"] = cpt;
+                        endEv.Dimensions["Role"] = result.Endpoint.Scheme;
+                        endEv.Dimensions[nameof(StreamPool.PooledMemory)] = StreamPool.Instance.PooledMemory;
+                        endEv.Dimensions[nameof(Uri.Host)] = result.Endpoint.Host;
+                        endEv.Dimensions[nameof(Uri.Port)] = result.Endpoint.Port;
+                        endEv.Category = TelemetryCategory.Health;
+                        endEv.Exception = result.Error;
+                        endEv.Severity = result.Ok ? Severity.Error : Severity.Info;
+                        endEv.Elapsed = result.Elapsed;
 
-                    return client.PingAllAsync();
-
-                }, nameof(OnHeartbeat), Severity.Diagnostic).GetAwaiter().GetResult();
+                        _telemetryWriter.Write(endEv);
+                    }
+                }
             }
             catch
             {

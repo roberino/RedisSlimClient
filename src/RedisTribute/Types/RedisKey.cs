@@ -21,7 +21,7 @@ namespace RedisTribute.Types
 
         public static implicit operator byte[] (RedisKey x) => x.Bytes;
 
-        public override string ToString() => Encoding.UTF8.GetString(Bytes);
+        public override string ToString() => IsNull ? string.Empty : Encoding.UTF8.GetString(Bytes);
 
         public bool Equals(RedisKey other)
         {
