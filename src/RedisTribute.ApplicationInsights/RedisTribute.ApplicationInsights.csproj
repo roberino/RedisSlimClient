@@ -2,15 +2,16 @@
 
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;netcoreapp2.1;netcoreapp2.2</TargetFrameworks>
-    <Version>0.1.0-beta0160</Version>
+    <LangVersion>7.2</LangVersion>
+    <Version>0.1.0-beta0163</Version>
     <Authors>Rob Eyres</Authors>
     <Company />
-    <Description>JSON serialization extensions for RedisTribute</Description>
+    <Description>Application insight extensions for RedisTribute</Description>
     <Copyright>R Eyres</Copyright>
     <PackageLicenseFile>LICENCE.txt</PackageLicenseFile>
     <PackageProjectUrl>https://github.com/roberino/RedisSlimClient/</PackageProjectUrl>
     <RepositoryUrl>https://github.com/roberino/RedisSlimClient/</RepositoryUrl>
-    <PackageTags>Redis Client Cache JSON</PackageTags>
+    <PackageTags>Redis Client Cache Telemetry ApplicationInsights</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>
@@ -18,7 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
+    <PackageReference Include="Microsoft.ApplicationInsights" Version="2.11.0" />
   </ItemGroup>
 
   <ItemGroup>

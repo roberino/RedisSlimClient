@@ -8,6 +8,7 @@ A work in progress. RedisTribute is a dotnet standard client for Redis, written 
 
 The main aims of the client are:
 
+* To create a pluggable, fault tolerant Redis client for .NET
 * To support basic Redis operations
 * To enable fast POCO to Redis mapping
 * To be performant with granular control over thread and socket usage

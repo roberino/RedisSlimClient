@@ -27,7 +27,8 @@ namespace RedisTribute.Telemetry
                     Elapsed = sw.Elapsed,
                     OperationId = opId,
                     Data = $"({e.Data.Length} bytes): {Encoding.ASCII.GetString(e.Data)}",
-                    Severity = Severity.Diagnostic
+                    Severity = Severity.Diagnostic,
+                    Category = TelemetryCategory.Internal
                 };
 
                 writer.Write(childEvent);

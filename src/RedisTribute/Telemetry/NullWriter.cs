@@ -10,6 +10,8 @@
 
         public Severity Severity => Severity.None;
 
+        public TelemetryCategory Category => TelemetryCategory.Internal;
+
         public void Write(TelemetryEvent telemetryEvent)
         {
         }
