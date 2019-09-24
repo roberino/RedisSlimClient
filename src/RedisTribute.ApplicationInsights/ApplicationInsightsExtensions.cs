@@ -12,6 +12,11 @@ namespace RedisTribute
             return clientConfiguration.UseApplicationInsights(new TelemetryClient(telemetryConfiguration));
         }
 
+        public static ClientConfiguration UseApplicationInsights(this ClientConfiguration clientConfiguration, string instrumentationKey)
+        {
+            return clientConfiguration.UseApplicationInsights(new TelemetryConfiguration(instrumentationKey));
+        }
+
         public static ClientConfiguration UseApplicationInsights(this ClientConfiguration clientConfiguration, TelemetryClient telemetryClient)
         {
             clientConfiguration.TelemetryWriter = new ApplicationInsightsTelemetryWriter(telemetryClient);

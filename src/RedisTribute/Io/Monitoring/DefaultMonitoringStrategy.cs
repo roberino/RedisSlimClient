@@ -1,4 +1,5 @@
 ﻿using RedisTribute.Telemetry;
+using RedisTribute.Types.Primatives;
 using System;
 using System.Threading;
 
@@ -34,6 +35,7 @@ namespace RedisTribute.Io.Monitoring
                         endEv.Dimensions["WT"] = wt;
                         endEv.Dimensions["CPT"] = cpt;
                         endEv.Dimensions["Role"] = result.Endpoint.Scheme;
+                        endEv.Dimensions[nameof(StreamPool.PooledMemory)] = StreamPool.Instance.PooledMemory;
                         endEv.Dimensions[nameof(Uri.Host)] = result.Endpoint.Host;
                         endEv.Dimensions[nameof(Uri.Port)] = result.Endpoint.Port;
                         endEv.Category = TelemetryCategory.Health;
