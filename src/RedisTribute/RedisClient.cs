@@ -27,8 +27,8 @@ namespace RedisTribute
 
         public Task<PingResponse[]> PingAllAsync(CancellationToken cancellation = default) 
             => _controller.GetResponses(() => new PingCommand(), 
-                (c, r) => new PingResponse(c.AssignedEndpoint, r, ((PingCommand)c).Elapsed), 
-                (c, e) => new PingResponse(c.AssignedEndpoint, e, ((PingCommand)c).Elapsed), ConnectionTarget.AllNodes);
+                (c, r, m) => new PingResponse(c.AssignedEndpoint, r, ((PingCommand)c).Elapsed, m), 
+                (c, e, m) => new PingResponse(c.AssignedEndpoint, e, ((PingCommand)c).Elapsed, m), ConnectionTarget.AllNodes);
 
         public Task<long> DeleteAsync(string key, CancellationToken cancellation = default) => _controller.GetNumericResponse(new DeleteCommand(key), cancellation);
 

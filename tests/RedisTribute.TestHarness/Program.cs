@@ -16,6 +16,8 @@ namespace RedisTribute.TestHarness
                 TelemetryWriter = new TextTelemetryWriter(Console.WriteLine, Severity.All)
             };
 
+            config.UseApplicationInsights("506daf4c-1db9-46a4-b818-d9036fb198d6");
+
             using (var client = await config.CreateClient().ConnectAsync())
             {
                 long i = 0;

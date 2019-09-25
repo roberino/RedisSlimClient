@@ -35,6 +35,9 @@ namespace RedisTribute.Io.Monitoring
                         endEv.Dimensions["WT"] = wt;
                         endEv.Dimensions["CPT"] = cpt;
                         endEv.Dimensions["Role"] = result.Endpoint.Scheme;
+                        endEv.Dimensions[nameof(result.Metrics.PendingCommands)] = result.Metrics.PendingCommands;
+                        endEv.Dimensions[nameof(result.Metrics.PendingReads)] = result.Metrics.PendingReads;
+                        endEv.Dimensions[nameof(result.Metrics.Workload)] = result.Metrics.Workload;
                         endEv.Dimensions[nameof(StreamPool.PooledMemory)] = StreamPool.Instance.PooledMemory;
                         endEv.Dimensions[nameof(Uri.Host)] = result.Endpoint.Host;
                         endEv.Dimensions[nameof(Uri.Port)] = result.Endpoint.Port;
