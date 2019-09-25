@@ -8,31 +8,47 @@ namespace RedisTribute.ApplicationInsights
     class ApplicationInsightsTelemetryWriter : ITelemetryWriter
     {
         readonly TelemetryClient _telemetryClient;
+        DateTime? _traceTtl;
 
         public ApplicationInsightsTelemetryWriter(TelemetryClient telemetryClient)
         {
             _telemetryClient = telemetryClient;
         }
 
-        public TelemetryCategory Category { get; } = TelemetryCategory.Health | TelemetryCategory.Internal | TelemetryCategory.Request;
-        public Severity Severity { get; } = Severity.Error | Severity.Info;
-        public bool Enabled { get; } = true;
+        public TimeSpan? ProactiveTrace { get; set; }
+        public TelemetryCategory Category => TelemetryCategory.Health | TelemetryCategory.Internal | TelemetryCategory.Request;
+        public Severity Severity => Severity.Error | Severity.Info;
+        public bool Enabled => true;
 
-        public void Write(TelemetryEvent telemetryEvent)
+        public void Write(TelemetryEvent ev)
         {
             var now = DateTime.UtcNow;
 
-            telemetryEvent.Dimensions.TryGetValue(nameof(Uri.Host), out var host);
-            telemetryEvent.Dimensions.TryGetValue(nameof(Uri.Port), out var port);
+            if (ev.Severity == Severity.Error && ProactiveTrace.HasValue)
+            {
+                _traceTtl = now.Add(ProactiveTrace.Value);
+            }
+
+            if (ev.Severity == Severity.Diagnostic && ev.Category == TelemetryCategory.Internal && _traceTtl.HasValue && _traceTtl.Value > now)
+            {
+                var trace = CopyDimentions(ev, new TraceTelemetry($"{ev.Name}/{ev.Data}", SeverityLevel.Warning));
+
+                _telemetryClient.TrackTrace(trace);
+
+                return;
+            }
+
+            ev.Dimensions.TryGetValue(nameof(Uri.Host), out var host);
+            ev.Dimensions.TryGetValue(nameof(Uri.Port), out var port);
 
             var target = host == null ? "unknown" : $"{host}:{port}";
 
-            if (telemetryEvent.Category == TelemetryCategory.Request && telemetryEvent.Sequence == TelemetrySequence.End)
+            if (ev.Category == TelemetryCategory.Request && ev.Sequence == TelemetrySequence.End)
             {
-                var telemetryItem = CopyDimentions(telemetryEvent, new DependencyTelemetry("REDIS", target, telemetryEvent.Name, telemetryEvent.Data)
+                var telemetryItem = CopyDimentions(ev, new DependencyTelemetry("REDIS", target, ev.Name, ev.Data)
                 {
-                    Timestamp = now.AddMilliseconds(telemetryEvent.Elapsed.TotalMilliseconds),
-                    Duration = telemetryEvent.Elapsed
+                    Timestamp = now.AddMilliseconds(ev.Elapsed.TotalMilliseconds),
+                    Duration = ev.Elapsed
                 });
 
                 _telemetryClient.TrackDependency(telemetryItem);
@@ -40,16 +56,16 @@ namespace RedisTribute.ApplicationInsights
                 return;
             }
 
-            if (telemetryEvent.Category == TelemetryCategory.Health)
+            if (ev.Category == TelemetryCategory.Health)
             {
-                var telemetryItem = CopyDimentions(telemetryEvent, new AvailabilityTelemetry("RedisTribute", now, telemetryEvent.Elapsed, target, telemetryEvent.Exception == null, telemetryEvent.Data));
+                var telemetryItem = CopyDimentions(ev, new AvailabilityTelemetry("RedisTribute", now, ev.Elapsed, target, ev.Exception == null, ev.Data));
 
                 _telemetryClient.TrackAvailability(telemetryItem);
             }
 
-            if (telemetryEvent.Category == TelemetryCategory.Internal && telemetryEvent.Exception != null)
+            if (ev.Category == TelemetryCategory.Internal && ev.Exception != null)
             {
-                _telemetryClient.TrackException(telemetryEvent.Exception);
+                _telemetryClient.TrackException(ev.Exception);
             }
         }
 

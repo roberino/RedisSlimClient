@@ -23,6 +23,8 @@ namespace RedisTribute
         internal static IRedisClient Create(ClientConfiguration configuration, Action onDisposing = null) => 
             new RedisClient(new RedisController(configuration, e => new ConnectionFactory().Create(e), onDisposing));
 
+        public string ClientName => _controller.Configuration.ClientName;
+
         public Task<bool> PingAsync(CancellationToken cancellation = default) => _controller.GetResponse(new PingCommand(), cancellation);
 
         public Task<PingResponse[]> PingAllAsync(CancellationToken cancellation = default) 
