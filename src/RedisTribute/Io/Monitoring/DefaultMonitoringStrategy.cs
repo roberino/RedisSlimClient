@@ -34,6 +34,8 @@ namespace RedisTribute.Io.Monitoring
 
                         endEv.Dimensions["WT"] = threads.WorkerThreads;
                         endEv.Dimensions["CPT"] = threads.IoThreads;
+                        endEv.Dimensions["MinWT"] = threads.MinWorkerThreads;
+                        endEv.Dimensions["MinCPT"] = threads.MinIoThreads;
                         endEv.Dimensions["Role"] = result.Endpoint.Scheme;
                         endEv.Dimensions[nameof(client.ClientName)] = client.ClientName;
                         endEv.Dimensions[nameof(result.Metrics.PendingCommands)] = result.Metrics.PendingCommands;
