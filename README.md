@@ -71,6 +71,18 @@ The DefaultOperationTimeout should be set reasonably high to cater for the cost 
 If Retry is enabled, the client will retry the request on another connection if possible until cancellation is requested. 
 ProactiveRetry will begin to retry the operation on another connection if the previous request takes too long, returning the first available response.
 
+# Extension packages
+
+## RedisTribute.Json
+
+This package adds a JSON serializer to the configuration for object to Redis mapping.
+
+## RedisTribute.ApplicationInsights
+
+This package adds Application Insights integration into the client so that calls to Redis are tracked as dependencies.
+
+[See application insights docs here](docs/ApplicationInsights.md)
+
 # Features
 
 * Support for SSL

@@ -24,7 +24,7 @@ namespace RedisTribute.Io.Monitoring
             {
                 var start = TelemetryEvent.CreateStart(nameof(OnHeartbeat));
 
-                ThreadPool.GetAvailableThreads(out var wt, out var cpt);
+                var threads = EnvironmentData.GetThreadPoolUsage();
 
                 foreach (var result in client.PingAllAsync().ConfigureAwait(false).GetAwaiter().GetResult())
                 {
@@ -32,9 +32,15 @@ namespace RedisTribute.Io.Monitoring
                     {
                         var endEv = start.CreateChild(nameof(OnHeartbeat));
 
-                        endEv.Dimensions["WT"] = wt;
-                        endEv.Dimensions["CPT"] = cpt;
+                        endEv.Dimensions["WT"] = threads.WorkerThreads;
+                        endEv.Dimensions["CPT"] = threads.IoThreads;
+                        endEv.Dimensions["MinWT"] = threads.MinWorkerThreads;
+                        endEv.Dimensions["MinCPT"] = threads.MinIoThreads;
                         endEv.Dimensions["Role"] = result.Endpoint.Scheme;
+                        endEv.Dimensions[nameof(client.ClientName)] = client.ClientName;
+                        endEv.Dimensions[nameof(result.Metrics.PendingCommands)] = result.Metrics.PendingCommands;
+                        endEv.Dimensions[nameof(result.Metrics.PendingReads)] = result.Metrics.PendingReads;
+                        endEv.Dimensions[nameof(result.Metrics.Workload)] = result.Metrics.Workload;
                         endEv.Dimensions[nameof(StreamPool.PooledMemory)] = StreamPool.Instance.PooledMemory;
                         endEv.Dimensions[nameof(Uri.Host)] = result.Endpoint.Host;
                         endEv.Dimensions[nameof(Uri.Port)] = result.Endpoint.Port;

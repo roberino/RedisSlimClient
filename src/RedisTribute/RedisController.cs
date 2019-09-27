@@ -1,6 +1,7 @@
 ﻿using RedisTribute.Configuration;
 using RedisTribute.Io;
 using RedisTribute.Io.Commands;
+using RedisTribute.Io.Monitoring;
 using RedisTribute.Types;
 using System;
 using System.Collections.Generic;
@@ -59,7 +60,7 @@ namespace RedisTribute
             return resultConverter(await GetResponseWithRetry(cmdFactory, cancellation), Configuration);
         }
 
-        public async Task<TResult[]> GetResponses<TCmd, TResult>(Func<IRedisResult<TCmd>> cmdFactory, Func<IRedisResult<TCmd>, TCmd, TResult> translator, Func<IRedisResult<TCmd>, Exception, TResult> errorTranslator, ConnectionTarget target, CancellationToken cancellation = default)
+        public async Task<TResult[]> GetResponses<TCmd, TResult>(Func<IRedisResult<TCmd>> cmdFactory, Func<IRedisResult<TCmd>, TCmd, PipelineMetrics, TResult> translator, Func<IRedisResult<TCmd>, Exception, PipelineMetrics, TResult> errorTranslator, ConnectionTarget target, CancellationToken cancellation = default)
         {
             var cmd0 = cmdFactory();
 
@@ -73,11 +74,11 @@ namespace RedisTribute
                 {
                     var result = await c.Execute(cmdx, cancellation);
 
-                    return translator(cmdx, result);
+                    return translator(cmdx, result, c.Metrics);
                 }
                 catch (Exception ex)
                 {
-                    return errorTranslator(cmdx, ex);
+                    return errorTranslator(cmdx, ex, c.Metrics);
                 }
             }));
         }

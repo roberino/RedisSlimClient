@@ -16,6 +16,7 @@ namespace RedisTribute
 
     public interface IRedisDiagnosticClient : IDisposable
     {
+        string ClientName { get; }
         Task<bool> PingAsync(CancellationToken cancellation = default);
         Task<PingResponse[]> PingAllAsync(CancellationToken cancellation = default);
     }

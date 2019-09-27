@@ -23,12 +23,14 @@ namespace RedisTribute
         internal static IRedisClient Create(ClientConfiguration configuration, Action onDisposing = null) => 
             new RedisClient(new RedisController(configuration, e => new ConnectionFactory().Create(e), onDisposing));
 
+        public string ClientName => _controller.Configuration.ClientName;
+
         public Task<bool> PingAsync(CancellationToken cancellation = default) => _controller.GetResponse(new PingCommand(), cancellation);
 
         public Task<PingResponse[]> PingAllAsync(CancellationToken cancellation = default) 
             => _controller.GetResponses(() => new PingCommand(), 
-                (c, r) => new PingResponse(c.AssignedEndpoint, r, ((PingCommand)c).Elapsed), 
-                (c, e) => new PingResponse(c.AssignedEndpoint, e, ((PingCommand)c).Elapsed), ConnectionTarget.AllNodes);
+                (c, r, m) => new PingResponse(c.AssignedEndpoint, r, ((PingCommand)c).Elapsed, m), 
+                (c, e, m) => new PingResponse(c.AssignedEndpoint, e, ((PingCommand)c).Elapsed, m), ConnectionTarget.AllNodes);
 
         public Task<long> DeleteAsync(string key, CancellationToken cancellation = default) => _controller.GetNumericResponse(new DeleteCommand(key), cancellation);
 

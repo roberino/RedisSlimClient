@@ -46,10 +46,10 @@ namespace RedisTribute.Io.Commands
 
                         if (level == Severity.Error)
                         {
-                            ThreadPool.GetAvailableThreads(out var wt, out var cpt);
+                            var threads = EnvironmentData.GetThreadPoolUsage();
 
-                            childEvent.Dimensions["WT"] = wt;
-                            childEvent.Dimensions["CPT"] = cpt;
+                            childEvent.Dimensions["WT"] = threads.WorkerThreads;
+                            childEvent.Dimensions["CPT"] = threads.IoThreads;
                         }
 
                         childEvent.Dimensions[$"{nameof(Uri.Host)}"] = cmd.AssignedEndpoint.Host;
