@@ -1,5 +1,13 @@
 # Application Insights
 
+## Basic Usage
+
+```cs
+
+config.UseApplicationInsights("<instrumentation-key-here>"); // or config or telemetry client instance
+
+```
+
 ## Example Queries
 
 ```

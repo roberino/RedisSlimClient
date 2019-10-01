@@ -94,19 +94,9 @@ namespace RedisTribute
             return msg.Value;
         }
 
-        public async Task<IReadOnlyCollection<TCmd>> GetMultikeyResultAsync<TCmd>(IReadOnlyCollection<string> keys, Func<RedisKey[], IRedisResult<TCmd>> cmdFactory,  CancellationToken cancellation = default)
+        public Task<IEnumerable<(RedisKey[] Keys, TCmd Result)>> GetMultikeyResultAsync<TCmd>(IReadOnlyCollection<string> keys, Func<RedisKey[], IRedisResult<TCmd>> cmdFactory, CancellationToken cancellation = default)
         {
-            var cmd = new MGetCommand(RedisKeys.FromStrings(keys));
-
-            var routes = await RouteMultiKeyCommandAsync(cmd);
-
-            var resultTasks = routes.Select(r =>
-                r.Executor.ExecuteWithCancellation(cmdFactory(r.Keys).AttachTelemetry(Configuration.TelemetryWriter), cancellation,
-                    Configuration.DefaultOperationTimeout));
-
-            var results = await Task.WhenAll(resultTasks);
-
-            return results;
+            return GetMultikeyResultAsync(RedisKeys.FromStrings(keys), cmdFactory, cancellation);
         }
 
         public void Dispose()
@@ -118,6 +108,46 @@ namespace RedisTribute
             catch { }
 
             _connection.Dispose();
+        }
+
+        async Task<IEnumerable<(RedisKey[] Keys, TCmd Result)>> GetMultikeyResultAsync<TCmd>(IReadOnlyCollection<RedisKey> keys, Func<RedisKey[], IRedisResult<TCmd>> cmdFactory, CancellationToken cancellation = default)
+        {
+            var cmd = new MGetCommand(keys);
+
+            var routes = await RouteMultiKeyCommandAsync(cmd);
+
+            var resultTasks = routes.Select(async r =>
+            {
+                try
+                {
+                    return (k: r.Keys, r: await r.Executor.ExecuteWithCancellation(cmdFactory(r.Keys).AttachTelemetry(Configuration.TelemetryWriter), cancellation,
+                    Configuration.DefaultOperationTimeout), x: null as Exception);
+                }
+                catch (TaskCanceledException)
+                {
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    return (r.Keys, default, ex);
+                }
+            });
+
+            var results = await Task.WhenAll(resultTasks);
+
+            var successfullResults = results.Where(r => r.x == null).Select(r => (r.k, r.r));
+            var missingKeys = results.Where(r => r.x != null).SelectMany(r => r.k).ToList();
+
+            if (missingKeys.Any())
+            {
+                cancellation.ThrowIfCancellationRequested();
+
+                var missingResults = await GetMultikeyResultAsync(missingKeys, cmdFactory, cancellation);
+
+                return successfullResults.Concat(missingResults);
+            }
+
+            return successfullResults;
         }
 
         async Task<T> GetResponseWithRetry<T>(Func<IRedisResult<T>> cmdFactory, CancellationToken cancellation)
@@ -190,7 +220,7 @@ namespace RedisTribute
                         var resultTaskFallback = GetResult();
 
                         await Task.WhenAny(resultTask, resultTaskFallback);
-    
+
                         if (resultTaskFallback.IsCompleted && resultTaskFallback.Result.success)
                         {
                             return resultTaskFallback.Result.value;

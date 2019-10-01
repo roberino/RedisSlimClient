@@ -50,13 +50,26 @@ namespace RedisTribute
         public Task<string> GetStringAsync(string key, CancellationToken cancellation = default) 
             => _controller.GetResponse(() => new GetCommand(key), cancellation, ResultConvertion.AsString);
 
-        public async Task<IReadOnlyCollection<string>> GetStringsAsync(IReadOnlyCollection<string> keys, CancellationToken cancellation = default)
+        public async Task<IDictionary<string, string>> GetStringsAsync(IReadOnlyCollection<string> keys, CancellationToken cancellation = default)
         {
             var cmd = new MGetCommand(RedisKeys.FromStrings(keys));
 
             var results = await _controller.GetMultikeyResultAsync(keys, k => new MGetCommand(k), cancellation);
 
-            return results.SelectMany(s => s.Select(r => { using (r) return r.ToString(_controller.Configuration.Encoding); })).ToList();
+            var resultsTransformed = new Dictionary<string, string>(keys.Count);
+
+            foreach(var result in results)
+            {
+                foreach(var item in result.Keys.Zip(result.Result, (k, r) => (k, r)))
+                {
+                    using (item.r)
+                    {
+                        resultsTransformed[item.k.ToString()] = item.r.ToString(_controller.Configuration.Encoding);
+                    }
+                }
+            }
+
+            return resultsTransformed;
         }
 
         public void Dispose()
