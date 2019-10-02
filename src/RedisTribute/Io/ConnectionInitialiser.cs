@@ -7,6 +7,7 @@ using RedisTribute.Util;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Security.Authentication;
 using System.Threading.Tasks;
 
@@ -115,7 +116,7 @@ namespace RedisTribute.Io.Server
                     return new[] { updatedPipe }.Concat(clusterNodes.Where(n => !n.IsMyself).Select(CreatePipelineConnection)).ToArray();
                 }
 
-                return new[] { initialPipeline }.Concat(roles.Slaves.Select(CreatePipelineConnection)).ToArray();
+                return new[] { initialPipeline }.Concat(roles.Slaves.Where(IsPublicSlave).Select(CreatePipelineConnection)).ToArray();
             }
 
             if (roles.RoleType == ServerRoleType.Slave)
@@ -124,6 +125,25 @@ namespace RedisTribute.Io.Server
             }
 
             throw new NotSupportedException(roles.RoleType.ToString());
+        }
+
+        bool IsPublicSlave(ServerEndPointInfo endPointInfo)
+        {
+            var initialEp = _initialEndPoint.CreateEndpoint();
+
+            if (initialEp is IPEndPoint iipep && HostAddressResolver.IsPrivateNetworkAddress(iipep.Address))
+            {
+                return true;
+            }
+
+            var ep = endPointInfo.CreateEndpoint();
+
+            if (ep is IPEndPoint ipep && HostAddressResolver.IsPrivateNetworkAddress(ipep.Address))
+            {
+                return false;
+            }
+
+            return true;
         }
 
         IConnectionSubordinate CreatePipelineConnection(ServerEndPointInfo endPointInfo)
