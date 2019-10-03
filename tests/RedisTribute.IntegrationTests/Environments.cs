@@ -29,18 +29,23 @@ namespace RedisTribute.IntegrationTests
             return null;
         }
 
-        public static ClientConfiguration GetConfiguration(ConfigurationScenario scenario, PipelineMode pipelineMode, Action<string> output = null)
+        public static ClientConfiguration GetConfiguration(ConfigurationScenario scenario, PipelineMode pipelineMode, Action<string> output = null, int? databaseIndex = null)
         {
             ThreadPool.SetMaxThreads(1000, 1000);
 
-            var pwdString = string.Empty;
+            var additionalConfig = string.Empty;
 
             if (scenario.ToString().Contains("Password"))
             {
-                pwdString = ";password=p@ssw0rd";
+                additionalConfig = ";password=p@ssw0rd";
             }
 
-            var config = new ClientConfiguration($"redis://localhost:{(int)scenario}{pwdString}")
+            if (databaseIndex.HasValue)
+            {
+                additionalConfig += $";database={databaseIndex}";
+            }
+
+            var config = new ClientConfiguration($"redis://localhost:{(int)scenario}{additionalConfig}")
             {
                 PipelineMode = pipelineMode,
                 DefaultOperationTimeout = TimeSpan.FromMilliseconds(10000),

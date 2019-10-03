@@ -10,6 +10,7 @@ namespace RedisTribute.Io.Server
     class ServerEndPointInfo : IServerEndpointFactory, IEquatable<ServerEndPointInfo>, IRedisEndpoint
     {
         Uri _uri;
+        int? _dbIndex;
 
         public ServerEndPointInfo(string host, int port, int mappedPort, IHostAddressResolver dnsResolver, ServerRoleType role = ServerRoleType.Unknown)
         {
@@ -18,6 +19,12 @@ namespace RedisTribute.Io.Server
             MappedPort = mappedPort;
             RoleType = role;
             DnsResolver = dnsResolver;
+        }
+
+        public void SetDatabase(int index)
+        {
+            _dbIndex = index;
+            _uri = null;
         }
 
         public Uri EndpointIdentifier
@@ -59,6 +66,16 @@ namespace RedisTribute.Io.Server
                     }
 
                     uri.Query += $"original-host={Host}";
+                }
+
+                if (_dbIndex.HasValue)
+                {
+                    if (uri.Query.Length > 0)
+                    {
+                        uri.Query += "&";
+                    }
+
+                    uri.Query += $"db={_dbIndex}";
                 }
 
                 _uri = uri.Uri;
