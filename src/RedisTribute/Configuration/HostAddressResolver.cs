@@ -6,8 +6,20 @@ namespace RedisTribute.Configuration
 {
     public sealed class HostAddressResolver : IHostAddressResolver
     {
+        static readonly IpSubnet[] _privateSubnets;
+
         readonly IDictionary<string, IPHostEntry> _hostLookup;
         readonly IList<(IpSubnet subnet, IPAddress address)> _ipMapping;
+
+        static HostAddressResolver()
+        {
+            _privateSubnets = new[]
+            {
+                new IpSubnet("10.0.0.0/8"),
+                new IpSubnet("172.16.0.0/12"),
+                new IpSubnet("192.168.0.0/16")
+            };
+        }
 
         public HostAddressResolver() : this(new Dictionary<string, IPHostEntry>(), new List<(IpSubnet subnet, IPAddress address)>())
         {
@@ -21,6 +33,8 @@ namespace RedisTribute.Configuration
 
         public static string LocalHost => nameof(LocalHost).ToLower();
 
+        public static bool IsPrivateNetworkAddress(IPAddress address) => _privateSubnets.Any(s => s.IsAddressOnSubnet(address));
+        
         public IHostAddressResolver Register(IPHostEntry ip)
         {
             _hostLookup[ip.HostName] = ip;

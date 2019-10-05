@@ -7,6 +7,7 @@ using RedisTribute.Util;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Security.Authentication;
 using System.Threading.Tasks;
 
@@ -68,6 +69,8 @@ namespace RedisTribute.Io.Server
 
         ClusterNodesCommand ClusterCommand => new ClusterNodesCommand(_networkConfiguration).AttachTelemetry(_telemetryWriter);
 
+        SelectCommand DatabaseSelectCommand(int index) => new SelectCommand(index).AttachTelemetry(_telemetryWriter);
+
         void OnChangeDetected(IRedirectionInfo redirectionInfo)
         {
             if (_telemetryWriter.Enabled)
@@ -102,6 +105,11 @@ namespace RedisTribute.Io.Server
 
                 if (info.TryGetValue("cluster", out var cluster) && cluster.TryGetValue("cluster_enabled", out var ce) && (long)ce == 1)
                 {
+                    if (_clientCredentials.Database > 0)
+                    {
+                        throw new InvalidOperationException($"Database invalid when cluster enabled: {_clientCredentials.Database}");
+                    }
+
                     var clusterNodes = await pipeline.ExecuteAdminWithTimeout(ClusterCommand, _timeout);
                     var me = clusterNodes.FirstOrDefault(n => n.IsMyself);
 
@@ -115,7 +123,7 @@ namespace RedisTribute.Io.Server
                     return new[] { updatedPipe }.Concat(clusterNodes.Where(n => !n.IsMyself).Select(CreatePipelineConnection)).ToArray();
                 }
 
-                return new[] { initialPipeline }.Concat(roles.Slaves.Select(CreatePipelineConnection)).ToArray();
+                return new[] { initialPipeline }.Concat(roles.Slaves.Where(IsPublicSlave).Select(CreatePipelineConnection)).ToArray();
             }
 
             if (roles.RoleType == ServerRoleType.Slave)
@@ -124,6 +132,25 @@ namespace RedisTribute.Io.Server
             }
 
             throw new NotSupportedException(roles.RoleType.ToString());
+        }
+
+        bool IsPublicSlave(ServerEndPointInfo endPointInfo)
+        {
+            var initialEp = _initialEndPoint.CreateEndpoint();
+
+            if (initialEp is IPEndPoint iipep && HostAddressResolver.IsPrivateNetworkAddress(iipep.Address))
+            {
+                return true;
+            }
+
+            var ep = endPointInfo.CreateEndpoint();
+
+            if (ep is IPEndPoint ipep && HostAddressResolver.IsPrivateNetworkAddress(ipep.Address))
+            {
+                return false;
+            }
+
+            return true;
         }
 
         IConnectionSubordinate CreatePipelineConnection(ServerEndPointInfo endPointInfo)
@@ -152,9 +179,17 @@ namespace RedisTribute.Io.Server
 
                         var password = _clientCredentials.PasswordManager.GetPassword(endPointInfo);
 
-                        await Auth(subPipe, password);
+                        int? dbIndex = null;
 
-                        subPipe.Initialising.Subscribe(p => Auth(p, password));
+                        if (_clientCredentials.Database > 0 && !(endPointInfo is ClusterNodeInfo))
+                        {
+                            dbIndex = _clientCredentials.Database;
+                            endPointInfo.SetDatabase(dbIndex.Value);
+                        }
+
+                        await Auth(subPipe, password, dbIndex);
+
+                        subPipe.Initialising.Subscribe(p => Auth(p, password, dbIndex));
 
                         return subPipe;
                     }, nameof(CreatePipelineConnection));
@@ -168,7 +203,7 @@ namespace RedisTribute.Io.Server
             }));
         }
 
-        async Task<ICommandPipeline> Auth(ICommandPipeline pipeline, string password)
+        async Task<ICommandPipeline> Auth(ICommandPipeline pipeline, string password, int? dbIndex)
         {
             if (password != null)
             {
@@ -180,6 +215,10 @@ namespace RedisTribute.Io.Server
 
             await pipeline.ExecuteAdminWithTimeout(ClientSetName, _timeout);
 
+            if (dbIndex.HasValue)
+            {
+                await pipeline.ExecuteAdminWithTimeout(DatabaseSelectCommand(dbIndex.Value), _timeout);
+            }
             return pipeline;
         }
     }

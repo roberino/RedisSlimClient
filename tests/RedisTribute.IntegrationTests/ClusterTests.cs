@@ -62,12 +62,12 @@ namespace RedisTribute.IntegrationTests
                     await client.SetAsync(k, $"val-{i}");
                 }
 
-               var mgetResult = (await client.GetStringsAsync(new[] {$"{keyBase}1", $"{keyBase}2", $"{keyBase}3", $"{keyBase}5"})).ToArray();
+               var mgetResult = await client.GetStringsAsync(new[] {$"{keyBase}1", $"{keyBase}2", $"{keyBase}3", $"{keyBase}5"});
 
-                Assert.Equal("val-1", mgetResult[0]);
-                Assert.Equal("val-2", mgetResult[1]);
-                Assert.Equal("val-3", mgetResult[2]);
-                Assert.Equal("val-5", mgetResult[3]);
+                Assert.Equal("val-1", mgetResult[$"{keyBase}1"]);
+                Assert.Equal("val-2", mgetResult[$"{keyBase}2"]);
+                Assert.Equal("val-3", mgetResult[$"{keyBase}3"]);
+                Assert.Equal("val-5", mgetResult[$"{keyBase}5"]);
             }
         }
     }

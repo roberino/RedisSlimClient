@@ -20,6 +20,29 @@ namespace RedisTribute.IntegrationTests
         [Theory]
         [InlineData(PipelineMode.Sync, ConfigurationScenario.NonSslBasic)]
         [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
+        public async Task GetStringAsync_AlternateDb_ReturnsNotFoundResult(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
+        {
+            var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine, 5);
+
+            config.HealthCheckInterval = TimeSpan.Zero;
+
+            using (var client = config.CreateClient())
+            {
+                await client.PingAsync();
+
+                var id = Guid.NewGuid().ToString();
+
+                await client.SetAsync(id, "hello");
+
+                var value = (string)await client.GetAsync<string>(id);
+
+                Assert.Equal("hello", value);
+            }
+        }
+
+        [Theory]
+        [InlineData(PipelineMode.Sync, ConfigurationScenario.NonSslBasic)]
+        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
         public async Task GetStringAsync_NotFound_ReturnsNotFoundResult(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
         {
             var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine);

@@ -10,7 +10,7 @@ namespace RedisTribute
     {
         Task<byte[]> GetAsync(string key, CancellationToken cancellation = default);
         Task<string> GetStringAsync(string key, CancellationToken cancellation = default);
-        Task<IReadOnlyCollection<string>> GetStringsAsync(IReadOnlyCollection<string> keys,
+        Task<IDictionary<string, string>> GetStringsAsync(IReadOnlyCollection<string> keys,
             CancellationToken cancellation = default);
     }
 

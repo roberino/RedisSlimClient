@@ -1,6 +1,7 @@
 ﻿using RedisTribute.Io.Monitoring;
 using RedisTribute.Io.Server;
 using RedisTribute.Util;
+using System;
 using System.Threading.Tasks;
 
 namespace RedisTribute.Io
@@ -33,6 +34,14 @@ namespace RedisTribute.Io
 
         public void Dispose()
         {
+            //if (Status == PipelineStatus.Ok)
+            //{
+            //    _pipeline
+            //        .Execute(pipe => pipe.ExecuteAdminWithTimeout(new QuitCommand(), TimeSpan.FromMilliseconds(100)))
+            //        .GetAwaiter()
+            //        .GetResult();
+            //}
+
             _pipeline.Dispose();
         }
     }

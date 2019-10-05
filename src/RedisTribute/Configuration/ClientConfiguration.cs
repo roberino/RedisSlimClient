@@ -32,6 +32,8 @@ namespace RedisTribute.Configuration
 
         public int Id { get; }
 
+        public int Database { get; private set; }
+
         public NetworkConfiguration NetworkConfiguration { get; }
 
         public string ClientName { get; private set; }
@@ -137,6 +139,7 @@ namespace RedisTribute.Configuration
             parser.Register<string>(nameof(SslConfiguration.SslHost), (i, v) => SslConfiguration.SslHost = v);
             parser.Register<string>(nameof(SslConfiguration.CertificatePath), (i, v) => SslConfiguration.CertificatePath = v);
             parser.Register<bool>(nameof(SslConfiguration.UseSsl), (i, v) => SslConfiguration.UseSsl = v);
+            parser.Register<int>(nameof(Database), (i, v) => Database = v);
             parser.Register<string>("password", (i, v) => {
                 if (i.PasswordManager is PasswordManager pwds)
                 {

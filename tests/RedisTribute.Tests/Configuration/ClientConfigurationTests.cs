@@ -29,6 +29,14 @@ namespace RedisTribute.UnitTests.Configuration
         }
 
         [Fact]
+        public void Ctr_NonDefaultDb_ReturnsSpecifiedDbIndex()
+        {
+            var config = new ClientConfiguration("host1:1234;database=2");
+
+            Assert.Equal(2, config.Database);
+        }
+
+        [Fact]
         public void Ctr_PasswordWithEqualsChar_ParsesCorrectly()
         {
             var config = new ClientConfiguration("host1:1234;password=abc=123");

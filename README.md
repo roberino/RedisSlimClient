@@ -4,11 +4,12 @@
 
 # RedisTribute
 
-A work in progress. RedisTribute is a dotnet standard client for Redis, written from the ground up.
+RedisTribute is a dotnet standard client for Redis, written from the ground up.
 
 The main aims of the client are:
 
-* To create a pluggable, fault tolerant Redis client for .NET
+* To create a pluggable, fault tolerant Redis client for .NET (with a focus on core / standard)
+* A simple, async interface with support for cancellation tokens
 * To support basic Redis operations
 * To enable fast POCO to Redis mapping
 * To be performant with granular control over thread and socket usage
@@ -32,7 +33,8 @@ using (var client = ((ClientConfiguration)"localhost:6379").CreateClient())
 
 ## Minimum configuration
 
-The minimal configuration must include a host and/or port name. Each additional setting must be separated by semi-colon. Azure configuration strings (from the portal) are also supported.
+The minimal configuration must include a host and/or port name. Each additional setting must be separated by semi-colon. 
+Azure configuration strings (from the portal) are also supported.
 
 e.g.
 
@@ -100,6 +102,10 @@ This package adds Application Insights integration into the client so that calls
 
 # TODO
 
+* HashSets
+* Binary keys
+* Expose info
+* Transactions
 * Support for clustering redirection (requires more testing)
 * Better memory management
 * Slimmer object serialization
