@@ -13,6 +13,7 @@ The main aims of the client are:
 * To support basic Redis operations
 * To enable fast POCO to Redis mapping
 * To be performant with granular control over thread and socket usage
+* Expose detailed telemetry to enable diagnostic analysis and monitoring
 
 # Basic usage
 

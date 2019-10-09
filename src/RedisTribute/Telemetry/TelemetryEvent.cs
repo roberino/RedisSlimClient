@@ -3,15 +3,11 @@ using System.Collections.Generic;
 
 namespace RedisTribute.Telemetry
 {
-    public class TelemetryEvent
+    public class TelemetryEvent : IDisposable
     {
         Exception _exception;
-
+        
         public static string CreateId() => Guid.NewGuid().ToString("N").Substring(0, 8).ToUpper();
-
-        public static TelemetryEvent CreateStart(string name) => new TelemetryEvent() { Name = name, Sequence = TelemetrySequence.Start };
-
-        public static TelemetryEvent CreateEnd(string name) => new TelemetryEvent() { Name = name, Sequence = TelemetrySequence.End };
 
         public DateTime Timestamp { get; set; } = DateTime.UtcNow;
 
@@ -39,9 +35,25 @@ namespace RedisTribute.Telemetry
             }
         }
 
+        Action _onDispose;
+        internal Action OnDispose
+        {
+            set
+            {
+                if (_onDispose != null)
+                {
+                    throw new InvalidOperationException();
+                }
+                _onDispose = value;
+            }
+        }
+
         public IDictionary<string, object> Dimensions { get; } = new Dictionary<string, object>();
 
-        public TelemetryEvent CreateChild(string name) => new TelemetryEvent() { Name = name, OperationId = OperationId };
+        public void Dispose()
+        {
+            _onDispose?.Invoke();
+        }
     }
 
     [Flags]

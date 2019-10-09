@@ -22,12 +22,12 @@ namespace RedisTribute.Telemetry
                 name = act.Method.Name;
             }
 
-            var ev = TelemetryEvent.CreateStart(name);
+            var ev = TelemetryEventFactory.Instance.CreateStart(name);
 
             ev.Severity = severity;
             ev.Category = category;
 
-            var endEv = ev.CreateChild(name);
+            var endEv = TelemetryEventFactory.Instance.Create(name, ev.OperationId);
 
             endEv.Category = category;
             endEv.Sequence = TelemetrySequence.End;

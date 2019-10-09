@@ -16,6 +16,7 @@ namespace RedisTribute.Benchmarks
 
         public void Write(TelemetryEvent telemetryEvent)
         {
+            telemetryEvent.Dispose();
         }
     }
 }

@@ -19,7 +19,8 @@ namespace RedisTribute.Telemetry
 
         public void Write(string eventName)
         {
-            var ev = _operation.CreateChild(eventName);
+            var ev = TelemetryEventFactory.Instance.Create(eventName, _operation.OperationId);
+
             _writer.Write(ev);
         }
     }

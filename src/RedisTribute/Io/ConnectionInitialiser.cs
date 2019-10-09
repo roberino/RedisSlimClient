@@ -75,12 +75,11 @@ namespace RedisTribute.Io.Server
         {
             if (_telemetryWriter.Enabled)
             {
-                _telemetryWriter.Write(new TelemetryEvent()
-                {
-                    Name = $"{nameof(ConnectionInitialiser)}/{nameof(ConfigurationChanged)}",
-                    Data = redirectionInfo.Location.ToString(),
-                    Severity = Severity.Warn
-                });
+                var ev = TelemetryEventFactory.Instance.Create($"{nameof(ConnectionInitialiser)}/{nameof(ConfigurationChanged)}");
+                ev.Data = redirectionInfo.Location.ToString();
+                ev.Severity = Severity.Warn;
+
+                _telemetryWriter.Write(ev);
             }
 
             ConfigurationChanged?.Invoke();

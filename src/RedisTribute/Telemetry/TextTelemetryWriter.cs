@@ -34,6 +34,8 @@ namespace RedisTribute.Telemetry
                     _writeMethod($"\t-{dim.Key}={dim.Value}");
                 }
             }
+
+            telemetryEvent.Dispose();
         }
     }
 }

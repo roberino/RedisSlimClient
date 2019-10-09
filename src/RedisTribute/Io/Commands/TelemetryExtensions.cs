@@ -1,6 +1,5 @@
 ﻿using RedisTribute.Telemetry;
 using System;
-using System.Threading;
 
 namespace RedisTribute.Io.Commands
 {
@@ -14,14 +13,12 @@ namespace RedisTribute.Io.Commands
                 var cmdName = cmd.GetType().Name;
                 var cmdData = cmd.CommandText + (cmd.Key.IsNull ? string.Empty : $"/{cmd.Key}");
 
-                var telemetryEvent = new TelemetryEvent()
-                {
-                    Name = cmdName,
-                    Data = cmdData,
-                    Sequence = TelemetrySequence.Start,
-                    Category = TelemetryCategory.Request,
-                    Severity = Severity.Info
-                };
+                var telemetryEvent = TelemetryEventFactory.Instance.Create(cmdName);
+
+                telemetryEvent.Data = cmdData;
+                telemetryEvent.Sequence = TelemetrySequence.Start;
+                telemetryEvent.Category = TelemetryCategory.Request;
+                telemetryEvent.Severity = Severity.Info;
 
                 writer.Write(telemetryEvent);
 
@@ -33,16 +30,13 @@ namespace RedisTribute.Io.Commands
                     {
                         var end = s.Status == CommandStatus.Completed || s.Status == CommandStatus.Cancelled || s.Status == CommandStatus.Faulted || s.Status == CommandStatus.Abandoned;
 
-                        var childEvent = new TelemetryEvent()
-                        {
-                            Name = $"{cmdName}/{s.Status}",
-                            Data = cmdData,
-                            Category = TelemetryCategory.Request,
-                            Sequence = end ? TelemetrySequence.End : TelemetrySequence.Transitioning,
-                            Elapsed = s.Elapsed,
-                            OperationId = telemetryEvent.OperationId,
-                            Severity = level
-                        };
+                        var childEvent = TelemetryEventFactory.Instance.Create(cmdName, telemetryEvent.OperationId);
+
+                        childEvent.Data = cmdData;
+                        childEvent.Category = TelemetryCategory.Request;
+                        childEvent.Sequence = end ? TelemetrySequence.End : TelemetrySequence.Transitioning;
+                        childEvent.Elapsed = s.Elapsed;
+                        childEvent.Severity = level;
 
                         if (level == Severity.Error)
                         {

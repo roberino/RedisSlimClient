@@ -22,7 +22,7 @@ namespace RedisTribute.Io.Monitoring
         {
             try
             {
-                var start = TelemetryEvent.CreateStart(nameof(OnHeartbeat));
+                var start = TelemetryEventFactory.Instance.CreateStart(nameof(OnHeartbeat));
 
                 var threads = EnvironmentData.GetThreadPoolUsage();
 
@@ -30,7 +30,7 @@ namespace RedisTribute.Io.Monitoring
                 {
                     if (_telemetryWriter.Enabled && _telemetryWriter.Category.HasFlag(TelemetryCategory.Health))
                     {
-                        var endEv = start.CreateChild(nameof(OnHeartbeat));
+                        var endEv = TelemetryEventFactory.Instance.Create(start.Name, start.OperationId);
 
                         endEv.Dimensions["WT"] = threads.WorkerThreads;
                         endEv.Dimensions["CPT"] = threads.IoThreads;
