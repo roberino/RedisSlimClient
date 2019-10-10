@@ -2,7 +2,7 @@
   "profiles": {
     "RedisTribute.TestHarness": {
       "commandName": "Project",
-      "commandLineArgs": "localhost:6379"
+      "commandLineArgs": "tribute-euw-c0.redis.cache.windows.net:6380,password=m89tOLYc5lf2bE40ku8jMI5QIQOJP0+FRtqbmWBTJgk=,ssl=True,abortConnect=False"
     }
   }
 }

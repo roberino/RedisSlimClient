@@ -58,12 +58,22 @@ namespace RedisTribute.Types.Primatives
 
         protected override void Dispose(bool disposing)
         {
-            base.Dispose(disposing);
             if (disposing && !_disposed)
             {
                 _disposed = true;
-                _onDispose();
+                try
+                {
+                    _internalStream.Dispose();
+                }
+                catch { }
+                try
+                {
+                    _onDispose();
+                }
+                catch { }
             }
+
+            base.Dispose(disposing);
         }
 
         public override string ToString() => ToString(DefaultEncoding);
@@ -177,9 +187,11 @@ namespace RedisTribute.Types.Primatives
 
         void Release(byte[] arr)
         {
+            var len = arr.Length;
+
             _pool.Return(arr);
 
-            Interlocked.Add(ref _bytesRented, -arr.Length);
+            Interlocked.Add(ref _bytesRented, -len);
         }
     }
 }

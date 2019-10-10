@@ -7,6 +7,9 @@ namespace RedisTribute.Telemetry
 {
     class TelemetryEventFactory
     {
+
+        readonly int _growRate;
+        readonly ReaderWriterLockSlim _lock;
         readonly TelemetryEvent _default;
         readonly List<Rentable<TelemetryEvent>> _pool;
         private readonly int _maxSize;
@@ -14,8 +17,12 @@ namespace RedisTribute.Telemetry
         public TelemetryEventFactory(int initialSize = 64, int maxSize = 1024)
         {
             _default = new TelemetryEvent();
-            _pool = Enumerable.Range(1, initialSize).Select(x => SetupDispose(new Rentable<TelemetryEvent>(new TelemetryEvent()))).ToList();
+            _lock = new ReaderWriterLockSlim();
+            _pool = new List<Rentable<TelemetryEvent>>();
             _maxSize = maxSize;
+            _growRate = (int)(initialSize * (1 / 4f));
+
+            ExpandPool(initialSize);
         }
 
         public static TelemetryEventFactory Instance { get; } = new TelemetryEventFactory();
@@ -33,47 +40,36 @@ namespace RedisTribute.Telemetry
 
         public TelemetryEvent Create(string name, string operationId = null)
         {
-            while (true)
+            _lock.EnterReadLock();
+
+            try
             {
-                var next = _pool.FirstOrDefault(x => x.Available);
-
-                if (next == null)
+                foreach (var next in _pool.Where(x => x.Available))
                 {
-                    if (_pool.Count >= _maxSize)
-                    {
-                        throw new InvalidOperationException($"Pool size exceeded ({_pool.Count}/{_maxSize})");
-                    }
-
-                    next = SetupDispose(new Rentable<TelemetryEvent>(new TelemetryEvent()
-                    {
-                        Name = name,
-                        OperationId = operationId ?? TelemetryEvent.CreateId()
-                    }));
-
-                    lock(_pool)
-                        _pool.Add(next);
-
                     if (next.Rent())
                     {
+                        next.Instance.Name = name;
+                        next.Instance.Category = _default.Category;
+                        next.Instance.Elapsed = _default.Elapsed;
+                        next.Instance.Exception = _default.Exception;
+                        next.Instance.Severity = _default.Severity;
+                        next.Instance.Sequence = _default.Sequence;
+                        next.Instance.Timestamp = DateTime.UtcNow;
+                        next.Instance.Dimensions.Clear();
+                        next.Instance.OperationId = operationId ?? TelemetryEvent.CreateId();
+
                         return next.Instance;
                     }
                 }
-
-                if (next.Rent())
-                {
-                    next.Instance.Name = name;
-                    next.Instance.Category = _default.Category;
-                    next.Instance.Elapsed = _default.Elapsed;
-                    next.Instance.Exception = _default.Exception;
-                    next.Instance.Severity = _default.Severity;
-                    next.Instance.Sequence = _default.Sequence;
-                    next.Instance.Timestamp = DateTime.UtcNow;
-                    next.Instance.Dimensions.Clear();
-                    next.Instance.OperationId = operationId ?? TelemetryEvent.CreateId();
-
-                    return next.Instance;
-                }
             }
+            finally
+            {
+                _lock.ExitReadLock();
+            }
+
+            ExpandPool(_growRate);
+
+            return Create(name, operationId);
         }
 
         static Rentable<TelemetryEvent> SetupDispose(Rentable<TelemetryEvent> rentable)
@@ -81,6 +77,24 @@ namespace RedisTribute.Telemetry
             rentable.Instance.OnDispose = () => rentable.Release();
 
             return rentable;
+        }
+
+        void ExpandPool(int numberOfItems)
+        {
+            _lock.EnterWriteLock();
+
+            if (_pool.Count + numberOfItems > _maxSize)
+            {
+                numberOfItems = _maxSize - _pool.Count;
+
+                if (numberOfItems <= 0)
+                {
+                    throw new InvalidOperationException($"Pool size exceeded ({_pool.Count}/{_maxSize})");
+                }
+            }
+
+            _pool.AddRange(Enumerable.Range(1, numberOfItems).Select(x => SetupDispose(new Rentable<TelemetryEvent>(new TelemetryEvent()))));
+            _lock.ExitWriteLock();
         }
 
         class Rentable<T>

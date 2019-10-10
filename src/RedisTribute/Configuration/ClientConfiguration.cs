@@ -73,9 +73,9 @@ namespace RedisTribute.Configuration
 
         public int ConnectionPoolSize { get; set; } = 1;
 
-        public int ReadBufferSize { get; set; } = 1024;
+        public int ReadBufferSize { get; set; } = 4096;
 
-        public int WriteBufferSize { get; set; } = 1024;
+        public int WriteBufferSize { get; set; } = 4096;
 
         public override string ToString()
         {
