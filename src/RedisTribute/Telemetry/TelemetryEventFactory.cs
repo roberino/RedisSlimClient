@@ -20,7 +20,7 @@ namespace RedisTribute.Telemetry
             _lock = new ReaderWriterLockSlim();
             _pool = new List<Rentable<TelemetryEvent>>();
             _maxSize = maxSize;
-            _growRate = (int)(initialSize * (1 / 4f));
+            _growRate = Math.Max((int)(initialSize * (1 / 4f)), 1);
 
             ExpandPool(initialSize);
         }

@@ -68,17 +68,21 @@ namespace RedisTribute.UnitTests.Telemetry
             Assert.Equal(50, capturedIds.Distinct().Count());
         }
 
-        [Fact]
-        public void Create_ExceedPoolSize_PoolIsExpanded()
+        [Theory]
+        [InlineData(4, 1)]
+        [InlineData(2, 1)]
+        [InlineData(10, 2)]
+        [InlineData(14, 3)]
+        public void Create_ExceedPoolSize_PoolIsExpanded(int minSize, int expectedGrowRate)
         {
-            var pool = new TelemetryEventFactory(4);
+            var pool = new TelemetryEventFactory(minSize);
 
-            Assert.Equal(4, pool.Size);
+            Assert.Equal(minSize, pool.Size);
 
-            var items = Enumerable.Range(1, 5).Select(n => pool.Create(n.ToString())).ToList();
+            var items = Enumerable.Range(1, minSize + 1).Select(n => pool.Create(n.ToString())).ToList();
 
-            Assert.Equal(5, pool.Size);
-            Assert.Equal(0, pool.Available);
+            Assert.Equal(minSize + expectedGrowRate, pool.Size);
+            Assert.Equal(expectedGrowRate - 1, pool.Available);
 
             var i = 1;
 
@@ -88,7 +92,7 @@ namespace RedisTribute.UnitTests.Telemetry
                 item.Dispose();
             }
 
-            Assert.Equal(5, pool.Available);
+            Assert.Equal(minSize + expectedGrowRate, pool.Available);
         }
 
 
