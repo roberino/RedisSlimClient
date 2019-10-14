@@ -20,6 +20,8 @@ namespace RedisTribute.Io.Commands
                 telemetryEvent.Category = TelemetryCategory.Request;
                 telemetryEvent.Severity = Severity.Info;
 
+                var opId = telemetryEvent.OperationId;
+
                 writer.Write(telemetryEvent);
 
                 cmd.OnStateChanged = s =>
@@ -30,7 +32,7 @@ namespace RedisTribute.Io.Commands
                     {
                         var end = s.Status == CommandStatus.Completed || s.Status == CommandStatus.Cancelled || s.Status == CommandStatus.Faulted || s.Status == CommandStatus.Abandoned;
 
-                        var childEvent = TelemetryEventFactory.Instance.Create(cmdName, telemetryEvent.OperationId);
+                        var childEvent = TelemetryEventFactory.Instance.Create(cmdName, opId);
 
                         childEvent.Data = cmdData;
                         childEvent.Category = TelemetryCategory.Request;

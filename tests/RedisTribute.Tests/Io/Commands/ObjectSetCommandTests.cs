@@ -24,7 +24,7 @@ namespace RedisTribute.UnitTests.Io.Commands
             settings.SerializerFactory.Create<TestComplexDto>().Returns(serializer);
             serializer.When(s => s.WriteData(instance, Arg.Any<IObjectWriter>())).Do(call => call.Arg<IObjectWriter>().Raw(new byte[1000]));
 
-            var command = new ObjectSetCommand<TestComplexDto>("x", settings, instance);
+            var command = new ObjectSetCommand<TestComplexDto>("x", settings, instance, default);
 
             object[] args = null;
 

@@ -15,11 +15,13 @@ namespace RedisTribute.Io.Commands
         readonly ISerializerSettings _configuration;
         readonly IObjectSerializer<T> _serializer;
         readonly T _objectData;
+        readonly SetOptions _options;
 
-        public ObjectSetCommand(RedisKey key, ISerializerSettings config, T objectData) : base("SET", true, key)
+        public ObjectSetCommand(RedisKey key, ISerializerSettings config, T objectData, SetOptions options) : base("SET", true, key)
         {
             _configuration = config;
             _objectData = objectData;
+            _options = options;
             _serializer = config.SerializerFactory.Create<T>();
         }
 
@@ -27,7 +29,7 @@ namespace RedisTribute.Io.Commands
         {
             var objStream = GetObjectData();
 
-            return new CommandParameters(() => objStream.Dispose(), CommandText, Key.Bytes, objStream.GetBuffer());
+            return new CommandParameters(SetCommand.GetArgs(CommandText, Key, objStream.GetBuffer(), _options), () => objStream.Dispose());
         }
 
         protected override bool TranslateResult(IRedisObject redisObject) => string.Equals(redisObject.ToString(), "OK", StringComparison.OrdinalIgnoreCase);

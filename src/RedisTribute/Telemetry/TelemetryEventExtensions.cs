@@ -27,6 +27,12 @@ namespace RedisTribute.Telemetry
             ev.Severity = severity;
             ev.Category = category;
 
+            if (!writer.Enabled || !writer.Severity.HasFlag(severity) || !writer.Category.HasFlag(category))
+            {
+                using (ev)
+                    return await act(new TelemetricContext(NullWriter.Instance, ev, ev.Dimensions));
+            }
+
             var endEv = TelemetryEventFactory.Instance.Create(name, ev.OperationId);
 
             endEv.Category = category;
@@ -34,11 +40,6 @@ namespace RedisTribute.Telemetry
             endEv.Severity = severity;
 
             var ctx = new TelemetricContext(writer, ev, endEv.Dimensions);
-
-            if (!writer.Enabled || !writer.Severity.HasFlag(severity) || !writer.Category.HasFlag(category))
-            {
-                return await act(ctx);
-            }
 
             var timer = new Stopwatch();
 

@@ -101,7 +101,7 @@ namespace RedisTribute.Benchmarks
 
             try
             {
-                await _currentClient.SetAsync(key, data, cancel.Token);
+                await _currentClient.SetAsync(key, data, cancellation: cancel.Token);
 
                 await _currentClient.GetAsync<T>(key, cancel.Token);
 

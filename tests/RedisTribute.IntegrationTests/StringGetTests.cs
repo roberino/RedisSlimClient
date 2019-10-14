@@ -1,4 +1,5 @@
 ﻿using RedisTribute.Configuration;
+using RedisTribute.Types;
 using System;
 using System.Linq;
 using System.Threading;
@@ -64,6 +65,70 @@ namespace RedisTribute.IntegrationTests
 
                 Assert.False(found);
                 Assert.Equal("not-found", value);
+            }
+        }
+
+
+        [Theory]
+        [InlineData(PipelineMode.Sync, ConfigurationScenario.NonSslBasic)]
+        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
+        public async Task SetStringAsync_WithCondition_ReturnsOk(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
+        {
+            var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine);
+
+            config.HealthCheckInterval = TimeSpan.Zero;
+
+            using (var client = config.CreateClient())
+            {
+                await client.PingAsync();
+
+                var data = Enumerable.Range(1, 16).Select(n => (byte)n).ToArray();
+                var key = Guid.NewGuid().ToString();
+
+                var result = await client.SetAsync(key, data, SetCondition.XX_SetKeyOnlyIfExists);
+
+                Assert.False(result);
+
+                var notFound = false;
+
+                var result2 = await client.GetAsync<byte[]>(key);
+
+                result2.IfNotFound(() => notFound = true);
+
+                Assert.True(notFound);
+            }
+        }
+
+
+        [Theory]
+        [InlineData(PipelineMode.Sync, ConfigurationScenario.NonSslBasic)]
+        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
+        public async Task SetStringAsync_WithExpiry_ReturnsOk(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
+        {
+            var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine);
+
+            config.HealthCheckInterval = TimeSpan.Zero;
+
+            using (var client = config.CreateClient())
+            {
+                await client.PingAsync();
+
+                var data = Enumerable.Range(1, 16).Select(n => (byte)n).ToArray();
+                var key = Guid.NewGuid().ToString();
+
+                var result = await client.SetAsync(key, data, (Expiry)DateTime.UtcNow.AddMilliseconds(5));
+
+                Assert.True(result);
+
+                await Task.Delay(10);
+
+                var notFound = false;
+
+                var result2 = await client.GetAsync<byte[]>(key);
+
+                result2.IfNotFound(() => notFound = true);
+
+                Assert.True(notFound);
             }
         }
 

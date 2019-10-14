@@ -6,7 +6,7 @@ namespace RedisTribute.Telemetry
     public class TelemetryEvent : IDisposable
     {
         Exception _exception;
-        
+                
         public static string CreateId() => Guid.NewGuid().ToString("N").Substring(0, 8).ToUpper();
 
         public DateTime Timestamp { get; set; } = DateTime.UtcNow;

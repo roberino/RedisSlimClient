@@ -34,12 +34,12 @@ namespace RedisTribute
 
         public Task<long> DeleteAsync(string key, CancellationToken cancellation = default) => _controller.GetNumericResponse(new DeleteCommand(key), cancellation);
 
-        public Task<bool> SetAsync(string key, byte[] data, CancellationToken cancellation = default) => _controller.GetResponse(new SetCommand(key, data), cancellation);
+        public Task<bool> SetAsync(string key, byte[] data, SetOptions options = default, CancellationToken cancellation = default) => _controller.GetResponse(new SetCommand(key, data, options), cancellation);
 
-        public Task<bool> SetAsync(string key, string data, CancellationToken cancellation = default) => _controller.GetResponse(new SetCommand(key, _controller.Configuration.Encoding.GetBytes(data)), cancellation);
+        public Task<bool> SetAsync(string key, string data, SetOptions options = default, CancellationToken cancellation = default) => _controller.GetResponse(new SetCommand(key, _controller.Configuration.Encoding.GetBytes(data), options), cancellation);
 
-        public Task<bool> SetAsync<T>(string key, T obj, CancellationToken cancellation = default) 
-            =>  _controller.GetResponse(new ObjectSetCommand<T>(key, _controller.Configuration, obj), cancellation);
+        public Task<bool> SetAsync<T>(string key, T obj, SetOptions options = default, CancellationToken cancellation = default) 
+            =>  _controller.GetResponse(new ObjectSetCommand<T>(key, _controller.Configuration, obj, options), cancellation);
 
         public Task<Result<T>> GetAsync<T>(string key, CancellationToken cancellation = default) 
             => Result<T>.FromOperation(() => GetInternalAsync<T>(key, cancellation), cancellation);

@@ -1,8 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace RedisTribute.Telemetry
 {
-    class TelemetricContext
+    class TelemetricContext : IDisposable
     {
         readonly ITelemetryWriter _writer;
         readonly TelemetryEvent _operation;
@@ -16,6 +17,11 @@ namespace RedisTribute.Telemetry
         }
 
         public IDictionary<string, object> Dimensions { get; }
+
+        public void Dispose()
+        {
+            _operation.Dispose();
+        }
 
         public void Write(string eventName)
         {

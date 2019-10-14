@@ -1,4 +1,5 @@
 ﻿using RedisTribute.Io.Server;
+using RedisTribute.Types;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -24,14 +25,14 @@ namespace RedisTribute
     public interface IRedisReaderWriter : IRedisReader
     {
         Task<long> DeleteAsync(string key, CancellationToken cancellation = default);
-        Task<bool> SetAsync(string key, byte[] data, CancellationToken cancellation = default);
-        Task<bool> SetAsync(string key, string data, CancellationToken cancellation = default);
+        Task<bool> SetAsync(string key, byte[] data, SetOptions options = default, CancellationToken cancellation = default);
+        Task<bool> SetAsync(string key, string data, SetOptions options = default, CancellationToken cancellation = default);
     }
 
     public interface IRedisMultiReaderWriter
     {
         Task<Result<T>> GetAsync<T>(string key, CancellationToken cancellation = default);
-        Task<bool> SetAsync<T>(string key, T obj, CancellationToken cancellation = default);
+        Task<bool> SetAsync<T>(string key, T obj, SetOptions options = default, CancellationToken cancellation = default);
     }
 
     public interface IRedisClient : IRedisReaderWriter, IRedisMultiReaderWriter, IRedisDiagnosticClient
