@@ -28,8 +28,17 @@
 
     public enum SetCondition
     {
+        /// <summary>
+        /// No conditions
+        /// </summary>
         Default = 0,
-        NX_SetKeyIfNotExists = 1,
-        XX_SetKeyOnlyIfExists = 2
+        /// <summary>
+        /// NX -- Only set the key if it does not already exist.
+        /// </summary>
+        SetKeyIfNotExists = 1,
+        /// <summary>
+        /// XX -- Only set the key if it already exist.
+        /// </summary>
+        SetKeyOnlyIfExists = 2
     }
 }

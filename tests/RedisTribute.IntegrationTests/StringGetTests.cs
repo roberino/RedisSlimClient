@@ -70,13 +70,15 @@ namespace RedisTribute.IntegrationTests
 
 
         [Theory]
-        [InlineData(PipelineMode.Sync, ConfigurationScenario.NonSslBasic)]
+        //[InlineData(PipelineMode.Sync, ConfigurationScenario.NonSslBasic)]
         [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
         public async Task SetStringAsync_WithCondition_ReturnsOk(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
         {
             var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine);
 
             config.HealthCheckInterval = TimeSpan.Zero;
+            config.FallbackStrategy = FallbackStrategy.None;
+            config.DefaultOperationTimeout = TimeSpan.FromMinutes(2);
 
             using (var client = config.CreateClient())
             {
@@ -85,7 +87,7 @@ namespace RedisTribute.IntegrationTests
                 var data = Enumerable.Range(1, 16).Select(n => (byte)n).ToArray();
                 var key = Guid.NewGuid().ToString();
 
-                var result = await client.SetAsync(key, data, SetCondition.XX_SetKeyOnlyIfExists);
+                var result = await client.SetAsync(key, data, SetCondition.SetKeyOnlyIfExists);
 
                 Assert.False(result);
 

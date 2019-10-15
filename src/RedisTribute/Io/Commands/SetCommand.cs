@@ -44,7 +44,7 @@ namespace RedisTribute.Io.Commands
 
             if (options.Condition != SetCondition.Default)
             {
-                args[i++] = options.Condition == SetCondition.NX_SetKeyIfNotExists ? "NX" : "XX";
+                args[i++] = options.Condition == SetCondition.SetKeyIfNotExists ? "NX" : "XX";
             }
 
             if (options.Expiry.HasValue)
@@ -56,6 +56,9 @@ namespace RedisTribute.Io.Commands
             return args;
         }
 
-        protected override bool TranslateResult(IRedisObject redisObject) => string.Equals(redisObject.ToString(), SuccessResponse, StringComparison.OrdinalIgnoreCase);
+        protected override bool TranslateResult(IRedisObject redisObject)
+        {
+            return string.Equals(redisObject.ToString(), SuccessResponse, StringComparison.OrdinalIgnoreCase);
+        }
     }
 }
