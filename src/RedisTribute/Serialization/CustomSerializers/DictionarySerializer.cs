@@ -2,18 +2,18 @@
 
 namespace RedisTribute.Serialization.CustomSerializers
 {
-    class DictionarySerializer<T> : IObjectSerializer<IDictionary<string, T>>
+    class DictionarySerializer<T> : IObjectSerializer<Dictionary<string, T>>
     {
         const string ItemName = "_data";
         
-        public IDictionary<string, T> ReadData(IObjectReader reader, IDictionary<string, T> defaultValue)
+        public Dictionary<string, T> ReadData(IObjectReader reader, Dictionary<string, T> defaultValue)
         {
             var items = reader.ReadEnumerable(ItemName, new Dictionary<string, T>());
 
-            return (IDictionary<string, T>)items;
+            return (Dictionary<string, T>)items;
         }
 
-        public void WriteData(IDictionary<string, T> instance, IObjectWriter writer)
+        public void WriteData(Dictionary<string, T> instance, IObjectWriter writer)
         {
             writer.WriteItem(ItemName, (IEnumerable<KeyValuePair<string, T>>)instance);
         }

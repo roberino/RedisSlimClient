@@ -1,7 +1,12 @@
 ﻿using RedisTribute.Configuration;
 using RedisTribute.Stubs;
+using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -54,6 +59,66 @@ namespace RedisTribute.IntegrationTests
                     Assert.Equal(1, deleted);
                 }
             }
-        } 
+        }
+
+        [Theory]
+        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
+        public async Task XDocument_Serialise_SerialisedAsXmlContent(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
+        {
+            var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine);
+
+            using (var client = config.CreateClient())
+            {
+                await client.PingAsync();
+
+                var someNumbers = Enumerable.Range(1, 25);
+                var data = someNumbers.Select(n => new XElement("data", new XAttribute("value", n)));
+                var root = new XDocument(new XElement("root", data));
+
+                var key = Guid.NewGuid().ToString();
+
+                await client.SetAsync(key, root);
+
+                var xmlBytes = await client.GetAsync(key);
+
+                using (var ms = new MemoryStream(xmlBytes))
+                using (var reader = new StreamReader(ms, Encoding.UTF8))
+                {
+                    var root2 = XDocument.Load(reader);
+
+                    Assert.Equal(someNumbers.Count(), root2.Root.Elements().Count());
+
+                    foreach (var pair in someNumbers.Zip(root2.Root.Elements(), (n, x) => (n, x)))
+                        Assert.Equal(pair.n.ToString(), pair.x.Attribute("value").Value);
+                }
+            }
+        }
+
+        [Theory]
+        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
+        public async Task Dictionary_Serialise_SerialisedAsXmlContent(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
+        {
+            var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine);
+
+            using (var client = config.CreateClient())
+            {
+                await client.PingAsync();
+
+                var someNumbers = Enumerable.Range(1, 25);
+                var data = someNumbers.ToDictionary(n => n.ToString(), n => $"x{n}");
+
+                var key = Guid.NewGuid().ToString();
+
+                await client.SetAsync(key, data);
+
+                var data2 = await client.GetAsync<Dictionary<string, string>>(key);
+
+                foreach (var pair in someNumbers.Zip(data2.AsValue(), (n, x) => (n, x)))
+                {
+                    Assert.Equal(pair.n.ToString(), pair.x.Key);
+                    Assert.Equal($"x{pair.n}", pair.x.Value);
+                }
+            }
+        }
     }
 }
