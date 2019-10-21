@@ -48,16 +48,21 @@ namespace RedisTribute.Benchmarks
         {
             var key = $"{PipelineMode}/{ConnectionPoolSize}";
 
-            _currentClient = _clients.GetOrAdd(key, k =>
-                new ClientConfiguration(ServerUri)
+            _currentClient = _clients.GetOrAdd(key, k => {
+               var conf = new ClientConfiguration(ServerUri)
                 {
                     ConnectionPoolSize = ConnectionPoolSize,
                     PipelineMode = PipelineMode,
                     ConnectTimeout = TimeSpan.FromMilliseconds(500),
                     DefaultOperationTimeout = TimeSpan.FromMilliseconds(500),
-                    FallbackStrategy = FallbackStrategy,
-                    TelemetryWriter = TelemetryOn ? new TextTelemetryWriter(Console.WriteLine, Severity.Error | Severity.Warn | Severity.Info) : NullTelemetry.Instance
-                }.CreateClient()
+                    FallbackStrategy = FallbackStrategy
+                };
+
+                if(TelemetryOn)
+                    conf.TelemetrySinks.Add(new TextTelemetryWriter(Console.WriteLine, Severity.Error | Severity.Warn | Severity.Info));
+
+                return conf.CreateClient();
+            }
             );
         }
 

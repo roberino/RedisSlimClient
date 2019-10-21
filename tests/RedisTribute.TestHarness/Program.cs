@@ -1,6 +1,7 @@
 ﻿using RedisTribute.Configuration;
 using RedisTribute.Stubs;
-using RedisTribute.Telemetry;
+using Serilog;
+using Serilog.Sinks.Elasticsearch;
 using System;
 using System.Linq;
 using System.Threading;
@@ -12,16 +13,19 @@ namespace RedisTribute.TestHarness
     {
         static async Task Main(string[] args)
         {
-            var config = new ClientConfiguration(args[0])
-            {
-                TelemetryWriter = new TextTelemetryWriter(Console.WriteLine, Severity.All)
-            };
+            var config = new ClientConfiguration(args[0]);
+
+            var loggerConfig = new LoggerConfiguration()
+                .WriteTo.Elasticsearch(new ElasticsearchSinkOptions(new Uri("http://localhost:9200"))
+                {
+                    AutoRegisterTemplate = true,
+                    AutoRegisterTemplateVersion = AutoRegisterTemplateVersion.ESv6
+                });
 
             config.UseApplicationInsights("506daf4c-1db9-46a4-b818-d9036fb198d6");
+            config.UseSerilog(loggerConfig);
 
             ThreadPool.SetMinThreads(32, 32);
-
-            var verbose = config.TelemetryWriter.Severity.HasFlag(Severity.Diagnostic);
 
             try
             {
@@ -32,7 +36,7 @@ namespace RedisTribute.TestHarness
 
                     while (true)
                     {
-                        var tasks = Enumerable.Range(0, 10).Select(n => Operation(client, n + i, verbose)).ToList();
+                        var tasks = Enumerable.Range(0, 10).Select(n => Operation(client, n + i, false)).ToList();
 
                         await Task.WhenAll(tasks);
 

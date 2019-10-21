@@ -74,7 +74,7 @@ namespace RedisTribute.Telemetry
 
         static Rentable<TelemetryEvent> SetupDispose(Rentable<TelemetryEvent> rentable)
         {
-            rentable.Instance.OnDispose = () => rentable.Release();
+            rentable.Instance.OnReleased = rentable.Release;
 
             return rentable;
         }
@@ -83,18 +83,24 @@ namespace RedisTribute.Telemetry
         {
             _lock.EnterWriteLock();
 
-            if (_pool.Count + numberOfItems > _maxSize)
+            try
             {
-                numberOfItems = _maxSize - _pool.Count;
-
-                if (numberOfItems <= 0)
+                if (_pool.Count + numberOfItems > _maxSize)
                 {
-                    throw new InvalidOperationException($"Pool size exceeded ({_pool.Count}/{_maxSize})");
-                }
-            }
+                    numberOfItems = _maxSize - _pool.Count;
 
-            _pool.AddRange(Enumerable.Range(1, numberOfItems).Select(x => SetupDispose(new Rentable<TelemetryEvent>(new TelemetryEvent()))));
-            _lock.ExitWriteLock();
+                    if (numberOfItems <= 0)
+                    {
+                        throw new InvalidOperationException($"Pool size exceeded ({_pool.Count}/{_maxSize})");
+                    }
+                }
+
+                _pool.AddRange(Enumerable.Range(1, numberOfItems).Select(x => SetupDispose(new Rentable<TelemetryEvent>(new TelemetryEvent()))));
+            }
+            finally
+            {
+                _lock.ExitWriteLock();
+            }
         }
 
         class Rentable<T>

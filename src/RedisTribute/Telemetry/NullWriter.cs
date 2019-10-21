@@ -14,7 +14,6 @@
 
         public void Write(TelemetryEvent telemetryEvent)
         {
-            telemetryEvent.Dispose();
         }
     }
 }

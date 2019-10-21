@@ -20,7 +20,6 @@ namespace RedisTribute.Telemetry
 
         public void Dispose()
         {
-            _operation.Dispose();
         }
 
         public void Write(string eventName)

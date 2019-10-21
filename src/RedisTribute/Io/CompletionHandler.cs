@@ -67,7 +67,8 @@ namespace RedisTribute.Io
             }
             catch (Exception ex)
             {
-                _commandQueue.AbortAll(ex, _workScheduler).ConfigureAwait(false).GetAwaiter().GetResult(); ;
+                _commandQueue.AbortAll(ex, _workScheduler).ConfigureAwait(false).GetAwaiter().GetResult();
+                throw;
             }
         }
     }

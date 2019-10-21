@@ -3,9 +3,16 @@ using System.Collections.Generic;
 
 namespace RedisTribute.Telemetry
 {
-    public class TelemetryEvent : IDisposable
+    public class TelemetryEvent
     {
+        readonly KeepAliveHandle _keepAliveHandle;
+
         Exception _exception;
+
+        public TelemetryEvent()
+        {
+            _keepAliveHandle = new KeepAliveHandle(Release);
+        }
                 
         public static string CreateId() => Guid.NewGuid().ToString("N").Substring(0, 8).ToUpper();
 
@@ -35,24 +42,41 @@ namespace RedisTribute.Telemetry
             }
         }
 
-        Action _onDispose;
-        internal Action OnDispose
+        Action _onReleased;
+        internal Action OnReleased
         {
             set
             {
-                if (_onDispose != null)
+                if (_onReleased != null)
                 {
                     throw new InvalidOperationException();
                 }
-                _onDispose = value;
+                _onReleased = value;
             }
         }
 
+        internal IDisposable KeepAlive() => _keepAliveHandle;
+
         public IDictionary<string, object> Dimensions { get; } = new Dictionary<string, object>();
 
-        public void Dispose()
+        void Release()
         {
-            _onDispose?.Invoke();
+            _onReleased?.Invoke();
+        }
+
+        class KeepAliveHandle : IDisposable
+        {
+            readonly Action _onDispose;
+
+            public KeepAliveHandle(Action onDispose)
+            {
+                _onDispose = onDispose;
+            }
+
+            public void Dispose()
+            {
+                _onDispose.Invoke();
+            }
         }
     }
 

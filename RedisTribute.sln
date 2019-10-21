@@ -49,6 +49,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RedisTribute.Json", "src\Re
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RedisTribute.ApplicationInsights", "src\RedisTribute.ApplicationInsights\RedisTribute.ApplicationInsights.csproj", "{C45FDA84-C8D8-45CF-ADD5-93044C2FDCF5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RedisTribute.Serilog", "src\RedisTribute.Serilog\RedisTribute.Serilog.csproj", "{9E74550F-233E-4750-9E4F-777392E1E556}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -87,6 +89,10 @@ Global
 		{C45FDA84-C8D8-45CF-ADD5-93044C2FDCF5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C45FDA84-C8D8-45CF-ADD5-93044C2FDCF5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C45FDA84-C8D8-45CF-ADD5-93044C2FDCF5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9E74550F-233E-4750-9E4F-777392E1E556}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9E74550F-233E-4750-9E4F-777392E1E556}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9E74550F-233E-4750-9E4F-777392E1E556}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9E74550F-233E-4750-9E4F-777392E1E556}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -101,6 +107,7 @@ Global
 		{7BD09ECB-169F-4DE6-A3BF-8C25254B1660} = {7D3242BB-A1A6-4A11-BBFD-F5DDD1F140C8}
 		{57F3C07A-0A31-48ED-BFB4-020FD5295B86} = {A0C42956-9A84-4769-8207-6BB16FD248D3}
 		{C45FDA84-C8D8-45CF-ADD5-93044C2FDCF5} = {A0C42956-9A84-4769-8207-6BB16FD248D3}
+		{9E74550F-233E-4750-9E4F-777392E1E556} = {A0C42956-9A84-4769-8207-6BB16FD248D3}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {13B5FD4B-6ADC-4F52-B91A-6F364DB1E8DC}

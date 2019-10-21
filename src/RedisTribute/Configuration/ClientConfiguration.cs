@@ -14,6 +14,8 @@ namespace RedisTribute.Configuration
     {
         static int _idCounter = 1;
 
+        readonly TelemetryAggregateWriter _telemetryAggregateWriter;
+
         public ClientConfiguration(string connectionOptions, NetworkConfiguration networkConfiguration = null)
         {
             Id = Interlocked.Increment(ref _idCounter);
@@ -26,6 +28,8 @@ namespace RedisTribute.Configuration
             parser.Parse(connectionOptions, this);
 
             PostParse(false);
+
+            _telemetryAggregateWriter = new TelemetryAggregateWriter();
         }
 
         public static implicit operator ClientConfiguration(string configString) => new ClientConfiguration(configString);
@@ -49,8 +53,10 @@ namespace RedisTribute.Configuration
         readonly NonNullable<IObjectSerializerFactory> _serializerFactory = Serialization.SerializerFactory.Instance;
         public IObjectSerializerFactory SerializerFactory { get => _serializerFactory.Value; set => _serializerFactory.Value = value; }
 
-        readonly NonNullable<ITelemetryWriter> _telemetryWriter = new NonNullable<ITelemetryWriter>(NullWriter.Instance);
-        public ITelemetryWriter TelemetryWriter { get => _telemetryWriter.Value; set => _telemetryWriter.Value = value; }
+
+        internal ITelemetryWriter TelemetryWriter => _telemetryAggregateWriter;
+
+        public ITelemetrySinkCollection TelemetrySinks => _telemetryAggregateWriter;
 
         public SslConfiguration SslConfiguration { get; }
 
@@ -121,13 +127,19 @@ namespace RedisTribute.Configuration
 
         internal ClientConfiguration Clone(IEnumerable<Uri> newEndpoints)
         {
-            return new ClientConfiguration(ToString(), NetworkConfiguration.Clone())
+            var conf = new ClientConfiguration(ToString(), NetworkConfiguration.Clone())
             {
                 ServerEndpoints = newEndpoints.ToArray(),
-                TelemetryWriter = TelemetryWriter,
                 SerializerFactory = SerializerFactory,
                 Encoding = Encoding
             };
+
+            foreach(var writer in _telemetryAggregateWriter)
+            {
+                conf.TelemetrySinks.Add(writer);
+            }
+
+            return conf;
         }
 
         ConfigurationParser<ClientConfiguration> CreateParser()

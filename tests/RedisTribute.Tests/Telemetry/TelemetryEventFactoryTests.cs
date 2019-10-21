@@ -20,7 +20,7 @@ namespace RedisTribute.UnitTests.Telemetry
             Assert.Equal(4, pool.Size);
             Assert.Equal(3, pool.Available);
 
-            item.Dispose();
+            item.KeepAlive().Dispose();
 
             Assert.Equal(4, pool.Available);
         }
@@ -38,7 +38,7 @@ namespace RedisTribute.UnitTests.Telemetry
             
             foreach (var item in items)
             {
-                item.Dispose();
+                item.KeepAlive().Dispose();
             }
 
             var reusedItem = pool.Create("x");
@@ -58,7 +58,9 @@ namespace RedisTribute.UnitTests.Telemetry
             Enumerable.Range(1, 50)
                 .AsParallel().ForAll(n =>
                 {
-                    using (var t = pool.Create(n.ToString()))
+                    var t = pool.Create(n.ToString());
+
+                    using (t.KeepAlive())
                     {
                         capturedIds.Add(t.OperationId);
                         Assert.Equal(n.ToString(), t.Name);
@@ -89,7 +91,7 @@ namespace RedisTribute.UnitTests.Telemetry
             foreach(var item in items)
             {
                 Assert.Equal((i++).ToString(), item.Name);
-                item.Dispose();
+                item.KeepAlive().Dispose();
             }
 
             Assert.Equal(minSize + expectedGrowRate, pool.Available);

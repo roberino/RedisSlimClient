@@ -23,12 +23,6 @@ namespace RedisTribute.ApplicationInsights
 
         public void Write(TelemetryEvent ev)
         {
-            using (ev)
-                WriteImpl(ev);
-        }
-
-        void WriteImpl(TelemetryEvent ev)
-        {
             var now = DateTime.UtcNow;
 
             if (ev.Severity == Severity.Error && ProactiveTrace.HasValue)

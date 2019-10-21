@@ -29,7 +29,7 @@ namespace RedisTribute.Telemetry
 
             if (!writer.Enabled || !writer.Severity.HasFlag(severity) || !writer.Category.HasFlag(category))
             {
-                using (ev)
+                using (ev.KeepAlive())
                     return await act(new TelemetricContext(NullWriter.Instance, ev, ev.Dimensions));
             }
 

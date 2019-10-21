@@ -70,7 +70,7 @@ namespace RedisTribute.IntegrationTests
 
 
         [Theory]
-        //[InlineData(PipelineMode.Sync, ConfigurationScenario.NonSslBasic)]
+        [InlineData(PipelineMode.Sync, ConfigurationScenario.NonSslBasic)]
         [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
         public async Task SetStringAsync_WithCondition_ReturnsOk(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
         {
@@ -91,13 +91,9 @@ namespace RedisTribute.IntegrationTests
 
                 Assert.False(result);
 
-                var notFound = false;
-
                 var result2 = await client.GetAsync<byte[]>(key);
 
-                result2.IfNotFound(() => notFound = true);
-
-                Assert.True(notFound);
+                Assert.False(result2.WasFound);
             }
         }
 
