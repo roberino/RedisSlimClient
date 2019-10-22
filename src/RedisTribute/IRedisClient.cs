@@ -24,6 +24,7 @@ namespace RedisTribute
 
     public interface IRedisReaderWriter : IRedisReader
     {
+        Task<long> ScanKeysAsync(ScanOptions scanOptions, CancellationToken cancellation = default);
         Task<long> DeleteAsync(string key, CancellationToken cancellation = default);
         Task<bool> SetAsync(string key, byte[] data, SetOptions options = default, CancellationToken cancellation = default);
         Task<bool> SetAsync(string key, string data, SetOptions options = default, CancellationToken cancellation = default);

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace RedisTribute.Types
+namespace RedisTribute
 {
     public readonly struct Expiry
     {

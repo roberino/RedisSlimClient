@@ -60,6 +60,11 @@ namespace RedisTribute.Types
                 return i.Value;
             }
 
+            if (value is RedisString && long.TryParse(value.ToString(), out var x))
+            {
+                return x;
+            }
+
             return 0;
         }
     }

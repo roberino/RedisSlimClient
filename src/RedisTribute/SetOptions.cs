@@ -1,4 +1,4 @@
-﻿namespace RedisTribute.Types
+﻿namespace RedisTribute
 {
     /// <summary>
     /// Options for setting a key value pair.
