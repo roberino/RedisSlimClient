@@ -41,7 +41,7 @@ namespace RedisTribute.Io.Commands
             if (_options.Type != ScanType.Any)
             {
                 args.Add("TYPE");
-                args.Add(_options.Type.ToString());
+                args.Add(_options.Type.ToString().ToLower());
             }
 
             return args.GetBuffer();
