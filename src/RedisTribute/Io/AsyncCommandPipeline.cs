@@ -96,7 +96,7 @@ namespace RedisTribute.Io
                     var formatter = new RedisByteFormatter(m);
 
                     return formatter.Write(args);
-                });
+                }, cancellation);
             };
 
             _pendingCommands.Increment();

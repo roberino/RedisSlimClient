@@ -166,27 +166,25 @@ namespace RedisTribute.IntegrationTests
 
             config.HealthCheckInterval = TimeSpan.Zero;
 
-            var i = 0;
+            var delay = false;
 
             using (var client = await config.CreateProxiedClientAsync(r =>
             {
-                i++;
-                if (i > 15)
-                    Thread.Sleep(150);
+                if (delay)
+                    Thread.Sleep(1500);
                 return r.ForwardResponse();
             }))
             {
                 var key = Guid.NewGuid().ToString();
 
                 await client.SetAsync(key, new byte[15000]);
-
-                _output.WriteLine($"i={i}");
-
+                
                 using (var cancel = new CancellationTokenSource(15))
-                {
-                    var result = await client.GetAsync<string>(key, cancel.Token);
-                    
+                {                    
                     var cancelled = false;
+                    delay = true;
+
+                    var result = await client.GetAsync<string>(key, cancel.Token);
 
                     var value = (string)result
                         .IfFound(v =>

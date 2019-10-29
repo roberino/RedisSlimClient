@@ -18,6 +18,10 @@ namespace RedisTribute.Telemetry
         public Severity Severity { get; }
         public TelemetryCategory Category { get; }
 
+        public void Flush()
+        {
+        }
+
         public void Write(TelemetryEvent telemetryEvent)
         {
             if (Enabled && Severity.HasFlag(telemetryEvent.Severity) && Category.HasFlag(telemetryEvent.Category))

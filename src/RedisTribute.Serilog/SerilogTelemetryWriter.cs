@@ -15,6 +15,10 @@ namespace RedisTribute.Serilog
         public Severity Severity => Severity.Error | Severity.Info;
         public bool Enabled => true;
 
+        public void Flush()
+        {
+        }
+
         public void Write(TelemetryEvent ev)
         {
             if (ev.Category == TelemetryCategory.Request && ev.Sequence == TelemetrySequence.End)

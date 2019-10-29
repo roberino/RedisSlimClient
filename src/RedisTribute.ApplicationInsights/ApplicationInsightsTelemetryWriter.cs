@@ -72,6 +72,11 @@ namespace RedisTribute.ApplicationInsights
             }
         }
 
+        public void Flush()
+        {
+            _telemetryClient.Flush();
+        }
+
         static T CopyDimentions<T>(TelemetryEvent ev, T item)
             where T : ISupportProperties
         {

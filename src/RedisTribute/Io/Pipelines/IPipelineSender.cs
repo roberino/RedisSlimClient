@@ -1,5 +1,6 @@
 ﻿using RedisTribute.Types.Primatives;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace RedisTribute.Io.Pipelines
@@ -8,6 +9,6 @@ namespace RedisTribute.Io.Pipelines
     {
         ValueTask SendAsync(byte[] data);
 
-        ValueTask SendAsync(Func<IMemoryCursor, ValueTask> writeAction);
+        ValueTask SendAsync(Func<IMemoryCursor, ValueTask> writeAction, CancellationToken cancellationToken = default);
     }
 }

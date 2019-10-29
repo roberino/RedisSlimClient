@@ -31,6 +31,14 @@ namespace RedisTribute.Telemetry
             Category |= writer.Category;
         }
 
+        public void Flush()
+        {
+            foreach(var sink in _sinks)
+            {
+                sink.Flush();
+            }
+        }
+
         public IEnumerator<ITelemetryWriter> GetEnumerator() => _sinks.GetEnumerator();
 
         public void Write(TelemetryEvent telemetryEvent)

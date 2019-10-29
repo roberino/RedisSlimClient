@@ -15,7 +15,7 @@ namespace RedisTribute.UnitTests.Io.Pipelines
             var socket = new StubSocket();
 
             using (var cancellationTokenSource = new CancellationTokenSource())
-            using (var sender = new SocketPipelineSender(socket, cancellationTokenSource.Token))
+            using (var sender = new SocketPipelineSender(socket, cancellationTokenSource.Token, new ResetHandle()))
             {
 
                 await sender.SendAsync(async m =>
