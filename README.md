@@ -96,6 +96,8 @@ This package adds Application Insights integration into the client so that calls
 * Retry logic
 * Azure compatibility
 * Retry handling
+* Telemetry
+* Scan / Get / MGet / Set
 
 # Benchmarks
 

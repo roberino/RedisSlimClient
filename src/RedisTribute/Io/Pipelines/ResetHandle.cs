@@ -7,12 +7,11 @@ namespace RedisTribute.Io.Pipelines
 {
     class ResetHandle : IDisposable
     {
-        readonly ManualResetEvent _resetEvent;
-        volatile bool _resetting;
+        readonly ManualResetEventSlim _resetEvent;
 
         public ResetHandle()
         {
-            _resetEvent = new ManualResetEvent(true);
+            _resetEvent = new ManualResetEventSlim(true);
             Resetting = new AsyncEvent<bool>();
         }
 
@@ -23,7 +22,7 @@ namespace RedisTribute.Io.Pipelines
 
         public IAsyncEvent<bool> Resetting { get; }
 
-        public bool IsResetting => _resetting;
+        public bool IsResetting => !_resetEvent.IsSet;
 
         public event Action Fault;
 
@@ -35,27 +34,30 @@ namespace RedisTribute.Io.Pipelines
         public async Task<IDisposable> BeginReset()
         {
             _resetEvent.Reset();
-            _resetting = true;
 
             await ((AsyncEvent<bool>)Resetting).PublishAsync(true);
 
             return new Disposer(() =>
             {
                 _resetEvent.Set();
-                _resetting = false;
             });
         }
 
         public void NotifyFault()
         {
-            _resetEvent.Reset();
-            _resetting = true;
-            Fault?.Invoke();
+            lock (_resetEvent)
+            {
+                if (_resetEvent.IsSet)
+                {
+                    _resetEvent.Reset();
+                    Fault?.Invoke();
+                }
+            }
         }
 
         public async Task AwaitReset()
         {
-            while (!_resetEvent.WaitOne(1000))
+            while (!_resetEvent.Wait(1000))
             {
                 await Task.Delay(100);
             }

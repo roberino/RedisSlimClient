@@ -45,7 +45,6 @@ namespace RedisTribute.IntegrationTests
             }
 
             var telemetryItems = channel.Where(t => t is DependencyTelemetry).Cast<DependencyTelemetry>().ToList();
-            var telemetry1 = telemetryItems.FirstOrDefault();
 
             Assert.True(telemetryItems.Count > 1);
             Assert.All(telemetryItems, x =>
