@@ -146,7 +146,7 @@ namespace RedisTribute.Types.Primatives
             return new PooledStream(() => { }, true, data, data.Length);
         }
 
-        public PooledStream CreateReadonlyCopy(ReadOnlySequence<byte> data)
+        public PooledStream CreateReadOnlyCopy(ReadOnlySequence<byte> data)
         {
             var arr = Rent((int)data.Length);
 

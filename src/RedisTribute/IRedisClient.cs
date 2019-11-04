@@ -30,13 +30,25 @@ namespace RedisTribute
         Task<bool> SetAsync(string key, string data, SetOptions options = default, CancellationToken cancellation = default);
     }
 
-    public interface IRedisMultiReaderWriter
+    public interface IRedisObjectReaderWriter
     {
         Task<Result<T>> GetAsync<T>(string key, CancellationToken cancellation = default);
         Task<bool> SetAsync<T>(string key, T obj, SetOptions options = default, CancellationToken cancellation = default);
     }
 
-    public interface IRedisClient : IRedisReaderWriter, IRedisMultiReaderWriter, IRedisDiagnosticClient
+    public interface IHashSetClient
+    {
+        Task<bool> SetHashField(string key, string field, byte[] data, CancellationToken cancellation = default);
+        Task<IDictionary<string, byte[]>> GetAllHashFields(string key, CancellationToken cancellation = default);
+        Task<byte[]> GetHashField(string key, string field, CancellationToken cancellation = default);
+    }
+
+    public interface IIPersistentDictionaryClient
+    {
+        Task<IPersistentDictionary<T>> GetHashSet<T>(string key, CancellationToken cancellation = default);
+    }
+
+    public interface IRedisClient : IRedisReaderWriter, IRedisObjectReaderWriter, IRedisDiagnosticClient, IHashSetClient, IIPersistentDictionaryClient
     {
     }
 }

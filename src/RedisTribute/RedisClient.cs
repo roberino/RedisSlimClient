@@ -72,6 +72,28 @@ namespace RedisTribute
             return resultsTransformed;
         }
 
+        public Task<bool> SetHashField(string key, string field, byte[] data, CancellationToken cancellation = default)
+        {
+            var cmd = new HSetCommand(key, field, data);
+
+            return _controller.GetResponse(cmd, cancellation);
+        }
+
+        public Task<byte[]> GetHashField(string key, string field, CancellationToken cancellation = default)
+        {
+            return _controller.GetResponse(() => new HGetCommand(key, field), cancellation, ResultConvertion.AsBytes);
+        }
+
+        public async Task<IDictionary<string, byte[]>> GetAllHashFields(string key, CancellationToken cancellation = default)
+        {
+            return await _controller.GetResponse(() => new HGetAllCommand(key), cancellation, (x, s) => x.ToDictionary(k => k.Key.ToString(), v => v.Value));
+        }
+
+        public async Task<IPersistentDictionary<T>> GetHashSet<T>(string key, CancellationToken cancellation = default)
+        {
+            return await RedisHashSet<T>.CreateAsync(key, this, _controller.Configuration, cancellation);
+        }
+
         public async Task<long> ScanKeysAsync(ScanOptions scanOptions, CancellationToken cancellation = default)
         {
             var cursor = 0L;

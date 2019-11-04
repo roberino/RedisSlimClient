@@ -3,6 +3,7 @@ using RedisTribute.Serialization.Emit;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using System.Xml;
 using System.Xml.Linq;
 
@@ -17,7 +18,8 @@ namespace RedisTribute.Serialization
             [typeof(Stream)] = new StreamSerializer(),
             [typeof(IDictionary<string, string>)] = new DictionarySerializer<string>(),
             [typeof(Dictionary<string, string>)] = new DictionarySerializer<string>(),
-            [typeof(KeyValuePair<string, string>)] = new KeyValueSerializer<string>()
+            [typeof(KeyValuePair<string, string>)] = new KeyValueSerializer<string>(),
+            [typeof(string)] = new StringSerializer(Encoding.UTF8)
         };
 
         SerializerFactory()
@@ -31,7 +33,7 @@ namespace RedisTribute.Serialization
             var type = typeof(T);
             var tc = Type.GetTypeCode(type);
 
-            if (tc == TypeCode.Object)
+            if (tc == TypeCode.Object || tc == TypeCode.String)
             {
                 if (_knownSerializers.TryGetValue(type, out var sz))
                 {

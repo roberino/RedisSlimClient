@@ -19,7 +19,7 @@ namespace RedisTribute.Types
 
         public RedisString(ReadOnlySequence<byte> sequence)
         {
-            var sharedStream = StreamPool.Instance.CreateReadonlyCopy(sequence);
+            var sharedStream = StreamPool.Instance.CreateReadOnlyCopy(sequence);
 
             _dataStream = sharedStream;
             _materializedBytes = new Lazy<byte[]>(() => sharedStream.ToArray());

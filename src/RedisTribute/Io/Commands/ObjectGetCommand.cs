@@ -1,7 +1,6 @@
 ﻿using RedisTribute.Configuration;
 using RedisTribute.Serialization;
 using RedisTribute.Types;
-using System;
 
 namespace RedisTribute.Io.Commands
 {
@@ -30,18 +29,7 @@ namespace RedisTribute.Io.Commands
                 throw new KeyNotFoundException();
             }
 
-            if (result is RedisString strData)
-            {
-                using (strData)
-                {
-                    var byteSeq = new ArraySegmentToRedisObjectReader(new StreamIterator(strData.AsStream()));
-                    var objReader = new ObjectReader(byteSeq, strData.AsStream(), _configuration.Encoding, null, _configuration.SerializerFactory);
-
-                    return _serializer.ReadData(objReader, default);
-                }
-            }
-
-            throw new ArgumentException($"{result.Type}");
+            return _configuration.Deserialize<T>(result);
         }
     }
 }
