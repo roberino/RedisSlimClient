@@ -103,6 +103,12 @@ namespace RedisTribute.Types
 
         public async Task SaveAsync(bool forceUpdate = false, CancellationToken cancellation = default)
         {
+            if (forceUpdate)
+            {
+                await SaveAsync(false, x => x.ProposedValue, cancellation);
+                return;
+            }
+
             await SaveAsync(_ => throw new ArgumentException("Data"), cancellation);
         }
 
@@ -198,12 +204,13 @@ namespace RedisTribute.Types
             using (await _lock.LockAsync())
             {
                 var originalValues = checkOriginal ? await _client.GetAllHashFields(Key.ToString(), cancellation) : new Dictionary<string, byte[]>();
-                var newData = new Dictionary<string, (ValueState State, byte[] Data)>();
+                var newData = new Dictionary<string, (ValueState State, byte[] Data, T Proposed, bool WasReconciled)>();
 
                 foreach (var item in _values)
                 {
                     if (item.Value.IsDirty)
                     {
+                        var reconciled = false;
                         var proposedValue = item.Value.Value;
 
                         if (checkOriginal && originalValues.TryGetValue(item.Key, out var originalValueBytes))
@@ -212,31 +219,43 @@ namespace RedisTribute.Types
 
                             if (item.Value.IsNew)
                             {
-                                proposedValue = reconcileFunction((item.Key, proposedValue, originalValue));
+                                if (!_serializerSettings.AreBinaryEqual(originalValueBytes, proposedValue))
+                                {
+                                    proposedValue = reconcileFunction((item.Key, proposedValue, originalValue));
+                                    reconciled = true;
+                                }
                             }
                             else
                             {
-                                var originalLocal = _serializerSettings.SerializeAsBytes(item.Value.OriginalValue);
-                                var eq = StructuralComparisons.StructuralEqualityComparer.Equals(originalValueBytes, originalLocal);
+                                var eq = _serializerSettings.AreBinaryEqual(originalValueBytes, item.Value.OriginalValue);
 
                                 if (!eq)
                                 {
-                                    proposedValue = reconcileFunction((item.Key, proposedValue, originalValue));
+                                    if (!_serializerSettings.AreBinaryEqual(originalValueBytes, proposedValue))
+                                    {
+                                        proposedValue = reconcileFunction((item.Key, proposedValue, originalValue));
+                                        reconciled = true;
+                                    }
                                 }
                             }
                         }
 
                         var data = _serializerSettings.SerializeAsBytes(proposedValue);
 
-                        newData[item.Key] = (item.Value, data);
+                        newData[item.Key] = (item.Value, data, proposedValue, reconciled);
 
                         cancellation.ThrowIfCancellationRequested();
                     }
                 }
 
-                foreach(var item in newData)
+                foreach (var item in newData)
                 {
                     await _client.SetHashField(Key.ToString(), item.Key, item.Value.Data, cancellation);
+
+                    if (item.Value.WasReconciled)
+                    {
+                        item.Value.State.Value = item.Value.Proposed;
+                    }
 
                     item.Value.State.WasUpdated();
                 }

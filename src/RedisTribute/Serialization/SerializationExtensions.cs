@@ -3,12 +3,19 @@ using RedisTribute.Io;
 using RedisTribute.Types;
 using RedisTribute.Types.Primatives;
 using System;
+using System.Collections;
 using System.IO;
 
 namespace RedisTribute.Serialization
 {
     static class SerializationExtensions
     {
+        public static bool AreBinaryEqual<T>(this ISerializerSettings serializerSettings, byte[] serializedData, T preSerializedValue)
+        {
+            var originalLocal = serializerSettings.SerializeAsBytes(preSerializedValue);
+            return StructuralComparisons.StructuralEqualityComparer.Equals(serializedData, originalLocal);
+        }
+
         public static T Deserialize<T>(this ISerializerSettings serializerSettings, IRedisObject result)
         {
             return Deserialize(serializerSettings, serializerSettings.SerializerFactory.Create<T>(), result);

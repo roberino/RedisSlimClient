@@ -67,6 +67,8 @@ namespace RedisTribute.IntegrationTests
 
                 lookup2["z"] = "12345";
 
+                await lookup2.SaveAsync();
+
                 await lookup.RefreshAsync();
 
                 Assert.Equal("12345", lookup["z"]);
