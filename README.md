@@ -98,6 +98,7 @@ This package adds Application Insights integration into the client so that calls
 * Retry handling
 * Telemetry
 * Scan / Get / MGet / Set
+* [HashSets] (docs/HashSets.md)
 
 # Benchmarks
 
@@ -105,7 +106,6 @@ This package adds Application Insights integration into the client so that calls
 
 # TODO
 
-* HashSets
 * Binary keys
 * Expose info
 * Transactions

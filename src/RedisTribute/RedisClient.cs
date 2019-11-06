@@ -72,24 +72,32 @@ namespace RedisTribute
             return resultsTransformed;
         }
 
-        public Task<bool> SetHashField(string key, string field, byte[] data, CancellationToken cancellation = default)
+        public Task<bool> DeleteHashFieldAsync(string key, string field, CancellationToken cancellation = default) 
+            => _controller.GetResponse(new HDeleteCommand(key, field), cancellation);
+
+        public Task<bool> SetHashFieldAsync(string key, string field, byte[] data, CancellationToken cancellation = default)
         {
+            if (data == null)
+            {
+                return DeleteHashFieldAsync(key, field, cancellation);
+            }
+
             var cmd = new HSetCommand(key, field, data);
 
             return _controller.GetResponse(cmd, cancellation);
         }
 
-        public Task<byte[]> GetHashField(string key, string field, CancellationToken cancellation = default)
+        public Task<byte[]> GetHashFieldAsync(string key, string field, CancellationToken cancellation = default)
         {
             return _controller.GetResponse(() => new HGetCommand(key, field), cancellation, ResultConvertion.AsBytes);
         }
 
-        public async Task<IDictionary<string, byte[]>> GetAllHashFields(string key, CancellationToken cancellation = default)
+        public async Task<IDictionary<string, byte[]>> GetAllHashFieldsAsync(string key, CancellationToken cancellation = default)
         {
             return await _controller.GetResponse(() => new HGetAllCommand(key), cancellation, (x, s) => x.ToDictionary(k => k.Key.ToString(), v => v.Value));
         }
 
-        public async Task<IPersistentDictionary<T>> GetHashSet<T>(string key, CancellationToken cancellation = default)
+        public async Task<IPersistentDictionary<T>> GetHashSetAsync<T>(string key, CancellationToken cancellation = default)
         {
             return await RedisHashSet<T>.CreateAsync(key, this, _controller.Configuration, cancellation);
         }

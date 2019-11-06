@@ -1,12 +1,9 @@
 ﻿using RedisTribute.Types;
-using System;
 
 namespace RedisTribute.Io.Commands
 {
     class SetCommand : RedisCommand<bool>
     {
-        public const string SuccessResponse = "OK";
-
         readonly byte[] _data;
         readonly SetOptions _options;
 
@@ -56,9 +53,6 @@ namespace RedisTribute.Io.Commands
             return args;
         }
 
-        protected override bool TranslateResult(IRedisObject redisObject)
-        {
-            return string.Equals(redisObject.ToString(), SuccessResponse, StringComparison.OrdinalIgnoreCase);
-        }
+        protected override bool TranslateResult(IRedisObject redisObject) => redisObject.IsOk();
     }
 }

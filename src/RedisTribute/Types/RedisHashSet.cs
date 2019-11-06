@@ -49,18 +49,29 @@ namespace RedisTribute.Types
             return hashSet;
         }
 
+        public string Id => Key.ToString();
+
         public T this[string key]
         {
-            get => _values[key].Value;
+            get
+            {
+                var v = _values[key];
+
+                if (v.IsDeleted)
+                {
+                    throw new KeyNotFoundException(key);
+                }
+
+                return v.Value;
+            }
             set => Add(key, value);
         }
 
         public RedisKey Key { get; }
-        public ICollection<string> Keys => _values.Keys;
-        public ICollection<T> Values => _values.Values.Select(v => v.Value).ToList();
-        public int Count => _values.Count;
+        public ICollection<string> Keys => _values.Where(v => !v.Value.IsDeleted).Select(v => v.Key).ToList();
+        public ICollection<T> Values => _values.Values.Where(v => !v.IsDeleted).Select(v => v.Value).ToList();
+        public int Count => Keys.Count;
         public bool IsReadOnly => false;
-
         public void Add(string key, T value)
         {
             _values.AddOrUpdate(key, new ValueState
@@ -78,7 +89,13 @@ namespace RedisTribute.Types
             Add(item.Key, item.Value);
         }
 
-        public void Clear() => _values.Clear();
+        public void Clear()
+        {
+            foreach (var item in _values.Values)
+            {
+                item.Delete();
+            }
+        }
 
         public bool Contains(KeyValuePair<string, T> item) => _values.Any(v => v.Key == item.Key && v.Value.Value.Equals(item.Value));
 
@@ -86,14 +103,33 @@ namespace RedisTribute.Types
 
         public void CopyTo(KeyValuePair<string, T>[] array, int arrayIndex)
         {
-            throw new NotSupportedException();
+            var i = arrayIndex;
+
+            foreach (var item in _values)
+            {
+                array[i++] = new KeyValuePair<string, T>(item.Key, item.Value.Value);
+
+                if (i == array.Length)
+                {
+                    break;
+                }
+            }
         }
 
-        public IEnumerator<KeyValuePair<string, T>> GetEnumerator() => _values.Select(v => new KeyValuePair<string, T>(v.Key, v.Value.Value)).GetEnumerator();
+        public IEnumerator<KeyValuePair<string, T>> GetEnumerator() => _values
+            .Where(v => !v.Value.IsDeleted)
+            .Select(v => new KeyValuePair<string, T>(v.Key, v.Value.Value))
+            .GetEnumerator();
 
         public bool Remove(string key)
         {
-            return _values.TryRemove(key, out _);
+            if (_values.TryGetValue(key, out var state))
+            {
+                state.Delete();
+                return true;
+            }
+
+            return false;
         }
 
         public bool Remove(KeyValuePair<string, T> item)
@@ -112,12 +148,12 @@ namespace RedisTribute.Types
             await SaveAsync(_ => throw new ArgumentException("Data"), cancellation);
         }
 
-        public Task SaveAsync(Func<(string Key, T ProposedValue, T OriginalValue), T> reconcileFunction, CancellationToken cancellation = default) 
+        public Task SaveAsync(Func<(string Key, T ProposedValue, T OriginalValue), T> reconcileFunction, CancellationToken cancellation = default)
             => SaveAsync(true, reconcileFunction, cancellation);
 
         public bool TryGetValue(string key, out T value)
         {
-            if( _values.TryGetValue(key, out var v))
+            if (_values.TryGetValue(key, out var v))
             {
                 value = v.Value;
                 return true;
@@ -130,7 +166,7 @@ namespace RedisTribute.Types
         {
             using (await _lock.LockAsync())
             {
-                var originalValues = await _client.GetAllHashFields(Key.ToString(), cancellation);
+                var originalValues = await _client.GetAllHashFieldsAsync(Key.ToString(), cancellation);
 
                 foreach (var item in _values)
                 {
@@ -159,6 +195,23 @@ namespace RedisTribute.Types
             }
         }
 
+        public async Task DeleteAsync(CancellationToken cancellation = default)
+        {
+            var remoteValues = await _client.GetAllHashFieldsAsync(Key.ToString(), cancellation);
+
+            var deleteTasks = remoteValues.Select(async item =>
+                 {
+                     await _client.SetHashFieldAsync(Key.ToString(), item.Key, null);
+
+                     _values.TryRemove(item.Key, out _);
+                 }
+              );
+
+            await Task.WhenAll(deleteTasks);
+
+            _values.Clear();
+        }
+
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
         class ValueState
@@ -177,6 +230,8 @@ namespace RedisTribute.Types
 
             public bool IsNew { get; }
 
+            public bool IsDeleted { get; private set; }
+
             public T OriginalValue { get; private set; }
 
             public T Value
@@ -189,11 +244,18 @@ namespace RedisTribute.Types
                 }
             }
 
+            public void Delete()
+            {
+                IsDeleted = true;
+                IsDirty = true;
+            }
+
             public void WasUpdated()
             {
                 OriginalValue = _newValue;
                 _newValue = default;
                 IsDirty = false;
+                IsDeleted = false;
             }
 
             public bool IsDirty { get; private set; }
@@ -203,7 +265,7 @@ namespace RedisTribute.Types
         {
             using (await _lock.LockAsync())
             {
-                var originalValues = checkOriginal ? await _client.GetAllHashFields(Key.ToString(), cancellation) : new Dictionary<string, byte[]>();
+                var originalValues = checkOriginal ? await _client.GetAllHashFieldsAsync(Key.ToString(), cancellation) : new Dictionary<string, byte[]>();
                 var newData = new Dictionary<string, (ValueState State, byte[] Data, T Proposed, bool WasReconciled)>();
 
                 foreach (var item in _values)
@@ -231,16 +293,28 @@ namespace RedisTribute.Types
 
                                 if (!eq)
                                 {
-                                    if (!_serializerSettings.AreBinaryEqual(originalValueBytes, proposedValue))
+                                    if (item.Value.IsDeleted)
                                     {
-                                        proposedValue = reconcileFunction((item.Key, proposedValue, originalValue));
-                                        reconciled = true;
+                                        proposedValue = reconcileFunction((item.Key, default, originalValue));
+
+                                        if (proposedValue != default)
+                                        {
+                                            reconciled = true;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        if (!_serializerSettings.AreBinaryEqual(originalValueBytes, proposedValue))
+                                        {
+                                            proposedValue = reconcileFunction((item.Key, proposedValue, originalValue));
+                                            reconciled = true;
+                                        }
                                     }
                                 }
                             }
                         }
 
-                        var data = _serializerSettings.SerializeAsBytes(proposedValue);
+                        var data = item.Value.IsDeleted && !reconciled ? null : _serializerSettings.SerializeAsBytes(proposedValue);
 
                         newData[item.Key] = (item.Value, data, proposedValue, reconciled);
 
@@ -248,26 +322,27 @@ namespace RedisTribute.Types
                     }
                 }
 
-                foreach (var item in newData)
+                var updateTasks = newData.Select(async item =>
                 {
-                    await _client.SetHashField(Key.ToString(), item.Key, item.Value.Data, cancellation);
+                    await _client.SetHashFieldAsync(Key.ToString(), item.Key, item.Value.Data, cancellation);
 
                     if (item.Value.WasReconciled)
                     {
                         item.Value.State.Value = item.Value.Proposed;
                     }
+                    else
+                    {
+                        if (item.Value.State.IsDeleted)
+                        {
+                            _values.TryRemove(item.Key, out _);
+                        }
+                    }
 
                     item.Value.State.WasUpdated();
-                }
+                });
+
+                await Task.WhenAll(updateTasks);
             }
-        }
-
-        bool AreEqual(T x, T y)
-        {
-            var xT = _serializerSettings.SerializeAsBytes(x);
-            var yT = _serializerSettings.SerializeAsBytes(y);
-
-            return StructuralComparisons.StructuralEqualityComparer.Equals(xT, yT);
         }
     }
 }

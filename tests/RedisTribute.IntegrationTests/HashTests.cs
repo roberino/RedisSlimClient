@@ -1,4 +1,5 @@
 ﻿using RedisTribute.Configuration;
+using RedisTribute.Stubs;
 using System;
 using System.Threading.Tasks;
 using Xunit;
@@ -18,7 +19,7 @@ namespace RedisTribute.IntegrationTests
         [Theory]
         [InlineData(PipelineMode.Sync, ConfigurationScenario.NonSslBasic)]
         [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
-        public async Task SetHashField_SomeFieldAndValue_ReturnsOk(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
+        public async Task SetHashFieldAsync_SomeFieldAndValue_ReturnsOk(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
         {
             var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine, 5);
 
@@ -30,7 +31,7 @@ namespace RedisTribute.IntegrationTests
 
                 var id = Guid.NewGuid().ToString();
 
-                var response = await client.SetHashField(id, "field-a", new byte[] { 1, 2, 3 });
+                var response = await client.SetHashFieldAsync(id, "field-a", new byte[] { 1, 2, 3 });
 
                 Assert.True(response);
 
@@ -41,7 +42,7 @@ namespace RedisTribute.IntegrationTests
         [Theory]
         [InlineData(PipelineMode.Sync, ConfigurationScenario.NonSslBasic)]
         [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
-        public async Task GetHashSet_CanAddValuesAndSave(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
+        public async Task GetHashSetAsync_OfStringValues_CanAddValuesAndSave(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
         {
             var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine, 5);
 
@@ -53,14 +54,14 @@ namespace RedisTribute.IntegrationTests
 
                 var id = Guid.NewGuid().ToString();
 
-                var lookup = await client.GetHashSet<string>(id);
+                var lookup = await client.GetHashSetAsync<string>(id);
 
                 lookup["x"] = "abc";
                 lookup["x=>y"] = "defgh";
 
                 await lookup.SaveAsync();
 
-                var lookup2 = await client.GetHashSet<string>(id);
+                var lookup2 = await client.GetHashSetAsync<string>(id);
 
                 Assert.Equal("abc", lookup["x"]);
                 Assert.Equal("defgh", lookup["x=>y"]);
@@ -72,6 +73,34 @@ namespace RedisTribute.IntegrationTests
                 await lookup.RefreshAsync();
 
                 Assert.Equal("12345", lookup["z"]);
+
+                await lookup.DeleteAsync();
+            }
+        }
+
+        [Theory]
+        [InlineData(PipelineMode.Sync, ConfigurationScenario.NonSslBasic)]
+        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
+        public async Task GetHashSetAsync_OfCustomType_CanAddValuesAndSave(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
+        {
+            var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine, 5);
+
+            config.HealthCheckInterval = TimeSpan.Zero;
+
+            using (var client = config.CreateClient())
+            {
+                await client.PingAsync();
+
+                var id = Guid.NewGuid().ToString();
+
+                var lookup = await client.GetHashSetAsync<TestComplexDto>(id);
+
+                lookup["x"] = new TestComplexDto() { DataItem1 = "abc" };
+                lookup["y"] = new TestComplexDto() { DataItem1 = "xyz" };
+
+                await lookup.SaveAsync();
+
+                await lookup.DeleteAsync();
             }
         }
     }

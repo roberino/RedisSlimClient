@@ -4,7 +4,6 @@ namespace RedisTribute.Io.Commands
 {
     class HSetCommand : RedisCommand<bool>
     {
-        public const string SuccessResponse = "OK";
         readonly RedisKey _field;
         readonly byte[] _data;
 

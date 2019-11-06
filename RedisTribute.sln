@@ -23,6 +23,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{9AC62569-0C1A-4367-864E-9CA9227BE2BC}"
 	ProjectSection(SolutionItems) = preProject
 		docs\ApplicationInsights.md = docs\ApplicationInsights.md
+		docs\HashSets.md = docs\HashSets.md
 		LICENSE = LICENSE
 		README.md = README.md
 	EndProjectSection
@@ -49,7 +50,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RedisTribute.Json", "src\Re
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RedisTribute.ApplicationInsights", "src\RedisTribute.ApplicationInsights\RedisTribute.ApplicationInsights.csproj", "{C45FDA84-C8D8-45CF-ADD5-93044C2FDCF5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RedisTribute.Serilog", "src\RedisTribute.Serilog\RedisTribute.Serilog.csproj", "{9E74550F-233E-4750-9E4F-777392E1E556}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RedisTribute.Serilog", "src\RedisTribute.Serilog\RedisTribute.Serilog.csproj", "{9E74550F-233E-4750-9E4F-777392E1E556}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

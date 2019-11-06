@@ -28,6 +28,6 @@ namespace RedisTribute.Io.Commands
             return new CommandParameters(SetCommand.GetArgs(CommandText, Key, objStream.GetBuffer(), _options), () => objStream.Dispose());
         }
 
-        protected override bool TranslateResult(IRedisObject redisObject) => string.Equals(redisObject.ToString(), "OK", StringComparison.OrdinalIgnoreCase);
+        protected override bool TranslateResult(IRedisObject redisObject) => redisObject.IsOk();
     }
 }

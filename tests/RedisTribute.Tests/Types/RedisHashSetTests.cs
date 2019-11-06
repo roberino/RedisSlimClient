@@ -29,7 +29,7 @@ namespace RedisTribute.UnitTests.Types
         [Fact]
         public async Task CreateAsync_GivenSomeClient_FetchesHashsetData()
         {
-            _client.GetAllHashFields("x", Arg.Any<CancellationToken>()).Returns(new Dictionary<string, byte[]>()
+            _client.GetAllHashFieldsAsync("x", Arg.Any<CancellationToken>()).Returns(new Dictionary<string, byte[]>()
             {
                 ["a"] = Encoding.UTF8.GetBytes("123"),
                 ["b"] = Encoding.UTF8.GetBytes("456"),
@@ -43,7 +43,7 @@ namespace RedisTribute.UnitTests.Types
         [Fact]
         public async Task SaveAsync_GivenSomeClient_SendDataToClient()
         {
-            _client.GetAllHashFields("x", Arg.Any<CancellationToken>()).Returns(new Dictionary<string, byte[]>());
+            _client.GetAllHashFieldsAsync("x", Arg.Any<CancellationToken>()).Returns(new Dictionary<string, byte[]>());
 
             var hashset = await RedisHashSet<string>.CreateAsync("x", _client, _settings);
 
@@ -52,14 +52,14 @@ namespace RedisTribute.UnitTests.Types
 
             await hashset.SaveAsync();
 
-            await _client.Received().SetHashField("x", "x1", Arg.Is<byte[]>(d => AreEqual("abc", d)));
-            await _client.Received().SetHashField("x", "y1", Arg.Is<byte[]>(d => AreEqual("def", d)));
+            await _client.Received().SetHashFieldAsync("x", "x1", Arg.Is<byte[]>(d => AreEqual("abc", d)));
+            await _client.Received().SetHashFieldAsync("x", "y1", Arg.Is<byte[]>(d => AreEqual("def", d)));
         }
 
         [Fact]
         public async Task SaveAsync_DataHasChanged_ReconcileFunctionInvoked()
         {
-            _client.GetAllHashFields("x", Arg.Any<CancellationToken>()).Returns(new Dictionary<string, byte[]>()
+            _client.GetAllHashFieldsAsync("x", Arg.Any<CancellationToken>()).Returns(new Dictionary<string, byte[]>()
             {
                 ["a"] = Encoding.UTF8.GetBytes("123"),
                 ["b"] = Encoding.UTF8.GetBytes("456"),
@@ -69,7 +69,7 @@ namespace RedisTribute.UnitTests.Types
 
             hashset["a"] = "xxx";
 
-            _client.GetAllHashFields("x", Arg.Any<CancellationToken>()).Returns(new Dictionary<string, byte[]>()
+            _client.GetAllHashFieldsAsync("x", Arg.Any<CancellationToken>()).Returns(new Dictionary<string, byte[]>()
             {
                 ["a"] = Encoding.UTF8.GetBytes("678"),
                 ["b"] = Encoding.UTF8.GetBytes("456"),
@@ -83,7 +83,7 @@ namespace RedisTribute.UnitTests.Types
         [Fact]
         public async Task SaveAsync_DataHasChangedButForceSetToTrue_RemoteValueOverwritten()
         {
-            _client.GetAllHashFields("x", Arg.Any<CancellationToken>()).Returns(new Dictionary<string, byte[]>()
+            _client.GetAllHashFieldsAsync("x", Arg.Any<CancellationToken>()).Returns(new Dictionary<string, byte[]>()
             {
                 ["a"] = Encoding.UTF8.GetBytes("123"),
                 ["b"] = Encoding.UTF8.GetBytes("456"),
@@ -93,7 +93,7 @@ namespace RedisTribute.UnitTests.Types
 
             hashset["a"] = "xxx";
 
-            _client.GetAllHashFields("x", Arg.Any<CancellationToken>()).Returns(new Dictionary<string, byte[]>()
+            _client.GetAllHashFieldsAsync("x", Arg.Any<CancellationToken>()).Returns(new Dictionary<string, byte[]>()
             {
                 ["a"] = Encoding.UTF8.GetBytes("678"),
                 ["b"] = Encoding.UTF8.GetBytes("456"),
@@ -103,13 +103,13 @@ namespace RedisTribute.UnitTests.Types
 
             Assert.Equal("xxx", hashset["a"]);
 
-            await _client.Received(1).SetHashField("x", "a", Arg.Is<byte[]>(d => AreEqual("xxx", d)));
+            await _client.Received(1).SetHashFieldAsync("x", "a", Arg.Is<byte[]>(d => AreEqual("xxx", d)));
         }
 
         [Fact]
         public async Task SaveAsync_DataHasChangedButNewDataIsEqual_ReconcileFunctionNotInvoked()
         {
-            _client.GetAllHashFields("x", Arg.Any<CancellationToken>()).Returns(new Dictionary<string, byte[]>()
+            _client.GetAllHashFieldsAsync("x", Arg.Any<CancellationToken>()).Returns(new Dictionary<string, byte[]>()
             {
                 ["a"] = Encoding.UTF8.GetBytes("123"),
                 ["b"] = Encoding.UTF8.GetBytes("456"),
@@ -119,7 +119,7 @@ namespace RedisTribute.UnitTests.Types
 
             hashset["a"] = "678";
 
-            _client.GetAllHashFields("x", Arg.Any<CancellationToken>()).Returns(new Dictionary<string, byte[]>()
+            _client.GetAllHashFieldsAsync("x", Arg.Any<CancellationToken>()).Returns(new Dictionary<string, byte[]>()
             {
                 ["a"] = Encoding.UTF8.GetBytes("678"),
                 ["b"] = Encoding.UTF8.GetBytes("456"),
@@ -133,7 +133,7 @@ namespace RedisTribute.UnitTests.Types
         [Fact]
         public async Task SaveAsync_AddNewValue_SetsNewValue()
         {
-            _client.GetAllHashFields("x", Arg.Any<CancellationToken>()).Returns(new Dictionary<string, byte[]>()
+            _client.GetAllHashFieldsAsync("x", Arg.Any<CancellationToken>()).Returns(new Dictionary<string, byte[]>()
             {
                 ["a"] = Encoding.UTF8.GetBytes("123"),
                 ["b"] = Encoding.UTF8.GetBytes("456"),
@@ -147,9 +147,59 @@ namespace RedisTribute.UnitTests.Types
 
             Assert.Equal("678", hashset["c"]);
 
-            await _client.Received(1).SetHashField("x", "c", Arg.Is<byte[]>(d => AreEqual("678", d)));
-            await _client.DidNotReceive().SetHashField("x", "a", Arg.Any<byte[]>());
-            await _client.DidNotReceive().SetHashField("x", "b", Arg.Any<byte[]>());
+            await _client.Received(1).SetHashFieldAsync("x", "c", Arg.Is<byte[]>(d => AreEqual("678", d)));
+            await _client.DidNotReceive().SetHashFieldAsync("x", "a", Arg.Any<byte[]>());
+            await _client.DidNotReceive().SetHashFieldAsync("x", "b", Arg.Any<byte[]>());
+        }
+
+        [Fact]
+        public async Task SaveAsync_DeleteValue_SetsNull()
+        {
+            _client.GetAllHashFieldsAsync("x", Arg.Any<CancellationToken>()).Returns(new Dictionary<string, byte[]>()
+            {
+                ["a"] = Encoding.UTF8.GetBytes("123"),
+                ["b"] = Encoding.UTF8.GetBytes("456"),
+            });
+
+            var hashset = await RedisHashSet<string>.CreateAsync("x", _client, _settings);
+
+            Assert.Equal(2, hashset.Count);
+
+            hashset.Remove("a");
+
+            Assert.Single(hashset);
+            Assert.DoesNotContain(hashset.Keys, k => k == "a");
+            Assert.DoesNotContain(hashset, k => k.Key == "a");
+            Assert.Throws<KeyNotFoundException>(() => hashset["a"]);
+
+            await hashset.SaveAsync(x => throw new InvalidOperationException());
+
+            await _client.Received(1).SetHashFieldAsync("x", "a", null);
+
+            Assert.DoesNotContain(hashset.Keys, k => k == "a");
+            Assert.DoesNotContain(hashset, k => k.Key == "a");
+            Assert.Throws<KeyNotFoundException>(() => hashset["a"]);
+        }
+
+        [Fact]
+        public async Task DeleteAsync_SomeValues_SetsNullOnEachAndRemovesAllItemsFromDictionary()
+        {
+            _client.GetAllHashFieldsAsync("x", Arg.Any<CancellationToken>()).Returns(new Dictionary<string, byte[]>()
+            {
+                ["a"] = Encoding.UTF8.GetBytes("123"),
+                ["b"] = Encoding.UTF8.GetBytes("456"),
+            });
+
+            var hashset = await RedisHashSet<string>.CreateAsync("x", _client, _settings);
+
+            hashset["c"] = "678";
+
+            await hashset.DeleteAsync();
+
+            await _client.Received(1).SetHashFieldAsync("x", "a", null);
+            await _client.Received(1).SetHashFieldAsync("x", "b", null);
+
+            Assert.Empty(hashset);
         }
 
         bool AreEqual(string value, byte[] encodedValue)

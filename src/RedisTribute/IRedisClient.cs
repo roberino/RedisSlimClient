@@ -38,14 +38,14 @@ namespace RedisTribute
 
     public interface IHashSetClient
     {
-        Task<bool> SetHashField(string key, string field, byte[] data, CancellationToken cancellation = default);
-        Task<IDictionary<string, byte[]>> GetAllHashFields(string key, CancellationToken cancellation = default);
-        Task<byte[]> GetHashField(string key, string field, CancellationToken cancellation = default);
+        Task<bool> SetHashFieldAsync(string key, string field, byte[] data, CancellationToken cancellation = default);
+        Task<IDictionary<string, byte[]>> GetAllHashFieldsAsync(string key, CancellationToken cancellation = default);
+        Task<byte[]> GetHashFieldAsync(string key, string field, CancellationToken cancellation = default);
     }
 
     public interface IIPersistentDictionaryClient
     {
-        Task<IPersistentDictionary<T>> GetHashSet<T>(string key, CancellationToken cancellation = default);
+        Task<IPersistentDictionary<T>> GetHashSetAsync<T>(string key, CancellationToken cancellation = default);
     }
 
     public interface IRedisClient : IRedisReaderWriter, IRedisObjectReaderWriter, IRedisDiagnosticClient, IHashSetClient, IIPersistentDictionaryClient
