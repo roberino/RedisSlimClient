@@ -9,11 +9,11 @@ Data can also be reconciled with any updated values saved remotely in the databa
 ## Basic usage
 
 ```cs
-	var dictionary = await client.GetHashSetAsync<MyObject>("my-set-1");
+var dictionary = await client.GetHashSetAsync<MyObject>("my-set-1");
 
-	dictionary["x"] = new MyObject { Value = 1 };
-	dictionary["y"] = new MyObject { Value = 2 };
+dictionary["x"] = new MyObject { Value = 1 };
+dictionary["y"] = new MyObject { Value = 2 };
 
-	await dictionary.SaveAsync();
+await dictionary.SaveAsync();
 
 ```

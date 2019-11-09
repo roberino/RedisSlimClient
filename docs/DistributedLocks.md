@@ -1,4 +1,4 @@
-# GetHashSetAsync and Persistent Dictionaries
+# Distributed code syncronisation using Redis
 
 The AquireLockAsync method is an implementation of the [Redlock](https://redis.io/topics/distlock) algorithm
 and can be used to create a distributed lock across systems using your Redis DB.
@@ -6,22 +6,14 @@ and can be used to create a distributed lock across systems using your Redis DB.
 ## Basic usage
 
 ```cs
-	using (var client = config.CreateClient())
-    {
-        await client.PingAllAsync();
+var lockKey = "MyResourceToLockName";
 
-        var lockKey = "MyResourceToLockName";
-
-        using (var asyncLock = await client.AquireLockAsync(lockKey, new LockOptions(TimeSpan.FromSeconds(5), true)))
-        {
-            // My locked code:
-
-			CallMyFunctionRequiringSyncronisation();
-
-			// Best to release asyncronously:
-
-            await asyncLock.ReleaseLockAsync(); 
-        }
-    }
-
+using (var asyncLock = await client.AquireLockAsync(lockKey, new LockOptions(TimeSpan.FromSeconds(5), true)))
+{
+    // My locked code:
+	CallMyFunctionRequiringSyncronisation();
+			
+	// Best to release asyncronously:
+	await asyncLock.ReleaseLockAsync(); 
+}
 ```

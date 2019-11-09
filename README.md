@@ -6,6 +6,8 @@
 
 RedisTribute is a dotnet standard client for Redis, written from the ground up.
 
+[Download NuGet package](https://www.nuget.org/packages/RedisTribute/)
+
 The main aims of the client are:
 
 * To create a pluggable, fault tolerant Redis client for .NET (with a focus on supporting DotNet Core / Standard)
@@ -18,6 +20,8 @@ The main aims of the client are:
 # Basic usage
 
 ```cs
+
+// NOTE: The client is designed to be used as a singleton and can be shared across threads - there is an overhead in creating new clients each call
 
 using (var client = ((ClientConfiguration)"localhost:6379").CreateClient())
 {

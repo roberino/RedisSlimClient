@@ -89,13 +89,19 @@ namespace RedisTribute.IntegrationTests
 
                     try
                     {
-                        var asyncLock = client.AquireLockAsync(lockKey, new LockOptions(TimeSpan.FromSeconds(5), false)).GetAwaiter().GetResult();
+                        var asyncLock = client.AquireLockAsync(lockKey, new LockOptions(TimeSpan.FromSeconds(15), false)).GetAwaiter().GetResult();
+
+                        _output.WriteLine($"Aquired lock for {n} for {asyncLock.RemainingTime}");
+
                         locksAquired.Add(asyncLock);
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        _output.WriteLine($"Aquire lock failed for {n} : {ex.Message}");
+                    }
                 });
 
-                foreach(var aquiredLock in locksAquired)
+                foreach (var aquiredLock in locksAquired)
                 {
                     aquiredLock.Dispose();
                 }
