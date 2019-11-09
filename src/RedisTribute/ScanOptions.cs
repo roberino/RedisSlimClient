@@ -11,22 +11,22 @@ namespace RedisTribute
     /// </remarks>
     public readonly struct ScanOptions
     {
-        public ScanOptions(Func<string, Task> resultsHandler, string matchPattern = null, ScanType type = ScanType.Any)
+        public ScanOptions(Func<string, Task> resultsHandler, string matchPattern = null)
         {
             ResultsHandler = resultsHandler;
             MatchPattern = matchPattern;
             MaxCount = null;
             BatchSize = null;
-            Type = type;
+            Type = ScanType.Any;
         }
 
-        public ScanOptions(Func<string, Task> resultsHandler, int batchSize, int maxCount, ScanType type, string matchPattern)
+        public ScanOptions(Func<string, Task> resultsHandler, int batchSize, int maxCount, string matchPattern)
         {
             ResultsHandler = resultsHandler;
             MatchPattern = matchPattern;
             MaxCount = maxCount;
             BatchSize = batchSize;
-            Type = type;
+            Type = ScanType.Any;
         }
 
         public Func<string, Task> ResultsHandler { get; }

@@ -14,10 +14,12 @@ namespace RedisTribute
     class RedisClient : IRedisClient
     {
         readonly RedisController _controller;
+        readonly RedisLock _redisLock;
 
         internal RedisClient(RedisController controller)
         {
             _controller = controller;
+            _redisLock = new RedisLock(_controller);
         }
 
         internal static IRedisClient Create(ClientConfiguration configuration, Action onDisposing = null) =>
@@ -133,6 +135,11 @@ namespace RedisTribute
             }
 
             return resultsCount;
+        }
+
+        public Task<IDistributedLock> AquireLockAsync(string key, LockOptions options = default, CancellationToken cancellation = default)
+        {
+            return _redisLock.AquireLockAsync(key, options, cancellation);
         }
 
         public void Dispose()

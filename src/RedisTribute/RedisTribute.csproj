@@ -16,6 +16,12 @@
     <DefineConstants>NET_CORE</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
+    <None Remove="Io\Commands\Scripts\ReleaseLock.lua" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Io\Commands\Scripts\ReleaseLock.lua" />
+  </ItemGroup>
+  <ItemGroup>
     <None Include="LICENSE.txt" Pack="true" PackagePath="$(PackageLicenseFile)" />
   </ItemGroup>
   <ItemGroup>

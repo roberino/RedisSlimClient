@@ -13,6 +13,7 @@ namespace RedisTribute.UnitTests.Io.Pipelines
     {
         readonly ManualResetEvent _sendWaitHandle;
         readonly ManualResetEvent _receiveWaitHandle;
+        readonly ManualResetEvent _connectionWaitHandle;
 
         Exception _reconnectError;
 
@@ -22,12 +23,14 @@ namespace RedisTribute.UnitTests.Io.Pipelines
         {
             _sendWaitHandle = new ManualResetEvent(false);
             _receiveWaitHandle = new ManualResetEvent(false);
+            _connectionWaitHandle = new ManualResetEvent(false);
             Received = new ConcurrentQueue<ReadOnlySequence<byte>>();
             State = new SocketState(() => true);
         }
 
         public void RaiseError(Exception ex = null)
         {
+            _connectionWaitHandle.Reset();
             State.WriteError(ex ?? new TimeoutException());
         }
 
@@ -49,6 +52,8 @@ namespace RedisTribute.UnitTests.Io.Pipelines
                     throw _reconnectError;
                 }
 
+                _connectionWaitHandle.Set();
+
                 return Task.CompletedTask;
             });
         }
@@ -64,6 +69,7 @@ namespace RedisTribute.UnitTests.Io.Pipelines
 
             _sendWaitHandle.Dispose();
             _receiveWaitHandle.Dispose();
+            _connectionWaitHandle.Dispose();
         }
 
         public async ValueTask<int> ReceiveAsync(Memory<byte> memory)
@@ -103,6 +109,11 @@ namespace RedisTribute.UnitTests.Io.Pipelines
         {
             _receiveWaitHandle.WaitOne();
             _receiveWaitHandle.Reset();
+        }
+
+        public void WaitForConnect()
+        {
+            _connectionWaitHandle.WaitOne(5000);
         }
 
         public ConcurrentQueue<ReadOnlySequence<byte>> Received { get; }
