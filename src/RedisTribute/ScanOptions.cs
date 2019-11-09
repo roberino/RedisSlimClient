@@ -5,6 +5,7 @@ namespace RedisTribute
 {
     /// <summary>
     /// Options for scanning keys
+    /// For match patterns see https://redis.io/commands/scan
     /// </summary>
     /// <remarks>
     /// SCAN cursor [MATCH pattern] [COUNT count] [TYPE type]

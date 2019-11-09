@@ -43,6 +43,9 @@ namespace RedisTribute
         Task<T> AquireLockAsync(string key, LockOptions options = default, CancellationToken cancellation = default);
     }
 
+    /// <summary>
+    /// See https://redis.io/topics/distlock
+    /// </summary>
     public interface IRedLock : IAsyncLockStrategy<IDistributedLock>
     {
     }

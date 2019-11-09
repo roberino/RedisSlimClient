@@ -6,6 +6,8 @@ The dictionary has extended capabilities allowing the values to be saved again b
 
 Data can also be reconciled with any updated values saved remotely in the database.
 
+## Basic usage
+
 ```cs
 	var dictionary = await client.GetHashSetAsync<MyObject>("my-set-1");
 

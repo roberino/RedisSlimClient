@@ -8,7 +8,7 @@ RedisTribute is a dotnet standard client for Redis, written from the ground up.
 
 The main aims of the client are:
 
-* To create a pluggable, fault tolerant Redis client for .NET (with a focus on core / standard)
+* To create a pluggable, fault tolerant Redis client for .NET (with a focus on supporting DotNet Core / Standard)
 * A simple, async interface with support for cancellation tokens
 * To support basic Redis operations
 * To enable fast POCO to Redis mapping
@@ -86,6 +86,7 @@ ProactiveRetry will begin to retry the operation on another connection if the pr
 * Retry handling
 * Telemetry
 * Scan / Get / MGet / Set
+* [Distributed Locks] (docs/DistributedLocks.md)
 * [HashSets] (docs/HashSets.md)
 
 # Extension packages
