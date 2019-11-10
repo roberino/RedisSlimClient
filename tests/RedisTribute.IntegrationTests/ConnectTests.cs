@@ -105,7 +105,7 @@ namespace RedisTribute.IntegrationTests
             {
                 await client.PingAllAsync();
 
-                var compactedResults = await ExecuteMultipleRequests(client, 30, (n, r) =>
+                var compactedResults = await ExecuteMultipleRequests(client, 50, (n, r) =>
                 {
                     if (n == 15)
                     {
