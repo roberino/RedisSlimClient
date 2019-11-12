@@ -107,7 +107,7 @@ namespace RedisTribute.IntegrationTests
 
                 var compactedResults = await ExecuteMultipleRequests(client, 50, (n, r) =>
                 {
-                    if (n == 15)
+                    if (n == 25)
                     {
                         errorOn = true;
                         return;
@@ -115,6 +115,7 @@ namespace RedisTribute.IntegrationTests
                     if (!r)
                     {
                         errorOn = false;
+                        Thread.Sleep(10);
                     }
                 });
 

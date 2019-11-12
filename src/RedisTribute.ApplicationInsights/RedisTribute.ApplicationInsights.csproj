@@ -2,7 +2,7 @@
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;netcoreapp2.1;netcoreapp2.2</TargetFrameworks>
     <LangVersion>7.2</LangVersion>
-    <Version>0.1.0-beta0201</Version>
+    <Version>0.2.0</Version>
     <Authors>Rob Eyres</Authors>
     <Company />
     <Description>Application insight extensions for RedisTribute</Description>
