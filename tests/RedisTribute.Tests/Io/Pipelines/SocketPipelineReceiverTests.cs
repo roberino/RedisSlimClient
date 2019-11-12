@@ -19,7 +19,7 @@ namespace RedisTribute.UnitTests.Io.Pipelines
             {
                 var waitHandle = new ManualResetEvent(false);
                 var cancellationTokenSource = new CancellationTokenSource();
-                var receiver = new SocketPipelineReceiver(socket, cancellationTokenSource.Token);
+                var receiver = new SocketPipelineReceiver(socket, cancellationTokenSource.Token, new ResetHandle());
 
                 await socket.SendStringAsync("abcxefg");
 

@@ -5,13 +5,16 @@ namespace RedisTribute.Telemetry
 {
     public class TelemetryEvent
     {
+        readonly KeepAliveHandle _keepAliveHandle;
+
         Exception _exception;
 
+        public TelemetryEvent()
+        {
+            _keepAliveHandle = new KeepAliveHandle(Release);
+        }
+                
         public static string CreateId() => Guid.NewGuid().ToString("N").Substring(0, 8).ToUpper();
-
-        public static TelemetryEvent CreateStart(string name) => new TelemetryEvent() { Name = name, Sequence = TelemetrySequence.Start };
-
-        public static TelemetryEvent CreateEnd(string name) => new TelemetryEvent() { Name = name, Sequence = TelemetrySequence.End };
 
         public DateTime Timestamp { get; set; } = DateTime.UtcNow;
 
@@ -39,9 +42,42 @@ namespace RedisTribute.Telemetry
             }
         }
 
+        Action _onReleased;
+        internal Action OnReleased
+        {
+            set
+            {
+                if (_onReleased != null)
+                {
+                    throw new InvalidOperationException();
+                }
+                _onReleased = value;
+            }
+        }
+
+        internal IDisposable KeepAlive() => _keepAliveHandle;
+
         public IDictionary<string, object> Dimensions { get; } = new Dictionary<string, object>();
 
-        public TelemetryEvent CreateChild(string name) => new TelemetryEvent() { Name = name, OperationId = OperationId };
+        void Release()
+        {
+            _onReleased?.Invoke();
+        }
+
+        class KeepAliveHandle : IDisposable
+        {
+            readonly Action _onDispose;
+
+            public KeepAliveHandle(Action onDispose)
+            {
+                _onDispose = onDispose;
+            }
+
+            public void Dispose()
+            {
+                _onDispose.Invoke();
+            }
+        }
     }
 
     [Flags]

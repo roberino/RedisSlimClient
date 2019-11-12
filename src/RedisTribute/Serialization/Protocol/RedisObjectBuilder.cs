@@ -22,6 +22,11 @@ namespace RedisTribute.Serialization.Protocol
 
         public IRedisObject[] AppendObjectData(ReadOnlySequence<byte> obj)
         {
+            if (obj.IsEmpty)
+            {
+                return new IRedisObject[] { RedisNull.Value };
+            }
+
             var byteSequence = new MemoryByteSequenceAdapter(obj);
 
             _items.AddRange(_parser.ReadItem(byteSequence));

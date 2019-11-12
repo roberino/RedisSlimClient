@@ -22,23 +22,24 @@ namespace RedisTribute.Telemetry
                 name = act.Method.Name;
             }
 
-            var ev = TelemetryEvent.CreateStart(name);
+            var ev = TelemetryEventFactory.Instance.CreateStart(name);
 
             ev.Severity = severity;
             ev.Category = category;
 
-            var endEv = ev.CreateChild(name);
+            if (!writer.Enabled || !writer.Severity.HasFlag(severity) || !writer.Category.HasFlag(category))
+            {
+                using (ev.KeepAlive())
+                    return await act(new TelemetricContext(NullWriter.Instance, ev, ev.Dimensions));
+            }
+
+            var endEv = TelemetryEventFactory.Instance.Create(name, ev.OperationId);
 
             endEv.Category = category;
             endEv.Sequence = TelemetrySequence.End;
             endEv.Severity = severity;
 
             var ctx = new TelemetricContext(writer, ev, endEv.Dimensions);
-
-            if (!writer.Enabled || !writer.Severity.HasFlag(severity) || !writer.Category.HasFlag(category))
-            {
-                return await act(ctx);
-            }
 
             var timer = new Stopwatch();
 

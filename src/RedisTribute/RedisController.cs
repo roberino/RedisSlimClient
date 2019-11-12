@@ -108,6 +108,8 @@ namespace RedisTribute
             catch { }
 
             _connection.Dispose();
+
+            Configuration.TelemetryWriter.Flush();
         }
 
         async Task<IEnumerable<(RedisKey[] Keys, TCmd Result)>> GetMultikeyResultAsync<TCmd>(IReadOnlyCollection<RedisKey> keys, Func<RedisKey[], IRedisResult<TCmd>> cmdFactory, CancellationToken cancellation = default)

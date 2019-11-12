@@ -1,9 +1,7 @@
 ﻿using RedisTribute.Configuration;
 using RedisTribute.Serialization;
 using RedisTribute.Types;
-using RedisTribute.Types.Primatives;
 using System;
-using System.IO;
 
 namespace RedisTribute.Io.Commands
 {
@@ -13,65 +11,23 @@ namespace RedisTribute.Io.Commands
         static int _maxBufferSize = 1024 * 4;
 
         readonly ISerializerSettings _configuration;
-        readonly IObjectSerializer<T> _serializer;
         readonly T _objectData;
+        readonly SetOptions _options;
 
-        public ObjectSetCommand(RedisKey key, ISerializerSettings config, T objectData) : base("SET", true, key)
+        public ObjectSetCommand(RedisKey key, ISerializerSettings config, T objectData, SetOptions options) : base("SET", true, key)
         {
             _configuration = config;
             _objectData = objectData;
-            _serializer = config.SerializerFactory.Create<T>();
+            _options = options;
         }
 
         protected override CommandParameters GetArgs()
         {
-            var objStream = GetObjectData();
+            var objStream = _configuration.Serialize(_objectData);
 
-            return new CommandParameters(() => objStream.Dispose(), CommandText, Key.Bytes, objStream.GetBuffer());
+            return new CommandParameters(SetCommand.GetArgs(CommandText, Key, objStream.GetBuffer(), _options), () => objStream.Dispose());
         }
 
-        protected override bool TranslateResult(IRedisObject redisObject) => string.Equals(redisObject.ToString(), "OK", StringComparison.OrdinalIgnoreCase);
-
-        byte[] GetObjectDataV1()
-        {
-            using (var ms = new MemoryStream())
-            {
-                var objWriter = new ObjectWriter(ms, _configuration.Encoding, null, _configuration.SerializerFactory);
-
-                _serializer.WriteData(_objectData, objWriter);
-
-                return ms.ToArray();
-            }
-        }
-
-        PooledStream GetObjectData()
-        {
-            var ms = StreamPool.Instance.CreateWritable(_maxBufferSize);
-
-            try
-            {
-                var objWriter = new ObjectWriter(ms, _configuration.Encoding, null, _configuration.SerializerFactory);
-
-                _serializer.WriteData(_objectData, objWriter);
-
-                return ms;
-            }
-            catch (NotSupportedException)
-            {
-                ms.Dispose();
-
-                lock (_lockObj)
-                {
-                    _maxBufferSize = _maxBufferSize << 1;
-
-                    if (_maxBufferSize > 16000)
-                    {
-                        throw new NotSupportedException();
-                    }
-                }
-            }
-
-            return GetObjectData();
-        }
+        protected override bool TranslateResult(IRedisObject redisObject) => redisObject.IsOk();
     }
 }

@@ -15,5 +15,9 @@
         public void Write(TelemetryEvent telemetryEvent)
         {
         }
+
+        public void Flush()
+        {
+        }
     }
 }

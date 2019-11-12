@@ -56,7 +56,7 @@ namespace RedisTribute.IntegrationTests
 
             if (output != null)
             {
-                config.TelemetryWriter = new TextTelemetryWriter(output, Severity.All);
+                config.TelemetrySinks.Add(new TextTelemetryWriter(output, Severity.All));
             }
 
             config.NetworkConfiguration.PortMappings

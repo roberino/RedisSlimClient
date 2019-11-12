@@ -31,14 +31,11 @@ namespace RedisTribute.Io.Pipelines
             {
                 component.Trace += e =>
                 {
-                    var childEvent = new TelemetryEvent()
-                    {
-                        Name = $"{baseName}/{e.Action}",
-                        Elapsed = sw.Elapsed,
-                        OperationId = opId,
-                        Data = $"{component.EndpointIdentifier} ({e.Data.Length} bytes): {Encoding.ASCII.GetString(e.Data)}",
-                        Severity = Severity.Diagnostic
-                    };
+                    var childEvent = TelemetryEventFactory.Instance.Create($"{baseName}/{e.Action}", opId);
+
+                    childEvent.Data = $"{component.EndpointIdentifier} ({e.Data.Length} bytes): {Encoding.ASCII.GetString(e.Data)}";
+                    childEvent.Severity = Severity.Diagnostic;
+                    childEvent.Elapsed = sw.Elapsed;
 
                     childEvent.Dimensions[$"{nameof(Uri.Host)}"] = component.EndpointIdentifier.Host;
                     childEvent.Dimensions[$"{nameof(Uri.Port)}"] = component.EndpointIdentifier.Port;
@@ -54,14 +51,11 @@ namespace RedisTribute.Io.Pipelines
 
                 if (writer.Severity.HasFlag(status))
                 {
-                    var childEvent = new TelemetryEvent()
-                    {
-                        Name = $"{baseName}/{s}",
-                        Elapsed = sw.Elapsed,
-                        OperationId = opId,
-                        Data = component.EndpointIdentifier.ToString(),
-                        Severity = s == PipelineStatus.Faulted ? Severity.Error : Severity.Diagnostic
-                    };
+                    var childEvent = TelemetryEventFactory.Instance.Create($"{baseName}/{s}", opId);
+
+                    childEvent.Data = component.EndpointIdentifier.ToString();
+                    childEvent.Elapsed = sw.Elapsed;
+                    childEvent.Severity = s == PipelineStatus.Faulted ? Severity.Error : Severity.Diagnostic;
 
                     childEvent.AddComponentInf(component);
 
@@ -73,15 +67,12 @@ namespace RedisTribute.Io.Pipelines
             {
                 if (writer.Severity.HasFlag(Severity.Error))
                 {
-                    var childEvent = new TelemetryEvent()
-                    {
-                        Name = nameof(component.Error),
-                        Elapsed = sw.Elapsed,
-                        OperationId = opId,
-                        Data = component.EndpointIdentifier.ToString(),
-                        Severity = Severity.Error,
-                        Exception = e
-                    };
+                    var childEvent = TelemetryEventFactory.Instance.Create(nameof(component.Error), opId);
+
+                    childEvent.Data = component.EndpointIdentifier.ToString();
+                    childEvent.Elapsed = sw.Elapsed;
+                    childEvent.Severity = Severity.Error;
+                    childEvent.Exception = e;
 
                     childEvent.AddComponentInf(component);
 

@@ -21,14 +21,11 @@ namespace RedisTribute.Io.Net
                 {
                     traceable.Trace += e =>
                     {
-                        var childEvent = new TelemetryEvent()
-                        {
-                            Name = $"{baseName}/{e.Action}",
-                            Elapsed = sw.Elapsed,
-                            OperationId = opId,
-                            Data = $"{socket.EndpointIdentifier} ({e.Data.Length} bytes): {Encoding.ASCII.GetString(e.Data)}",
-                            Severity = Severity.Diagnostic
-                        };
+                        var childEvent = TelemetryEventFactory.Instance.Create($"{baseName}/{e.Action}", opId);
+
+                        childEvent.Elapsed = sw.Elapsed;
+                        childEvent.Data = $"{socket.EndpointIdentifier} ({e.Data.Length} bytes): {Encoding.ASCII.GetString(e.Data)}";
+                        childEvent.Severity = Severity.Diagnostic;
 
                         childEvent.Dimensions[$"{nameof(Uri.Host)}"] = socket.EndpointIdentifier.Host;
                         childEvent.Dimensions[$"{nameof(Uri.Port)}"] = socket.EndpointIdentifier.Port;
@@ -44,14 +41,11 @@ namespace RedisTribute.Io.Net
 
                     if (writer.Severity.HasFlag(level))
                     {
-                        var childEvent = new TelemetryEvent()
-                        {
-                            Name = $"{baseName}/{s}",
-                            Elapsed = sw.Elapsed,
-                            OperationId = opId,
-                            Data = socket.EndpointIdentifier.ToString(),
-                            Severity = level
-                        };
+                        var childEvent = TelemetryEventFactory.Instance.Create($"{baseName}/{s}", opId);
+
+                        childEvent.Data = socket.EndpointIdentifier.ToString();
+                        childEvent.Severity = level;
+                        childEvent.Elapsed = sw.Elapsed;
 
                         childEvent.Dimensions[$"{nameof(Uri.Host)}"] = socket.EndpointIdentifier.Host;
                         childEvent.Dimensions[$"{nameof(Uri.Port)}"] = socket.EndpointIdentifier.Port;

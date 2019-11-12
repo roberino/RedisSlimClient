@@ -13,16 +13,20 @@ namespace RedisTribute.Io.Pipelines
     {
         readonly ISocket _socket;
         readonly CancellationTokenSource _cancellationTokenSource;
+        readonly ResetHandle _resetHandle;
 
         public SocketPipeline(ISocket socket, IReadWriteBufferSettings bufferSettings = null)
         {
-            _cancellationTokenSource = new CancellationTokenSource();
             _socket = socket;
 
-            Receiver = new SocketPipelineReceiver(_socket, _cancellationTokenSource.Token, (bufferSettings?.ReadBufferSize).GetValueOrDefault(512));
-            Sender = new SocketPipelineSender(_socket, _cancellationTokenSource.Token);
+            _cancellationTokenSource = new CancellationTokenSource();
+            _resetHandle = new ResetHandle();
+
+            Receiver = new SocketPipelineReceiver(_socket, _cancellationTokenSource.Token, _resetHandle, (bufferSettings?.ReadBufferSize).GetValueOrDefault(512));
+            Sender = new SocketPipelineSender(_socket, _cancellationTokenSource.Token, _resetHandle);
 
             _socket.State.Changed += OnSocketChange;
+            _resetHandle.Fault += OnFaultNotification;
         }
 
         public IPipelineReceiver Receiver { get; }
@@ -33,6 +37,8 @@ namespace RedisTribute.Io.Pipelines
 
         public Task RunAsync()
         {
+            _resetHandle.Enable();
+
             return Task.WhenAll(Schedulables.Select(x => x.RunAsync()));
         }
 
@@ -43,8 +49,7 @@ namespace RedisTribute.Io.Pipelines
 
         public async Task ResetAsync()
         {
-            using (await ((IResetable)Sender).ResetAsync())
-            using (await ((IResetable)Receiver).ResetAsync())
+            using (await _resetHandle.BeginReset())
             {
                 await Attempt.WithExponentialBackoff(_socket.ConnectAsync, TimeSpan.FromSeconds(5), cancellation: _cancellationTokenSource.Token);
             }
@@ -62,7 +67,13 @@ namespace RedisTribute.Io.Pipelines
                 _socket.Dispose();
 
                 _cancellationTokenSource.Dispose();
+                _resetHandle.Dispose();
             }
+        }
+
+        void OnFaultNotification()
+        {
+            Faulted?.Invoke();
         }
 
         void OnSocketChange((SocketStatus status, long id) state)

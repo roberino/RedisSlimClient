@@ -19,7 +19,7 @@ namespace RedisTribute
 
         public static ClientConfiguration UseApplicationInsights(this ClientConfiguration clientConfiguration, TelemetryClient telemetryClient)
         {
-            clientConfiguration.TelemetryWriter = new ApplicationInsightsTelemetryWriter(telemetryClient);
+            clientConfiguration.TelemetrySinks.Add(new ApplicationInsightsTelemetryWriter(telemetryClient));
 
             return clientConfiguration;
         }

@@ -38,17 +38,7 @@ namespace RedisTribute.UnitTests.Io
 
                 socket.RaiseError();
 
-                var timeoutCount = 0;
-
-                while (socket.CallsToConnect == 0)
-                {
-                    await Task.Delay(5);
-
-                    if (timeoutCount++ > 100)
-                    {
-                        break;
-                    }
-                }
+                socket.WaitForConnect();
 
                 Assert.Equal(1, socket.CallsToConnect);
             }

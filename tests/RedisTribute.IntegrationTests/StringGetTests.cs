@@ -1,4 +1,5 @@
 ﻿using RedisTribute.Configuration;
+using RedisTribute.Types;
 using System;
 using System.Linq;
 using System.Threading;
@@ -67,6 +68,68 @@ namespace RedisTribute.IntegrationTests
             }
         }
 
+
+        [Theory]
+        [InlineData(PipelineMode.Sync, ConfigurationScenario.NonSslBasic)]
+        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
+        public async Task SetStringAsync_WithCondition_ReturnsOk(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
+        {
+            var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine);
+
+            config.HealthCheckInterval = TimeSpan.Zero;
+            config.FallbackStrategy = FallbackStrategy.None;
+            config.DefaultOperationTimeout = TimeSpan.FromMinutes(2);
+
+            using (var client = config.CreateClient())
+            {
+                await client.PingAsync();
+
+                var data = Enumerable.Range(1, 16).Select(n => (byte)n).ToArray();
+                var key = Guid.NewGuid().ToString();
+
+                var result = await client.SetAsync(key, data, SetCondition.SetKeyOnlyIfExists);
+
+                Assert.False(result);
+
+                var result2 = await client.GetAsync<byte[]>(key);
+
+                Assert.False(result2.WasFound);
+            }
+        }
+
+
+        [Theory]
+        [InlineData(PipelineMode.Sync, ConfigurationScenario.NonSslBasic)]
+        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
+        public async Task SetStringAsync_WithExpiry_ReturnsOk(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
+        {
+            var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine);
+
+            config.HealthCheckInterval = TimeSpan.Zero;
+
+            using (var client = config.CreateClient())
+            {
+                await client.PingAsync();
+
+                var data = Enumerable.Range(1, 16).Select(n => (byte)n).ToArray();
+                var key = Guid.NewGuid().ToString();
+
+                var result = await client.SetAsync(key, data, (Expiry)DateTime.UtcNow.AddMilliseconds(5));
+
+                Assert.True(result);
+
+                await Task.Delay(10);
+
+                var notFound = false;
+
+                var result2 = await client.GetAsync<byte[]>(key);
+
+                result2.IfNotFound(() => notFound = true);
+
+                Assert.True(notFound);
+            }
+        }
+
         [Theory]
         [InlineData(PipelineMode.Sync, ConfigurationScenario.NonSslBasic)]
         [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
@@ -103,21 +166,25 @@ namespace RedisTribute.IntegrationTests
 
             config.HealthCheckInterval = TimeSpan.Zero;
 
+            var delay = false;
+
             using (var client = await config.CreateProxiedClientAsync(r =>
             {
-                Thread.Sleep(5);
+                if (delay)
+                    Thread.Sleep(1500);
                 return r.ForwardResponse();
             }))
             {
                 var key = Guid.NewGuid().ToString();
 
                 await client.SetAsync(key, new byte[15000]);
-
-                using (var cancel = new CancellationTokenSource(1))
-                {
-                    var result = await client.GetAsync<string>(key, cancel.Token);
-                    
+                
+                using (var cancel = new CancellationTokenSource(15))
+                {                    
                     var cancelled = false;
+                    delay = true;
+
+                    var result = await client.GetAsync<string>(key, cancel.Token);
 
                     var value = (string)result
                         .IfFound(v =>

@@ -1,6 +1,5 @@
 ﻿using RedisTribute.Io.Net;
 using RedisTribute.Io.Scheduling;
-using RedisTribute.Util;
 using System;
 using System.Buffers;
 using System.IO.Pipelines;
@@ -9,26 +8,27 @@ using System.Threading.Tasks;
 
 namespace RedisTribute.Io.Pipelines
 {
-    class SocketPipelineReceiver : IPipelineReceiver, ISchedulable, IResetable
+    class SocketPipelineReceiver : IPipelineReceiver, ISchedulable
     {
         readonly int _minBufferSize;
         readonly ISocket _socket;
         readonly Pipe _pipe;
         readonly CancellationToken _cancellationToken;
-        readonly AsyncLock _resetLock;
+        readonly ResetHandle _resetHandle;
 
-        volatile bool _resetting;
         Func<ReadOnlySequence<byte>, SequencePosition?> _delimiter;
         Action<ReadOnlySequence<byte>> _handler;
 
-        public SocketPipelineReceiver(ISocket socket, CancellationToken cancellationToken, int minBufferSize = 1024)
+        public SocketPipelineReceiver(ISocket socket, CancellationToken cancellationToken, ResetHandle resetHandle, int minBufferSize = 1024)
         {
             _cancellationToken = cancellationToken;
+            _resetHandle = resetHandle;
             _minBufferSize = minBufferSize;
             _socket = socket;
 
-            _resetLock = new AsyncLock();
             _pipe = new Pipe();
+
+            _resetHandle.Resetting.Subscribe(Reset);
         }
 
         public Uri EndpointIdentifier => _socket.EndpointIdentifier;
@@ -49,40 +49,17 @@ namespace RedisTribute.Io.Pipelines
 
         public async Task RunAsync()
         {
-            _resetting = false;
-
             var readerTask = PumpFromSocket();
             var pubTask = ReadPipeAsync();
 
             await Task.WhenAll(readerTask, pubTask);
         }
 
-        public async Task<IDisposable> ResetAsync()
-        {
-            _resetting = true;
-
-            StateChanged?.Invoke(PipelineStatus.Resetting);
-
-            var handle = await _resetLock.LockAsync();
-
-            _pipe.Reader.CancelPendingRead();
-            _pipe.Writer.CancelPendingFlush();
-            _pipe.Reader.Complete();
-            _pipe.Writer.Complete();
-            _pipe.Reset();
-
-            _resetting = false;
-
-            return handle;
-        }
-
         public void Dispose()
         {
             Error = null;
             StateChanged = null;
-
-            _resetLock.Dispose();
-
+            _resetHandle.Dispose();
             _pipe.Reader.Complete();
             _pipe.Writer.Complete();
         }
@@ -99,7 +76,7 @@ namespace RedisTribute.Io.Pipelines
             {
                 try
                 {
-                    await AwaitReset();
+                    await _resetHandle.AwaitReset();
 
                     StateChanged?.Invoke(PipelineStatus.AwaitingConnection);
 
@@ -133,6 +110,8 @@ namespace RedisTribute.Io.Pipelines
                     StateChanged?.Invoke(PipelineStatus.Faulted);
                     Error?.Invoke(ex);
 
+                    _resetHandle.NotifyFault();
+
                     continue;
                 }
 
@@ -151,13 +130,15 @@ namespace RedisTribute.Io.Pipelines
             writer.Complete(error);
         }
 
-        async Task AwaitReset()
+        public void Reset()
         {
-            while (_resetting)
-            {
-                StateChanged?.Invoke(PipelineStatus.AwaitingReset);
-                await _resetLock.AwaitAsync();
-            }
+            StateChanged?.Invoke(PipelineStatus.Resetting);
+
+            _pipe.Reader.CancelPendingRead();
+            _pipe.Writer.CancelPendingFlush();
+            _pipe.Reader.Complete();
+            _pipe.Writer.Complete();
+            _pipe.Reset();
         }
 
         async Task ReadPipeAsync()
@@ -173,7 +154,7 @@ namespace RedisTribute.Io.Pipelines
             {
                 try
                 {
-                    await AwaitReset();
+                    await _resetHandle.AwaitReset();
 
                     StateChanged?.Invoke(PipelineStatus.ReadingFromPipe);
 
@@ -234,6 +215,7 @@ namespace RedisTribute.Io.Pipelines
                     error = ex;
                     StateChanged?.Invoke(PipelineStatus.Faulted);
                     Error?.Invoke(ex);
+                    _resetHandle.NotifyFault();
                 }
             }
 

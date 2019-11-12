@@ -19,6 +19,15 @@ namespace RedisTribute.Util
             _handlers.Add(handler);
         }
 
+        public void Subscribe(Action handler)
+        {
+            _handlers.Add(_ =>
+            {
+                handler();
+                return Task.CompletedTask;
+            });
+        }
+
         public async Task PublishAsync(T args)
         {
             if(_handlers.Count == 0)

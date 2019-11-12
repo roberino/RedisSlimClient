@@ -6,17 +6,22 @@
 
 RedisTribute is a dotnet standard client for Redis, written from the ground up.
 
+[Download NuGet package](https://www.nuget.org/packages/RedisTribute/)
+
 The main aims of the client are:
 
-* To create a pluggable, fault tolerant Redis client for .NET (with a focus on core / standard)
+* To create a pluggable, fault tolerant Redis client for .NET (with a focus on supporting DotNet Core / Standard)
 * A simple, async interface with support for cancellation tokens
 * To support basic Redis operations
 * To enable fast POCO to Redis mapping
 * To be performant with granular control over thread and socket usage
+* Expose detailed telemetry to enable diagnostic analysis and monitoring
 
 # Basic usage
 
 ```cs
+
+// NOTE: The client is designed to be used as a singleton and can be shared across threads - there is an overhead in creating new clients each call
 
 using (var client = ((ClientConfiguration)"localhost:6379").CreateClient())
 {
@@ -73,6 +78,21 @@ The DefaultOperationTimeout should be set reasonably high to cater for the cost 
 If Retry is enabled, the client will retry the request on another connection if possible until cancellation is requested. 
 ProactiveRetry will begin to retry the operation on another connection if the previous request takes too long, returning the first available response.
 
+# Main Features
+
+* Support for SSL
+* Flexible thread management
+* Support for clusters and replica configurations
+* Support for master/slave configurations
+* Keep alive & socket monitoring
+* Retry logic
+* Azure compatibility
+* Retry handling
+* Telemetry
+* Scan / Get / MGet / Set
+* [Distributed Locks](docs/DistributedLocks.md)
+* [HashSets](docs/HashSets.md)
+
 # Extension packages
 
 ## RedisTribute.Json
@@ -85,24 +105,12 @@ This package adds Application Insights integration into the client so that calls
 
 [See application insights docs here](docs/ApplicationInsights.md)
 
-# Features
-
-* Support for SSL
-* Flexible thread management
-* Support for clusters and replica configurations
-* Support for master/slave configurations
-* Keep alive & socket monitoring
-* Retry logic
-* Azure compatibility
-* Retry handling
-
 # Benchmarks
 
 [See benchmarks here](docs/benchmarks/RedisTribute.Benchmarks.RedisClientBenchmarks-report-github.md)
 
 # TODO
 
-* HashSets
 * Binary keys
 * Expose info
 * Transactions

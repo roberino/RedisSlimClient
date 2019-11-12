@@ -1,7 +1,6 @@
 ﻿using RedisTribute.Io.Net;
 using RedisTribute.Io.Scheduling;
 using RedisTribute.Types.Primatives;
-using RedisTribute.Util;
 using System;
 using System.IO.Pipelines;
 using System.Threading;
@@ -9,25 +8,24 @@ using System.Threading.Tasks;
 
 namespace RedisTribute.Io.Pipelines
 {
-    class SocketPipelineSender : IPipelineSender, ISchedulable, IResetable
+    class SocketPipelineSender : IPipelineSender, ISchedulable
     {
         readonly ISocket _socket;
         readonly Pipe _pipe;
         readonly CancellationToken _cancellationToken;
+        readonly ResetHandle _resetHandle;
         readonly MemoryCursor _memoryCursor;
-        readonly AsyncLock _resetLock;
 
-        volatile bool _resetting;
-
-        public SocketPipelineSender(ISocket socket, CancellationToken cancellationToken)
+        public SocketPipelineSender(ISocket socket, CancellationToken cancellationToken, ResetHandle resetHandle)
         {
             _cancellationToken = cancellationToken;
+            _resetHandle = resetHandle;
             _socket = socket;
 
-            _resetLock = new AsyncLock();
             _pipe = new Pipe();
 
             _memoryCursor = new MemoryCursor(_pipe.Writer);
+            _resetHandle.Resetting.Subscribe(Reset);
         }
 
         public Uri EndpointIdentifier => _socket.EndpointIdentifier;
@@ -42,33 +40,12 @@ namespace RedisTribute.Io.Pipelines
 
         public async Task RunAsync()
         {
-            _resetting = false;
-
             await PumpToSocket();
-        }
-
-        public async Task<IDisposable> ResetAsync()
-        {
-            StateChanged?.Invoke(PipelineStatus.Resetting);
-
-            var handle = await _resetLock.LockAsync();
-
-            _resetting = true;
-
-            _pipe.Reader.CancelPendingRead();
-            _pipe.Writer.CancelPendingFlush();
-            _pipe.Reader.Complete();
-            _pipe.Writer.Complete();
-            _pipe.Reset();
-
-            _resetting = false;
-
-            return handle;
         }
 
         public async ValueTask SendAsync(byte[] data)
         {
-            await AwaitReset();
+            await _resetHandle.AwaitReset();
 
             StateChanged?.Invoke(PipelineStatus.WritingToPipe);
 
@@ -77,9 +54,11 @@ namespace RedisTribute.Io.Pipelines
             StateChanged?.Invoke(PipelineStatus.WritingToPipeComplete);
         }
 
-        public async ValueTask SendAsync(Func<IMemoryCursor, ValueTask> writeAction)
+        public async ValueTask SendAsync(Func<IMemoryCursor, ValueTask> writeAction, CancellationToken cancellationToken = default)
         {
-            await AwaitReset();
+            await _resetHandle.AwaitReset();
+
+            cancellationToken.ThrowIfCancellationRequested();
 
             await writeAction(_memoryCursor);
 
@@ -90,13 +69,15 @@ namespace RedisTribute.Io.Pipelines
             StateChanged?.Invoke(PipelineStatus.WritingToPipeComplete);
         }
 
-        async ValueTask AwaitReset()
+        void Reset()
         {
-            while (_resetting)
-            {
-                StateChanged?.Invoke(PipelineStatus.AwaitingReset);
-                await _resetLock.AwaitAsync();
-            }
+            StateChanged?.Invoke(PipelineStatus.Resetting);
+
+            _pipe.Reader.CancelPendingRead();
+            _pipe.Writer.CancelPendingFlush();
+            _pipe.Reader.Complete();
+            _pipe.Writer.Complete();
+            _pipe.Reset();
         }
 
         async Task PumpToSocket()
@@ -107,7 +88,7 @@ namespace RedisTribute.Io.Pipelines
             {
                 try
                 {
-                    await AwaitReset();
+                    await _resetHandle.AwaitReset();
 
                     StateChanged?.Invoke(PipelineStatus.ReadingFromPipe);
 
@@ -137,6 +118,7 @@ namespace RedisTribute.Io.Pipelines
                     error = ex;
                     StateChanged?.Invoke(PipelineStatus.Faulted);
                     Error?.Invoke(error);
+                    _resetHandle.NotifyFault();
                     await Task.Delay(10);
                 }
             }

@@ -39,7 +39,7 @@ namespace RedisTribute.Io
 
         void OnReceive(ReadOnlySequence<byte> objData)
         {
-            var nextData = objData.Slice(0, objData.Length - 2);
+            var nextData = objData.Length > 2 ? objData.Slice(0, objData.Length - 2) : ReadOnlySequence<byte>.Empty;
             
             var createdItems = _redisObjectBuilder.AppendObjectData(nextData);
 
@@ -48,19 +48,27 @@ namespace RedisTribute.Io
                 Trace?.Invoke((nameof(_redisObjectBuilder.AppendObjectData), nextData.ToArray()));
             }
 
-            foreach (var item in createdItems)
+            try
             {
-                if (!_commandQueue.ProcessNextCommand(cmd =>
+                foreach (var item in createdItems)
                 {
-                    _workScheduler.Schedule(() =>
+                    if (!_commandQueue.ProcessNextCommand(cmd =>
                     {
-                        cmd.Complete(item);
-                        return Task.CompletedTask;
-                    });
-                }))
-                {
-                    Trace?.Invoke(("What?", new byte[0]));
+                        _workScheduler.Schedule(() =>
+                        {
+                            cmd.Complete(item);
+                            return Task.CompletedTask;
+                        });
+                    }))
+                    {
+                        Trace?.Invoke(("What?", new byte[0]));
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                _commandQueue.AbortAll(ex, _workScheduler).ConfigureAwait(false).GetAwaiter().GetResult();
+                throw;
             }
         }
     }

@@ -1,6 +1,8 @@
-﻿using RedisTribute.Types.Primatives;
+﻿using RedisTribute.Serialization.CustomSerializers;
+using RedisTribute.Types.Primatives;
 using System;
 using System.IO;
+using System.Text;
 
 namespace RedisTribute.Serialization
 {
@@ -26,6 +28,8 @@ namespace RedisTribute.Serialization
                     return (IObjectSerializer<T>)new PrimativeSerializerImpl<double>(BinaryFormatter.Default.ToDouble, BinaryFormatter.Default.ToBytes);
                 case TypeCode.Decimal:
                     return (IObjectSerializer<T>)new PrimativeSerializerImpl<decimal>(BinaryFormatter.Default.ToDecimal, BinaryFormatter.Default.ToBytes);
+                case TypeCode.String:
+                    return (IObjectSerializer<T>)new StringSerializer(Encoding.UTF8);
             }
 
             throw new NotSupportedException(tc.ToString());

@@ -7,7 +7,13 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <PackageReference Include="Serilog.Formatting.Elasticsearch" Version="8.0.0" />
+      <PackageReference Include="Serilog.Sinks.ElasticSearch" Version="8.0.0" />
+    </ItemGroup>
+
+    <ItemGroup>
       <ProjectReference Include="..\..\src\RedisTribute.ApplicationInsights\RedisTribute.ApplicationInsights.csproj" />
+      <ProjectReference Include="..\..\src\RedisTribute.Serilog\RedisTribute.Serilog.csproj" />
       <ProjectReference Include="..\..\src\RedisTribute\RedisTribute.csproj" />
       <ProjectReference Include="..\RedisTribute.Stubs\RedisTribute.Stubs.csproj" />
     </ItemGroup>

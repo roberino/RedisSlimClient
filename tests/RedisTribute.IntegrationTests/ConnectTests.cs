@@ -105,9 +105,9 @@ namespace RedisTribute.IntegrationTests
             {
                 await client.PingAllAsync();
 
-                var compactedResults = await ExecuteMultipleRequests(client, 30, (n, r) =>
+                var compactedResults = await ExecuteMultipleRequests(client, 50, (n, r) =>
                 {
-                    if (n == 15)
+                    if (n == 25)
                     {
                         errorOn = true;
                         return;
@@ -115,11 +115,55 @@ namespace RedisTribute.IntegrationTests
                     if (!r)
                     {
                         errorOn = false;
+                        Thread.Sleep(10);
                     }
                 });
 
                 Assert.Equal(3, compactedResults.Count);
                 Assert.True(compactedResults[0]);
+            }
+        }
+
+        [Theory]
+        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
+        [InlineData(PipelineMode.Sync, ConfigurationScenario.NonSslBasic)]
+        public async Task PingAsync_WithNetworkError_WillReconnect2(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
+        {
+            var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine);
+
+            config.FallbackStrategy = FallbackStrategy.None;
+
+            var errorOn = false;
+
+            using (var client = await config.CreateProxiedClientAsync(r =>
+            {
+                if (errorOn)
+                {
+                    throw new Exception();
+                }
+
+                return r.ForwardResponse();
+            }))
+            {
+                await client.PingAllAsync();
+
+                var key = Guid.NewGuid().ToString("N").Substring(4);
+
+                await client.SetAsync(key, $"k-{key}");
+
+                errorOn = true;
+                try
+                {
+                    await client.GetStringAsync(key);
+                }
+                catch (Exception ex)
+                {
+                    _output.WriteLine(ex.Message);
+                }
+
+                errorOn = false;
+
+                var result = client.GetStringAsync(key);
             }
         }
 

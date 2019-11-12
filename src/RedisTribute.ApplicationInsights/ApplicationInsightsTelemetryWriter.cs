@@ -8,6 +8,7 @@ namespace RedisTribute.ApplicationInsights
     class ApplicationInsightsTelemetryWriter : ITelemetryWriter
     {
         readonly TelemetryClient _telemetryClient;
+
         DateTime? _traceTtl;
 
         public ApplicationInsightsTelemetryWriter(TelemetryClient telemetryClient)
@@ -60,6 +61,8 @@ namespace RedisTribute.ApplicationInsights
             {
                 var telemetryItem = CopyDimentions(ev, new AvailabilityTelemetry("RedisTribute", now, ev.Elapsed, target, ev.Exception == null, ev.Data));
 
+                // telemetryItem.Properties["ProcessMemory"] = Process.GetCurrentProcess().WorkingSet64.ToString();
+
                 _telemetryClient.TrackAvailability(telemetryItem);
             }
 
@@ -67,6 +70,11 @@ namespace RedisTribute.ApplicationInsights
             {
                 _telemetryClient.TrackException(ev.Exception);
             }
+        }
+
+        public void Flush()
+        {
+            _telemetryClient.Flush();
         }
 
         static T CopyDimentions<T>(TelemetryEvent ev, T item)

@@ -21,15 +21,13 @@ namespace RedisTribute.Telemetry
 
             traceable.Trace += e =>
             {
-                var childEvent = new TelemetryEvent()
-                {
-                    Name = $"{baseName}/{e.Action}",
-                    Elapsed = sw.Elapsed,
-                    OperationId = opId,
-                    Data = $"({e.Data.Length} bytes): {Encoding.ASCII.GetString(e.Data)}",
-                    Severity = Severity.Diagnostic,
-                    Category = TelemetryCategory.Internal
-                };
+                var childEvent = TelemetryEventFactory.Instance.Create($"{baseName}/{e.Action}");
+
+                childEvent.Elapsed = sw.Elapsed;
+                childEvent.OperationId = opId;
+                childEvent.Data = $"({e.Data.Length} bytes): {Encoding.ASCII.GetString(e.Data)}";
+                childEvent.Severity = Severity.Diagnostic;
+                childEvent.Category = TelemetryCategory.Internal;
 
                 writer.Write(childEvent);
             };
