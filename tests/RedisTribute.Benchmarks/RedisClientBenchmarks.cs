@@ -59,7 +59,7 @@ namespace RedisTribute.Benchmarks
                 };
 
                 if(TelemetryOn)
-                    conf.TelemetrySinks.Add(new TextTelemetryWriter(Console.WriteLine, Severity.Error | Severity.Warn | Severity.Info));
+                    conf.TelemetrySinks.Add(new TextTelemetryWriter(_ => { }, Severity.Error | Severity.Warn | Severity.Info));
 
                 return conf.CreateClient();
             }

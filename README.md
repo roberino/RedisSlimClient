@@ -1,6 +1,6 @@
-[![Build status](https://ci.appveyor.com/api/projects/status/0eagkgc04t1jvg1m?svg=true)](https://ci.appveyor.com/project/roberino/RedisTribute)
+[![Build status](https://ci.appveyor.com/api/projects/status/0eagkgc04t1jvg1m?svg=true)](https://ci.appveyor.com/project/roberino/RedisSlimClient)
 
-[![Build Status](https://travis-ci.org/roberino/RedisTribute.svg?branch=master)](https://travis-ci.org/roberino/RedisTribute)
+[![Build Status](https://travis-ci.org/roberino/RedisSlimClient.svg?branch=master)](https://travis-ci.org/roberino/RedisSlimClient)
 
 # RedisTribute
 
