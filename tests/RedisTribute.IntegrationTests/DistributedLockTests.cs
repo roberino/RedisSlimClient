@@ -72,6 +72,9 @@ namespace RedisTribute.IntegrationTests
         [Theory]
         [InlineData(PipelineMode.Sync, ConfigurationScenario.NonSslBasic)]
         [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
+        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslReplicaSetMaster)]
+        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslClusterSet)]
+        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.SslBasic)]
         public async Task AquireLockAsync_AquireLockOnOtherThread(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
         {
             var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine);

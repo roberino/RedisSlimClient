@@ -21,7 +21,7 @@ namespace RedisTribute.IntegrationTests
         [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
         public async Task SetHashFieldAsync_SomeFieldAndValue_ReturnsOk(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
         {
-            var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine, 5);
+            var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine);
 
             config.HealthCheckInterval = TimeSpan.Zero;
 
@@ -42,9 +42,10 @@ namespace RedisTribute.IntegrationTests
         [Theory]
         [InlineData(PipelineMode.Sync, ConfigurationScenario.NonSslBasic)]
         [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
+        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslClusterSet)]
         public async Task GetHashSetAsync_OfStringValues_CanAddValuesAndSave(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
         {
-            var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine, 5);
+            var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine);
 
             config.HealthCheckInterval = TimeSpan.Zero;
 
@@ -83,7 +84,7 @@ namespace RedisTribute.IntegrationTests
         [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
         public async Task GetHashSetAsync_OfCustomType_CanAddValuesAndSave(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
         {
-            var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine, 5);
+            var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine);
 
             config.HealthCheckInterval = TimeSpan.Zero;
 
