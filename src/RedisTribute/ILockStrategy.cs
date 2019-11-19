@@ -38,6 +38,36 @@ namespace RedisTribute
         public bool AllowRecursion { get; }
     }
 
+    public readonly struct NullLock : IAsyncLockStrategy<IAsyncLock>, IAsyncLockStrategy<IDistributedLock>
+    {
+        public Task<IDistributedLock> AquireLockAsync(string key, LockOptions options = default, CancellationToken cancellation = default)
+        {
+            return Task.FromResult((IDistributedLock)new LockImpl() { Key = key });
+        }
+
+        Task<IAsyncLock> IAsyncLockStrategy<IAsyncLock>.AquireLockAsync(string key, LockOptions options, CancellationToken cancellation)
+        {
+            return Task.FromResult((IAsyncLock)new LockImpl() { Key = key });
+        }
+
+        private class LockImpl : IDistributedLock
+        {
+            public string Key { get; set; }
+            public DateTime Created { get; } = DateTime.UtcNow;
+            public TimeSpan RemainingTime => TimeSpan.MaxValue;
+            public bool LockExpired => false;
+
+            public void Dispose()
+            {
+            }
+
+            public Task ReleaseLockAsync(CancellationToken cancellation = default)
+            {
+                return Task.CompletedTask;
+            }
+        }
+    }
+
     public interface IAsyncLockStrategy<T> where T : IAsyncLock
     {
         Task<T> AquireLockAsync(string key, LockOptions options = default, CancellationToken cancellation = default);

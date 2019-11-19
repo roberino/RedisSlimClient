@@ -6,11 +6,11 @@ namespace RedisTribute.Types.Graphs
 {
     class Graph : IGraph
     {
-        readonly IPersistentDictionaryClient _client;
+        readonly IPersistentDictionaryProvider _client;
         readonly ISerializerSettings _serializerSettings;
         readonly GraphOptions _options;
 
-        public Graph(IPersistentDictionaryClient client, ISerializerSettings serializerSettings, GraphOptions options = default)
+        public Graph(IPersistentDictionaryProvider client, ISerializerSettings serializerSettings, GraphOptions options = default)
         {
             _client = client;
             _serializerSettings = serializerSettings;
@@ -21,7 +21,7 @@ namespace RedisTribute.Types.Graphs
         {
             var nodeData = await _client.GetHashSetAsync<byte[]>(_options.GetKey(label), cancellation);
 
-            return new Vertex<T>(label, _serializerSettings, nodeData, GetVertexAsync<T>);
+            return new Vertex<T>(_options.Namespace, label, _serializerSettings, nodeData, GetVertexAsync<T>);
         }
     }
 }

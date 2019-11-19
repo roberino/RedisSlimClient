@@ -44,7 +44,7 @@ namespace RedisTribute
         Task<byte[]> GetHashFieldAsync(string key, string field, CancellationToken cancellation = default);
     }
 
-    public interface IPersistentDictionaryClient
+    public interface IPersistentDictionaryProvider
     {
         Task<IPersistentDictionary<T>> GetHashSetAsync<T>(string key, CancellationToken cancellation = default);
     }
@@ -59,7 +59,7 @@ namespace RedisTribute
         IRedisObjectReaderWriter, 
         IRedisDiagnosticClient, 
         IHashSetClient, 
-        IPersistentDictionaryClient,
+        IPersistentDictionaryProvider,
         IRedLock,
         IGraphClient
     {

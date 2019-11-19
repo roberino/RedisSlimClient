@@ -129,6 +129,11 @@ namespace RedisTribute.Types.Graphs
 
             public Task<bool> MatchesEdgeAsync(Edge<T> edge)
             {
+                if (_edgeCondition == null)
+                {
+                    return Task.FromResult(true);
+                }
+
                 return Task.FromResult(_edgeCondition(edge));
             }
         }

@@ -102,7 +102,7 @@ namespace RedisTribute
 
         public async Task<IPersistentDictionary<T>> GetHashSetAsync<T>(string key, CancellationToken cancellation = default)
         {
-            return await RedisHashSet<T>.CreateAsync(key, this, _controller.Configuration, cancellation);
+            return await RedisHashSet<T>.CreateAsync(key, this, _controller.Configuration, GetLock(), cancellation);
         }
 
         public async Task<long> ScanKeysAsync(ScanOptions scanOptions, CancellationToken cancellation = default)
@@ -140,7 +140,7 @@ namespace RedisTribute
 
         public Task<IDistributedLock> AquireLockAsync(string key, LockOptions options = default, CancellationToken cancellation = default)
         {
-            return _redisLock.AquireLockAsync(key, options, cancellation);
+            return _redisLock.AquireLockAsync($"$$_redlock:{key}", options, cancellation);
         }
 
         public IGraph GetGraph(string graphNamespace)
@@ -156,6 +156,19 @@ namespace RedisTribute
         public void Dispose()
         {
             _controller.Dispose();
+        }
+
+        IAsyncLockStrategy<IAsyncLock> GetLock()
+        {
+            switch (_controller.Configuration.LockStrategy)
+            {
+                case LockStrategy.Local:
+                    return new LocalLockStrategy();
+                case LockStrategy.Distributed:
+                    return new RedisLock(_controller);
+                default:
+                    return new NullLock();
+            }
         }
 
         Task<T> GetInternalAsync<T>(string key, CancellationToken cancellation = default)

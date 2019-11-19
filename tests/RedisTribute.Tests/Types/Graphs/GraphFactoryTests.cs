@@ -14,7 +14,7 @@ namespace RedisTribute.UnitTests.Types.Graphs
     public class GraphFactoryTests
     {
         readonly IPersistentDictionary<byte[]> _graphStorage;
-        readonly IPersistentDictionaryClient _client;
+        readonly IPersistentDictionaryProvider _client;
         readonly ISerializerSettings _serializerSettings;
 
         public GraphFactoryTests()
@@ -24,7 +24,7 @@ namespace RedisTribute.UnitTests.Types.Graphs
             _serializerSettings.Encoding.Returns(Encoding.UTF8);
             _serializerSettings.SerializerFactory.Returns(SerializerFactory.Instance);
 
-            _client = Substitute.For<IPersistentDictionaryClient>();
+            _client = Substitute.For<IPersistentDictionaryProvider>();
             _graphStorage = new FakeStore();
 
             _client.GetHashSetAsync<byte[]>("x", Arg.Any<CancellationToken>()).Returns(_graphStorage);

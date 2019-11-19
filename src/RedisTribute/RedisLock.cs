@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace RedisTribute
 {
-    class RedisLock : IRedLock
+    class RedisLock : IRedLock, IAsyncLockStrategy<IAsyncLock>
     {
         readonly RedisController _controller;
         readonly ConcurrentDictionary<string, LockRelease> _currentLocks;
@@ -93,7 +93,10 @@ namespace RedisTribute
             throw LockNotObtained("Cancelled");
         }
 
-        private async Task ReleaseLockAsync(string key, byte[] data, string localKey, CancellationToken cancellation)
+        async Task<IAsyncLock> IAsyncLockStrategy<IAsyncLock>.AquireLockAsync(string key, LockOptions options, CancellationToken cancellation)
+            => await AquireLockAsync(key, options, cancellation);
+
+        async Task ReleaseLockAsync(string key, byte[] data, string localKey, CancellationToken cancellation)
         {
             try
             {

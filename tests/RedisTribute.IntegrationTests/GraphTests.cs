@@ -20,7 +20,7 @@ namespace RedisTribute.IntegrationTests
         [Theory]
         [InlineData(PipelineMode.Sync, ConfigurationScenario.NonSslBasic)]
         [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
-        public async Task x(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
+        public async Task GetGraph_WhenConnected_CanQuery(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
         {
             var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine);
 
