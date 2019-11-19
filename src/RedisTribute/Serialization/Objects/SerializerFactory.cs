@@ -19,7 +19,8 @@ namespace RedisTribute.Serialization
             [typeof(IDictionary<string, string>)] = new DictionarySerializer<string>(),
             [typeof(Dictionary<string, string>)] = new DictionarySerializer<string>(),
             [typeof(KeyValuePair<string, string>)] = new KeyValueSerializer<string>(),
-            [typeof(string)] = new StringSerializer(Encoding.UTF8)
+            [typeof(string)] = new StringSerializer(Encoding.UTF8),
+            [typeof(byte[])] = new ByteArraySerializer()
         };
 
         SerializerFactory()
