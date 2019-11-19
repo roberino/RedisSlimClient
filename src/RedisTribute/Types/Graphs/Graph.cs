@@ -4,20 +4,22 @@ using System.Threading.Tasks;
 
 namespace RedisTribute.Types.Graphs
 {
-    class GraphFactory
+    class Graph : IGraph
     {
         readonly IPersistentDictionaryClient _client;
         readonly ISerializerSettings _serializerSettings;
+        readonly GraphOptions _options;
 
-        public GraphFactory(IPersistentDictionaryClient client, ISerializerSettings serializerSettings)
+        public Graph(IPersistentDictionaryClient client, ISerializerSettings serializerSettings, GraphOptions options = default)
         {
             _client = client;
             _serializerSettings = serializerSettings;
+            _options = options;
         }
 
         public async Task<IVertex<T>> GetVertexAsync<T>(string label, CancellationToken cancellation = default)
         {
-            var nodeData = await _client.GetHashSetAsync<byte[]>(label, cancellation);
+            var nodeData = await _client.GetHashSetAsync<byte[]>(_options.GetKey(label), cancellation);
 
             return new Vertex<T>(label, _serializerSettings, nodeData, GetVertexAsync<T>);
         }

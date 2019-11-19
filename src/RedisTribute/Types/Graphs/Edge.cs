@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace RedisTribute.Types.Graphs
 {
-    public readonly struct Edge<T>
+    public readonly struct Edge<T> : IComparable
     {
         private readonly Func<CancellationToken, Task<IVertex<T>>> _vertexLink;
 
@@ -17,6 +17,16 @@ namespace RedisTribute.Types.Graphs
 
         public string Label { get; }
         public double Weight { get; }
+
+        public int CompareTo(object obj)
+        {
+            if (obj is Edge<T> e)
+            {
+                return e.Weight.CompareTo(Weight);
+            }
+
+            return -1;
+        }
 
         public Task<IVertex<T>> GetVertex(CancellationToken cancellation) => _vertexLink(cancellation);
     }

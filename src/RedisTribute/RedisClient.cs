@@ -3,6 +3,7 @@ using RedisTribute.Io;
 using RedisTribute.Io.Commands;
 using RedisTribute.Io.Server;
 using RedisTribute.Types;
+using RedisTribute.Types.Graphs;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -140,6 +141,16 @@ namespace RedisTribute
         public Task<IDistributedLock> AquireLockAsync(string key, LockOptions options = default, CancellationToken cancellation = default)
         {
             return _redisLock.AquireLockAsync(key, options, cancellation);
+        }
+
+        public IGraph GetGraph(string graphNamespace)
+        {
+            if (string.IsNullOrEmpty(graphNamespace))
+            {
+                throw new ArgumentNullException(nameof(graphNamespace));
+            }
+
+            return new Graph(this, _controller.Configuration, new GraphOptions(graphNamespace));
         }
 
         public void Dispose()

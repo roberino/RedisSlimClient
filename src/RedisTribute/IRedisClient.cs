@@ -1,5 +1,6 @@
 ﻿using RedisTribute.Io.Server;
 using RedisTribute.Types;
+using RedisTribute.Types.Graphs;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -48,13 +49,19 @@ namespace RedisTribute
         Task<IPersistentDictionary<T>> GetHashSetAsync<T>(string key, CancellationToken cancellation = default);
     }
 
+    public interface IGraphClient
+    {
+        IGraph GetGraph(string graphNamespace);
+    }
+
     public interface IRedisClient : 
         IRedisReaderWriter, 
         IRedisObjectReaderWriter, 
         IRedisDiagnosticClient, 
         IHashSetClient, 
         IPersistentDictionaryClient,
-        IRedLock
+        IRedLock,
+        IGraphClient
     {
     }
 }

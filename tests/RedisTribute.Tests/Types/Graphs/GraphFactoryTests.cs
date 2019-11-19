@@ -33,7 +33,7 @@ namespace RedisTribute.UnitTests.Types.Graphs
         [Fact]
         public async Task GetVertexAsync_SomeLabel_CallsPersistentDictionaryClient()
         {
-            var factory = new GraphFactory(_client, _serializerSettings);
+            var factory = new Graph(_client, _serializerSettings);
 
             var vertex = await factory.GetVertexAsync<string>("x");
 
@@ -44,7 +44,7 @@ namespace RedisTribute.UnitTests.Types.Graphs
         [Fact]
         public async Task Connect_SomeLabel_AddsEdge()
         {
-            var factory = new GraphFactory(_client, _serializerSettings);
+            var factory = new Graph(_client, _serializerSettings);
 
             var vertex = await factory.GetVertexAsync<string>("x");
 
@@ -56,7 +56,7 @@ namespace RedisTribute.UnitTests.Types.Graphs
         [Fact]
         public async Task Connect_ThenSave_RemoteDataUpdated()
         {
-            var factory = new GraphFactory(_client, _serializerSettings);
+            var factory = new Graph(_client, _serializerSettings);
 
             var vertex = await factory.GetVertexAsync<string>("x");
 

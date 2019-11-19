@@ -10,12 +10,13 @@ namespace RedisTribute.Types.Graphs
 {
     class Vertex<T> : IVertex<T>
     {
+        readonly string _graphNamespace;
         readonly ISerializerSettings _serializerSettings;
         readonly Func<string, CancellationToken, Task<IVertex<T>>> _lookup;
         readonly IPersistentDictionary<byte[]> _nodeData;
         readonly List<Edge<T>> _edges;
 
-        public Vertex(string label, ISerializerSettings serializerSettings, IPersistentDictionary<byte[]> nodeData, Func<string, CancellationToken, Task<IVertex<T>>> lookup)
+        public Vertex(string graphNamespace, string label, ISerializerSettings serializerSettings, IPersistentDictionary<byte[]> nodeData, Func<string, CancellationToken, Task<IVertex<T>>> lookup)
         {
             _serializerSettings = serializerSettings;
             _nodeData = nodeData;
@@ -24,16 +25,47 @@ namespace RedisTribute.Types.Graphs
             var data = GetVertexData(nodeData);
 
             _edges = data.Edges;
-
+            _graphNamespace = graphNamespace;
             Label = label;
             Attributes = data.Attributes;
         }
 
+        public string Namespace { get; }
         public string Label { get; }
         public T Attributes { get; }
         public IReadOnlyCollection<Edge<T>> Edges => _edges;
 
-        public Edge<T> Connect(string label, double weight = default)
+        public async Task AcceptAsync(IVisitor<T> visitor, CancellationToken cancellation = default)
+        {
+            if (cancellation.IsCancellationRequested)
+            {
+                return;
+            }
+
+            if (await visitor.VisitAsync(this, cancellation))
+            {
+                if (cancellation.IsCancellationRequested)
+                {
+                    return;
+                }
+
+                var tasks = _edges.Select(async e =>
+                {
+                    if (!await visitor.ShouldTraverseAsync(e, cancellation))
+                    {
+                        return false;
+                    }
+
+                    var ev = await e.GetVertex(cancellation);
+
+                    return await visitor.VisitAsync(ev, cancellation);
+                });
+
+                await Task.WhenAll(tasks);
+            }
+        }
+
+        public Edge<T> Connect(string label, double weight = 1)
         {
             lock (_edges)
             {
@@ -90,6 +122,26 @@ namespace RedisTribute.Types.Graphs
             .ToList();
 
             return (attributes, edges);
+        }
+
+        public bool Equals(IVertex<T> other)
+        {
+            if (other == null)
+            {
+                return false;
+            }
+
+            return string.Equals(Namespace, other.Namespace) && string.Equals(other.Label, Label);
+        }
+
+        public override bool Equals(object obj)
+        {
+            return Equals(obj as IVertex<T>);
+        }
+
+        public override int GetHashCode()
+        {
+            return $"{Namespace}:{Label}".GetHashCode();
         }
 
         static string GetMetaKey(string keyName) => $"${keyName}";
