@@ -11,7 +11,7 @@ namespace RedisTribute.Types.Graphs
         {
             var visitor = new QueryVisitor<T>(query);
 
-            await vertex.AcceptAsync(visitor, cancellation);
+            await vertex.TraverseAsync(visitor, cancellation);
 
             return visitor.Results;
         }
@@ -31,7 +31,7 @@ namespace RedisTribute.Types.Graphs
             {
                 if (await _query.ExecuteAsync(vertex))
                 {
-                    if (_results.TryAdd(vertex.Label, vertex))
+                    if (_results.TryAdd(vertex.Id, vertex))
                     {
                         return true;
                     }
@@ -40,7 +40,7 @@ namespace RedisTribute.Types.Graphs
                 return false;
             }
 
-            public Task<bool> ShouldTraverseAsync(Edge<T> edge, CancellationToken cancellation)
+            public Task<bool> ShouldTraverseAsync(IEdge<T> edge, CancellationToken cancellation)
             {
                 if (cancellation.IsCancellationRequested)
                 {

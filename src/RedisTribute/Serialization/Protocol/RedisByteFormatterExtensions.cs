@@ -76,10 +76,13 @@ namespace RedisTribute.Serialization.Protocol
         public static void WriteBytes(this Stream output, byte[] data, int? length = null)
         {
             output.Write(ResponseType.BulkStringType);
-            output.WriteRaw(data.Length.ToString());
+            output.WriteRaw(data == null ? "-1" : data.Length.ToString());
             output.WriteEnd();
-            output.Write(data, 0, length.GetValueOrDefault(data.Length));
-            output.WriteEnd();
+            if (data != null)
+            {
+                output.Write(data, 0, length.GetValueOrDefault(data.Length));
+                output.WriteEnd();
+            }
         }
 
         public static void WriteBytes(this Stream output, ArraySegment<byte> segment)

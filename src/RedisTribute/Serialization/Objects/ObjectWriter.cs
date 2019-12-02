@@ -32,13 +32,17 @@ namespace RedisTribute.Serialization
 
         public void Raw(byte[] data, int? length = null)
         {
-            //_stream.WriteBytes(data, length);
+            if (data == null || (length.HasValue && length.Value == 0))
+            {
+                return;
+            }
+
             _stream.Write(data, 0, length.GetValueOrDefault(data.Length));
         }
 
         public void WriteItem(string name, string data)
         {
-            Write(name, TypeCode.String, SubType.None, _textEncoding.GetBytes(data));
+            Write(name, TypeCode.String, SubType.None, data == null ? null : _textEncoding.GetBytes(data));
         }
 
         public void WriteItem(string name, byte[] data)

@@ -107,7 +107,9 @@ namespace RedisTribute.Serialization.Protocol
 
             try
             {
-                return long.Parse(txt);
+                var x = long.Parse(txt);
+
+                return x > 0 ? x : 0;
             }
             catch (FormatException)
             {

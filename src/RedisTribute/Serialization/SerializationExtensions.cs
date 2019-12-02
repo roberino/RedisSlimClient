@@ -21,6 +21,11 @@ namespace RedisTribute.Serialization
             return Deserialize(serializerSettings, serializerSettings.SerializerFactory.Create<T>(), result);
         }
 
+        public static T Deserialize<T>(this ISerializerSettings serializerSettings, byte[] data)
+        {
+            return Deserialize(serializerSettings, serializerSettings.SerializerFactory.Create<T>(), data);
+        }
+
         public static T Deserialize<T>(this ISerializerSettings serializerSettings, IObjectSerializer<T> serializer, IRedisObject result)
         {
             if (result is RedisString strData)
@@ -44,7 +49,7 @@ namespace RedisTribute.Serialization
 
         public static T Deserialize<T>(this ISerializerSettings serializerSettings, IObjectSerializer<T> serializer, byte[] data)
         {
-            using(var ms = StreamPool.Instance.CreateReadonly(data))
+            using (var ms = StreamPool.Instance.CreateReadonly(data))
             {
                 return serializerSettings.Deserialize(serializer, ms);
             }

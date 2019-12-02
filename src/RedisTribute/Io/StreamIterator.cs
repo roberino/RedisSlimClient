@@ -41,8 +41,6 @@ namespace RedisTribute.Io
                     yield break;
                 }
 
-                DebugOutput.Dump(_buffer, read);
-
                 foreach (var segment in Iterate(_buffer, 0, read))
                 {
                     yield return segment;

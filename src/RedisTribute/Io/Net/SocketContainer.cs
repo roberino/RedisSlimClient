@@ -124,6 +124,8 @@ namespace RedisTribute.Io.Net
         {
             var socket = Socket;
 
+            if (socket == null) return;
+
             Socket = null;
 
             BeforeShutdown();

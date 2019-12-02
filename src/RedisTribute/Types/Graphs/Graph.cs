@@ -17,11 +17,14 @@ namespace RedisTribute.Types.Graphs
             _options = options;
         }
 
-        public async Task<IVertex<T>> GetVertexAsync<T>(string label, CancellationToken cancellation = default)
+        public async Task<IVertex<T>> GetVertexAsync<T>(string id, CancellationToken cancellation = default)
         {
-            var nodeData = await _client.GetHashSetAsync<byte[]>(_options.GetKey(label), cancellation);
+            var nameResolver = new NameResolver(_options.Namespace);
+            var uri = nameResolver.GetLocation(GraphObjectType.Vertex, id);
+            var edgeFactory = new EdgeFactory<T>(nameResolver, null, _serializerSettings, GetVertexAsync<T>);
+            var nodeData = await _client.GetHashSetAsync<byte[]>(uri.ToString(), cancellation);
 
-            return new Vertex<T>(_options.Namespace, label, _serializerSettings, nodeData, GetVertexAsync<T>);
+            return new Vertex<T>(nameResolver, id, _serializerSettings, nodeData, edgeFactory);
         }
     }
 }

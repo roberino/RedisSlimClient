@@ -2,12 +2,14 @@
 using RedisTribute.Configuration;
 using RedisTribute.Serialization;
 using RedisTribute.Types.Graphs;
+using RedisTribute.Util;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace RedisTribute.UnitTests.Types.Graphs
 {
@@ -16,8 +18,9 @@ namespace RedisTribute.UnitTests.Types.Graphs
         readonly IPersistentDictionary<byte[]> _graphStorage;
         readonly IPersistentDictionaryProvider _client;
         readonly ISerializerSettings _serializerSettings;
+        readonly ITestOutputHelper _output;
 
-        public GraphFactoryTests()
+        public GraphFactoryTests(ITestOutputHelper output)
         {
             _serializerSettings = Substitute.For<ISerializerSettings>();
 
@@ -27,7 +30,8 @@ namespace RedisTribute.UnitTests.Types.Graphs
             _client = Substitute.For<IPersistentDictionaryProvider>();
             _graphStorage = new FakeStore();
 
-            _client.GetHashSetAsync<byte[]>("x", Arg.Any<CancellationToken>()).Returns(_graphStorage);
+            _client.GetHashSetAsync<byte[]>("graph://default/vertex/x", Arg.Any<CancellationToken>()).Returns(_graphStorage);
+            _output = output;
         }
 
         [Fact]
@@ -37,7 +41,7 @@ namespace RedisTribute.UnitTests.Types.Graphs
 
             var vertex = await factory.GetVertexAsync<string>("x");
 
-            Assert.Equal("x", vertex.Label);
+            Assert.Equal("x", vertex.Id);
             Assert.Empty(vertex.Edges);
         }
 
@@ -50,7 +54,7 @@ namespace RedisTribute.UnitTests.Types.Graphs
 
             vertex.Connect("y");
 
-            Assert.Equal("y", vertex.Edges.Single().Label);
+            Assert.Equal("y", vertex.Edges.Single().TargetVertex.Id);
         }
 
         [Fact]
@@ -66,7 +70,7 @@ namespace RedisTribute.UnitTests.Types.Graphs
 
             var vertex2 = await factory.GetVertexAsync<string>("x");
 
-            Assert.Equal("y", vertex2.Edges.Single().Label);
+            Assert.Equal("y", vertex2.Edges.Single().TargetVertex.Id);
         }
 
         class FakeStore : Dictionary<string, byte[]>, IPersistentDictionary<byte[]>

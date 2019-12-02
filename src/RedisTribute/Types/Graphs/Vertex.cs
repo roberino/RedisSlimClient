@@ -10,32 +10,36 @@ namespace RedisTribute.Types.Graphs
 {
     class Vertex<T> : IVertex<T>
     {
-        readonly string _graphNamespace;
+        readonly NameResolver _nameResolver;
         readonly ISerializerSettings _serializerSettings;
         readonly Func<string, CancellationToken, Task<IVertex<T>>> _lookup;
         readonly IPersistentDictionary<byte[]> _nodeData;
+        readonly EdgeFactory<T> _edgeFactory;
         readonly List<Edge<T>> _edges;
 
-        public Vertex(string graphNamespace, string label, ISerializerSettings serializerSettings, IPersistentDictionary<byte[]> nodeData, Func<string, CancellationToken, Task<IVertex<T>>> lookup)
+        public Vertex(NameResolver nameResolver, string id, ISerializerSettings serializerSettings, IPersistentDictionary<byte[]> nodeData, EdgeFactory<T> edgeFactory)
         {
             _serializerSettings = serializerSettings;
             _nodeData = nodeData;
-            _lookup = lookup;
+            _edgeFactory = edgeFactory;
+            _nameResolver = nameResolver;
 
-            var data = GetVertexData(nodeData);
+            var data = GetVertexData(nodeData, id);
 
             _edges = data.Edges;
-            _graphNamespace = graphNamespace;
-            Label = label;
+
+            Id = id;
             Attributes = data.Attributes;
+            Label = data.Label;
         }
 
-        public string Namespace { get; }
-        public string Label { get; }
-        public T Attributes { get; }
-        public IReadOnlyCollection<Edge<T>> Edges => _edges;
+        public string Namespace => _nameResolver.Namespace;
+        public string Id { get; }
+        public string Label { get; set; }
+        public T Attributes { get; set; }
+        public IReadOnlyCollection<IEdge<T>> Edges => _edges.Where(e => !e.Removed).ToList();
 
-        public async Task AcceptAsync(IVisitor<T> visitor, CancellationToken cancellation = default)
+        public async Task TraverseAsync(IVisitor<T> visitor, CancellationToken cancellation = default)
         {
             if (cancellation.IsCancellationRequested)
             {
@@ -49,14 +53,14 @@ namespace RedisTribute.Types.Graphs
                     return;
                 }
 
-                var tasks = _edges.Select(async e =>
+                var tasks = _edges.Where(e => !e.Removed).Select(async e =>
                 {
                     if (!await visitor.ShouldTraverseAsync(e, cancellation))
                     {
                         return false;
                     }
 
-                    var ev = await e.GetVertex(cancellation);
+                    var ev = await e.TargetVertex.GetVertex(cancellation);
 
                     return await visitor.VisitAsync(ev, cancellation);
                 });
@@ -65,63 +69,159 @@ namespace RedisTribute.Types.Graphs
             }
         }
 
-        public Edge<T> Connect(string label, double weight = 1)
+        public IEdge<T> Connect(string vertexId, string edgeLabel = null, Direction direction = Direction.Out, double weight = 1)
+            => Connect(CreateEdgeId(), vertexId, edgeLabel, direction, weight);
+
+        public IEdge<T> Connect(string edgeId, string vertexId, string edgeLabel = null, Direction direction = Direction.Out, double weight = 1)
         {
             lock (_edges)
             {
-                if (_edges.Any(e => string.Equals(e.Label, label)))
+                if (_edges.Any(e => string.Equals(e.Label, edgeLabel) && string.Equals(e.TargetVertex.Id, vertexId)))
                 {
-                    throw new InvalidOperationException($"Edge already exists: {label}");
+                    throw new InvalidOperationException($"Edge already exists: {edgeLabel} => {vertexId}");
                 }
 
-                var newEdge = new Edge<T>(label, weight, c => _lookup(label, c));
+                var newEdge = _edgeFactory.Create(edgeId, vertexId, edgeLabel, direction, weight);
 
-                var weightData = _serializerSettings.SerializeAsBytes(weight);
-
-                _nodeData[GetEdgeKey(label)] = weightData;
                 _edges.Add(newEdge);
 
                 return newEdge;
             }
         }
 
-        public void Remove(string label)
+        public async Task SaveAsync(CancellationToken cancellation = default)
         {
-            lock (_edges)
-            {
-                var key = GetEdgeKey(label);
+            _nodeData[_nameResolver.GetLocation(GraphObjectType.Metadata, Id).PathAndQuery] = _serializerSettings.SerializeAsBytes(Attributes);
+            _nodeData[_nameResolver.GetLocation(GraphObjectType.Label, Id).PathAndQuery] = _serializerSettings.SerializeAsBytes(Label);
 
-                _nodeData.Remove(key);
+            await UpdateEdges(true, cancellation);
+        }
+
+        public async Task UpdateEdges(bool traverse, CancellationToken cancellation = default)
+        {
+            var modified = _edges.Where(e => e.Dirty).Select(e => new
+            {
+                uri = _nameResolver.GetLocation(GraphObjectType.Edge, e.Id).PathAndQuery,
+                edge = e
+            })
+              .ToArray();
+
+            var updatedVertexes = new List<Vertex<T>>();
+
+            foreach (var item in modified)
+            {
+                if (item.edge.Removed)
+                {
+                    _nodeData.Remove(item.uri);
+
+                    if (traverse && item.edge.OriginalDirection != Direction.Out)
+                    {
+                        var v = (Vertex<T>)await item.edge.TargetVertex.GetVertex(cancellation);
+
+                        var mirrorEdge = v.Edges.SingleOrDefault(e => e.Id == item.edge.Id);
+
+                        if (mirrorEdge == null)
+                        {
+                            continue;
+                        }
+
+                        mirrorEdge.Remove();
+
+                        updatedVertexes.Add(v);
+                    }
+                }
+                else
+                {
+                    _nodeData[item.uri] = _edgeFactory.Serialize(item.edge);
+
+                    if (traverse && item.edge.OriginalDirection == Direction.Bidirectional)
+                    {
+                        var v = (Vertex<T>)await item.edge.TargetVertex.GetVertex(cancellation);
+
+                        var mirrorEdge = v.Edges.SingleOrDefault(e => e.Id == item.edge.Id);
+
+                        if (mirrorEdge == null)
+                        {
+                            if (item.edge.IsNew)
+                            {
+                                v.Connect(item.edge.Id, Id, item.edge.Label, item.edge.OriginalDirection, item.edge.Weight);
+                                updatedVertexes.Add(v);
+                            }
+
+                            continue;
+                        }
+
+                        if (item.edge.Direction == Direction.Out)
+                        {
+                            mirrorEdge.Remove();
+                        }
+                        else
+                        {
+                            mirrorEdge.Label = item.edge.Label;
+                            mirrorEdge.Weight = item.edge.Weight;
+                        }
+
+                        updatedVertexes.Add(v);
+                    }
+                }
+            }
+
+            await _nodeData.SaveAsync(true, cancellation);
+
+            if (traverse && updatedVertexes.Any())
+            {
+                await Task.WhenAll(updatedVertexes.GroupBy(v => v.Id).Select(v => v.First().UpdateEdges(false, cancellation)));
+            }
+
+            foreach (var item in modified)
+            {
+                if (item.edge.Removed)
+                {
+                    _edges.Remove(item.edge);
+                }
+
+                item.edge.Clean();
             }
         }
 
-        public Task SaveAsync(CancellationToken cancellation = default)
+        string CreateEdgeId()
         {
-            return _nodeData.SaveAsync(true, cancellation);
+            while (true)
+            {
+                var id = Guid.NewGuid().ToString("N").Substring(0, 4);
+
+                if (!_edges.Any(e => e.Id == id))
+                {
+                    return id;
+                }
+            }
         }
 
-        (T Attributes, List<Edge<T>> Edges) GetVertexData(IPersistentDictionary<byte[]> nodeData)
+        (T Attributes, List<Edge<T>> Edges, string Label) GetVertexData(IPersistentDictionary<byte[]> nodeData, string id)
         {
             var serializer = _serializerSettings.SerializerFactory.Create<T>();
 
+            string label = null;
             T attributes = default;
 
-            if (nodeData.TryGetValue(GetMetaKey(nameof(Vertex<object>.Attributes)), out var data))
+            if (nodeData.TryGetValue(_nameResolver.GetLocation(GraphObjectType.Metadata, id).PathAndQuery, out var data))
             {
                 attributes = _serializerSettings.Deserialize(serializer, data);
             }
 
-            var weightSerializer = _serializerSettings.SerializerFactory.Create<double>();
-
-            var edges = nodeData.Where(kv => IsEdgeKey(kv.Key)).Select(e =>
+            if (nodeData.TryGetValue(_nameResolver.GetLocation(GraphObjectType.Label, id).PathAndQuery, out var labelData))
             {
-                var weight = _serializerSettings.Deserialize(weightSerializer, e.Value);
+                label = _serializerSettings.Deserialize<string>(labelData);
+            }
 
-                return new Edge<T>(GetEdgeName(e.Key), weight, c => _lookup(e.Key, c));
-            })
-            .ToList();
+            var edgeSerializer = _serializerSettings.SerializerFactory.Create<EdgeData>();
 
-            return (attributes, edges);
+            var edges = nodeData
+                .Where(kv => _nameResolver.IsType(kv.Key, GraphObjectType.Edge))
+                .Select(e => _edgeFactory.Create(e.Value))
+                .ToList();
+
+            return (attributes, edges, label);
         }
 
         public bool Equals(IVertex<T> other)
@@ -131,7 +231,7 @@ namespace RedisTribute.Types.Graphs
                 return false;
             }
 
-            return string.Equals(Namespace, other.Namespace) && string.Equals(other.Label, Label);
+            return string.Equals(Namespace, other.Namespace) && string.Equals(other.Id, Id);
         }
 
         public override bool Equals(object obj)
@@ -141,13 +241,7 @@ namespace RedisTribute.Types.Graphs
 
         public override int GetHashCode()
         {
-            return $"{Namespace}:{Label}".GetHashCode();
+            return $"{Namespace}:{Id}".GetHashCode();
         }
-
-        static string GetMetaKey(string keyName) => $"${keyName}";
-        static string GetEdgeKey(string keyName) => $">{keyName}";
-        static string GetEdgeName(string edgeKey) => edgeKey.Substring(1);
-        static bool IsMetaKey(string keyName) => keyName.StartsWith("$");
-        static bool IsEdgeKey(string keyName) => keyName.StartsWith(">");
     }
 }

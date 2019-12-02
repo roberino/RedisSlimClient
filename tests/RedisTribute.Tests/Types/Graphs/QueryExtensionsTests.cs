@@ -13,17 +13,17 @@ namespace RedisTribute.UnitTests.Types.Graphs
         {
             var vertex = Substitute.For<IVertex<string>>();
 
-            vertex.AcceptAsync(Arg.Any<IVisitor<string>>()).Returns(async call =>
+            vertex.TraverseAsync(Arg.Any<IVisitor<string>>()).Returns(async call =>
             {
                 await call.Arg<IVisitor<string>>().VisitAsync(vertex, default);
             });
 
-            vertex.Label.Returns("abc");
+            vertex.Id.Returns("abc");
             vertex.Attributes.Returns("xyz");
 
             var query = Query<string>.Create()
-                .WithLabel("abc")
-                .WithAttributes(a => a.Contains("x")).Build();
+                .HasLabel("abc")
+                .HasAttributes(a => a.Contains("x")).Build();
 
             var results = await vertex.QueryAsync(query);
 

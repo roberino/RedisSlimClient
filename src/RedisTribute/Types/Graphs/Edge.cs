@@ -4,19 +4,82 @@ using System.Threading.Tasks;
 
 namespace RedisTribute.Types.Graphs
 {
-    public readonly struct Edge<T> : IComparable
+    class Edge<T> : IEdge<T>
     {
-        private readonly Func<CancellationToken, Task<IVertex<T>>> _vertexLink;
-
-        public Edge(string label, double weight, Func<CancellationToken, Task<IVertex<T>>> vertexLink)
+        public Edge(Uri location, EdgeData data, Func<CancellationToken, Task<IVertex<T>>> vertexLink, bool isNew = false)
         {
-            Label = label;
-            Weight = weight;
-            _vertexLink = vertexLink;
+            Data = data;
+            Location = location;
+            OriginalDirection = data.Direction;
+            TargetVertex = new VertexReference<T>(data.TargetVertexId, vertexLink);
+            Dirty = isNew;
+            Redirected = isNew;
+            IsNew = isNew;
         }
 
-        public string Label { get; }
-        public double Weight { get; }
+        internal EdgeData Data { get; }
+
+        public Uri Location { get; }
+
+        public string Id => Data.Id;
+
+        public Direction OriginalDirection { get; }
+
+        public Direction Direction
+        {
+            get => Data.Direction;
+            set
+            {
+                if (Data.Direction != value)
+                {
+                    Data.Direction = value;
+                    Dirty = true;
+                    Redirected = true;
+                }
+            }
+        }
+
+        public VertexReference<T> TargetVertex { get; }
+
+        public string Label
+        {
+            get => Data.Label;
+            set
+            {
+                Data.Label = value;
+                Dirty = true;
+            }
+        }
+
+        public double Weight
+        {
+            get => Data.Weight;
+            set
+            {
+                Data.Weight = value;
+                Dirty = true;
+            }
+        }
+
+        public bool Redirected { get; private set; }
+
+        public bool Removed { get; private set; }
+
+        public bool Dirty { get; private set; }
+
+        public bool IsNew { get; private set; }
+
+        public void Remove()
+        {
+            Removed = true;
+            Dirty = true;
+        }
+
+        public void Clean()
+        {
+            Redirected = false;
+            Dirty = false;
+        }
 
         public int CompareTo(object obj)
         {
@@ -28,6 +91,18 @@ namespace RedisTribute.Types.Graphs
             return -1;
         }
 
-        public Task<IVertex<T>> GetVertex(CancellationToken cancellation) => _vertexLink(cancellation);
+        public bool Equals(IEdge<T> other)
+        {
+            if(other == null)
+            {
+                return false;
+            }
+
+            return string.Equals(other.Id, Id);
+        }
+
+        public override int GetHashCode() => Id.GetHashCode();
+
+        public override bool Equals(object obj) => Equals(obj as IEdge<T>);
     }
 }

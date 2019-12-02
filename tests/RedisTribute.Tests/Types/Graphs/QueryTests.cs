@@ -13,12 +13,12 @@ namespace RedisTribute.UnitTests.Types.Graphs
         {
             var query = Query<TestComplexDto>
                 .Create()
-                .WithLabel(x => x.Contains("b"))
+                .HasLabel(x => x.Contains("b"))
                 .Build();
 
             var vertex = Substitute.For<IVertex<TestComplexDto>>();
 
-            vertex.Label.Returns("abc");
+            vertex.Id.Returns("abc");
 
             Assert.True(await query.ExecuteAsync(vertex));
         }
@@ -28,13 +28,13 @@ namespace RedisTribute.UnitTests.Types.Graphs
         {
             var query = Query<TestComplexDto>
                 .Create()
-                .WithLabel(x => x.Contains("b"))
-                .WithLabel(x => x.Contains("c"))
+                .HasLabel(x => x.Contains("b"))
+                .HasLabel(x => x.Contains("c"))
                 .Build();
 
             var vertex = Substitute.For<IVertex<TestComplexDto>>();
 
-            vertex.Label.Returns("abc");
+            vertex.Label = "abc";
 
             Assert.True(await query.ExecuteAsync(vertex));
         }
@@ -44,13 +44,13 @@ namespace RedisTribute.UnitTests.Types.Graphs
         {
             var query = Query<TestComplexDto>
                 .Create()
-                .WithLabel(x => x.Contains("b"))
-                .WithLabel(x => x.Contains("z"))
+                .HasLabel(x => x.Contains("b"))
+                .HasLabel(x => x.Contains("z"))
                 .Build();
 
             var vertex = Substitute.For<IVertex<TestComplexDto>>();
 
-            vertex.Label.Returns("abc");
+            vertex.Label = "abc";
 
             Assert.False(await query.ExecuteAsync(vertex));
         }

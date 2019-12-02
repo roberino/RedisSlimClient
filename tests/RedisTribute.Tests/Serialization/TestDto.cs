@@ -32,6 +32,13 @@ namespace RedisTribute.UnitTests.Serialization
         public string DataItem1 { get; set; }
     }
 
+    public class TestDtoWithDouble
+    {
+        public double DataItem1 { get; set; }
+
+        public string DataItem2 { get; set; }
+    }
+
     public class TestDtoWithGeneric<T>
     {
         public T DataItem1 { get; set; }

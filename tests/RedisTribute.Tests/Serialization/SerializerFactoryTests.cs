@@ -35,6 +35,26 @@ namespace RedisTribute.UnitTests.Serialization
         }
 
         [Fact]
+        public void WriteData_SimpleTypeWithDouble_CanSerializeAndDeserialize()
+        {
+            WhenWritingObject(new TestDtoWithDouble());
+
+            ThenOutputIsValid<TestDtoWithDouble>(x => Assert.Equal(0d, x.DataItem1));
+        }
+
+        [Fact]
+        public void WriteData_SimpleTypeWithNullString_CanSerializeAndDeserialize()
+        {
+            WhenWritingObject(new TestDtoWithString
+            {
+                DataItem1 = null
+            }
+            );
+
+            ThenOutputIsValid<TestDtoWithString>(x => Assert.Empty(x.DataItem1));
+        }
+
+        [Fact]
         public void WriteData_ObjectCollection_CanWriteAndRead()
         {
             WhenWritingObject(new TestDtoWithGenericCollection<TestDtoWithInt> { Items = new[] { new TestDtoWithInt() { DataItem1 = 123 }, new TestDtoWithInt() { DataItem1 = 456 } } } );

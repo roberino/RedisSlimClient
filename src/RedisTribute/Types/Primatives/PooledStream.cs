@@ -122,15 +122,19 @@ namespace RedisTribute.Types.Primatives
     sealed class StreamPool
     {
         readonly ArrayPool<byte> _pool;
+        readonly PooledStream _nullStream;
 
         long _bytesRented;
 
         StreamPool()
         {
             _pool = ArrayPool<byte>.Create();
+            _nullStream = new PooledStream(() => { }, true, new byte[0], 0);
         }
 
         public static StreamPool Instance { get; } = new StreamPool();
+
+        public PooledStream Null => _nullStream;
 
         public long PooledMemory => _bytesRented;
 

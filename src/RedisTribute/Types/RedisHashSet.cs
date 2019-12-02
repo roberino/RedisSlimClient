@@ -48,7 +48,7 @@ namespace RedisTribute.Types
 
         public static async Task<RedisHashSet<T>> CreateAsync(RedisKey key, 
             IHashSetClient client, ISerializerSettings serializerSettings, 
-            IAsyncLockStrategy<IAsyncLock> lockStrategy, CancellationToken cancellation = default)
+            IAsyncLockStrategy<IAsyncLock> lockStrategy = null, CancellationToken cancellation = default)
         {
             var hashSet = new RedisHashSet<T>(key, client, serializerSettings, lockStrategy: lockStrategy);
 
@@ -220,6 +220,14 @@ namespace RedisTribute.Types
             _values.Clear();
         }
 
+        public void RevertChanges()
+        {
+            foreach(var x in _values.Where(v => v.Value.IsDirty))
+            {
+                x.Value.Revert();
+            }
+        }
+
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
         class ValueState
@@ -236,7 +244,7 @@ namespace RedisTribute.Types
                 IsNew = true;
             }
 
-            public bool IsNew { get; }
+            public bool IsNew { get; private set; }
 
             public bool IsDeleted { get; private set; }
 
@@ -264,6 +272,17 @@ namespace RedisTribute.Types
                 _newValue = default;
                 IsDirty = false;
                 IsDeleted = false;
+                IsNew = false;
+            }
+
+            public void Revert()
+            {
+                if (!IsNew)
+                {
+                    _newValue = default;
+                    IsDeleted = false;
+                    IsDirty = false;
+                }
             }
 
             public bool IsDirty { get; private set; }

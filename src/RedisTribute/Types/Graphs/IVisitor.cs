@@ -7,6 +7,6 @@ namespace RedisTribute.Types.Graphs
     {
         Task<bool> VisitAsync(IVertex<T> vertex, CancellationToken cancellation);
 
-        Task<bool> ShouldTraverseAsync(Edge<T> edge, CancellationToken cancellation);
+        Task<bool> ShouldTraverseAsync(IEdge<T> edge, CancellationToken cancellation);
     }
 }

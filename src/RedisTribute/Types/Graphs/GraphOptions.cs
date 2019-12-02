@@ -2,21 +2,13 @@
 {
     public readonly struct GraphOptions
     {
+        readonly string _namespace;
+
         public GraphOptions(string graphNamespace)
         {
-            Namespace = graphNamespace;
+            _namespace = graphNamespace;
         }
 
-        public string Namespace { get; }
-
-        public string GetKey(string label)
-        {
-            if (string.IsNullOrEmpty(Namespace))
-            {
-                return label;
-            }
-
-            return $"{Namespace}:{label}";
-        }
+        public string Namespace => _namespace ?? "default";
     }
 }

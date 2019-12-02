@@ -5,6 +5,6 @@ namespace RedisTribute.Types.Graphs
 {
     public interface IGraph
     {
-        Task<IVertex<T>> GetVertexAsync<T>(string label, CancellationToken cancellation = default);
+        Task<IVertex<T>> GetVertexAsync<T>(string id, CancellationToken cancellation = default);
     }
 }

@@ -37,11 +37,11 @@ namespace RedisTribute.IntegrationTests
                 var x = await graph.GetVertexAsync<string>("x");
                 var y = await graph.GetVertexAsync<string>("y");
 
-                var edge = await x.ConnectToAndSaveAsync(y, 1, -1);
+                var edge = x.Connect(y.Id, "eq");
 
                 var results = await x.QueryAsync(Query<string>
                     .Create()
-                    .WithLabel("x")
+                    .HasLabel("x")
                     .Build());
 
                 Assert.Equal(results.Single(), x);
