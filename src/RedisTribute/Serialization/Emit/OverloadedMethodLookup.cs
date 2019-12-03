@@ -7,9 +7,9 @@ namespace RedisTribute.Serialization.Emit
 {
     static class OverloadedMethodLookupExtensions
     {
-        public static OverloadedMethodLookup<T, Type> CreateParameterOverload<T>(string methodName, string overloadedParameterName)
+        public static OverloadedMethodLookup<T, Type> CreateParameterOverload<T>(string methodNamePrefix, string overloadedParameterName)
         {
-            return new OverloadedMethodLookup<T, Type>(methodName,
+            return new OverloadedMethodLookup<T, Type>(methodNamePrefix,
                 m => m.GetParameters().Single(p => p.Name == overloadedParameterName).ParameterType)
             {
                 DefaultBinding = x => x.methodType != typeof(object) && x.methodType.IsAssignableFrom(x.targetType),
@@ -22,8 +22,8 @@ namespace RedisTribute.Serialization.Emit
     {
         readonly IDictionary<TKey, MethodInfo> _methods;
 
-        public OverloadedMethodLookup(string methodName, Func<MethodInfo, TKey> grouping)
-            : this(m => m.Name == methodName, grouping)
+        public OverloadedMethodLookup(string methodNamePrefix, Func<MethodInfo, TKey> grouping)
+            : this(m => m.Name.StartsWith(methodNamePrefix), grouping)
         {
         }
 
@@ -37,11 +37,34 @@ namespace RedisTribute.Serialization.Emit
                 .ToDictionary(g => g.Key, g => g.First());
         }
 
-        public MethodInfo BindByGenericParam(Func<ParameterInfo, bool> genericParamFilter, params Type[] typeArgs)
+        public MethodInfo BindGenericByMethod(Func<MethodInfo, bool> genericParamFilter, params Type[] typeArgs)
         {
             var genMethod = _methods.Values
-                .FirstOrDefault(m => 
-                    m.IsGenericMethod 
+                .FirstOrDefault(genericParamFilter);
+
+            if (genMethod != null)
+            {
+                return genMethod.MakeGenericMethod(typeArgs);
+            }
+
+            throw new InvalidOperationException();
+        }
+
+        public MethodInfo BindToGenericParam(string methodName, params Type[] typeArgs)
+        {
+            return BindGenericByMethod(m =>
+            m.Name == methodName
+            && m.IsGenericMethod
+            && m.ContainsGenericParameters
+            && m.GetParameters().Where(p => p.ParameterType.ContainsGenericParameter()).Any(p => p.ParameterType.IsGenericType), typeArgs);
+        }
+
+        public MethodInfo BindByGenericParam(string methodName, Func<ParameterInfo, bool> genericParamFilter, params Type[] typeArgs)
+        {
+            var genMethod = _methods.Values
+                .FirstOrDefault(m =>
+                    m.Name == methodName
+                    && m.IsGenericMethod
                     && m.ContainsGenericParameters
                     && m.GetParameters().Where(p => p.ParameterType.ContainsGenericParameter()).Any(genericParamFilter));
 
@@ -53,11 +76,12 @@ namespace RedisTribute.Serialization.Emit
             throw new InvalidOperationException();
         }
 
-        public MethodInfo BindByGenericReturnValue(Func<Type, bool> returnTypeFilter, params Type[] typeArgs)
+        public MethodInfo BindByGenericReturnValue(string methodName, Func<Type, bool> returnTypeFilter, params Type[] typeArgs)
         {
             var genMethod = _methods.Values
                 .FirstOrDefault(m =>
-                    m.IsGenericMethod
+                    m.Name == methodName
+                    && m.IsGenericMethod
                     && returnTypeFilter(m.ReturnType));
 
             if (genMethod != null)
@@ -87,6 +111,11 @@ namespace RedisTribute.Serialization.Emit
                 {
                     return assignable.Value;
                 }
+            }
+
+            if (FallbackBinding == null)
+            {
+                return null;
             }
 
             return _methods.SingleOrDefault(kv => FallbackBinding.Invoke((type, kv.Key))).Value;

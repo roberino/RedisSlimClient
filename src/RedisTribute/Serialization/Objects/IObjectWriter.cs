@@ -7,6 +7,7 @@ namespace RedisTribute.Serialization
     {
         void BeginWrite(int itemCount);
         void Raw(byte[] data, int? length = null);
+        void WriteEnum<T>(string name, T data);
         void WriteItem<T>(string name, IEnumerable<T> data);
         void WriteItem<T>(string name, T data);
         void WriteItem(string name, string data);

@@ -141,6 +141,15 @@ namespace RedisTribute.Serialization
             return (float)ReadPrimativeValue(name, _dataFormatter.ToDouble);
         }
 
+        public T ReadEnum<T>(string name, T defaultValue)
+        {
+            return ReadPrimativeValue(name, x =>
+            {
+                return (x == null || x.Length == 0) ? defaultValue : (T)Enum.Parse(typeof(T), Encoding.ASCII.GetString(x));
+            });
+            //return ReadPrimativeValue(name, x => (x == null || x.Length == 0) ? defaultValue : (T)Enum.Parse(typeof(T), Encoding.ASCII.GetString(x)));
+        }
+
         public T ReadObject<T>(string name, T defaultValue)
         {
             var sz = _serializerFactory.Create<T>();

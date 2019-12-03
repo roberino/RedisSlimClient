@@ -50,6 +50,11 @@ namespace RedisTribute.Serialization
             Write(name, TypeCode.Object, SubType.ByteArray, data);
         }
 
+        public void WriteEnum<T>(string name, T data)
+        {
+            Write(name, TypeCode.String, SubType.None, Encoding.ASCII.GetBytes($"{data}"));
+        }
+
         public void WriteItem<T>(string name, T data)
         {
             if (data == default)

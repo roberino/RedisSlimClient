@@ -39,8 +39,20 @@ namespace RedisTribute.UnitTests.Serialization
         public string DataItem2 { get; set; }
     }
 
+    public class TestDtoWithEnum
+    {
+        public TestEnum DataItem1 { get; set; }
+    }
+
     public class TestDtoWithGeneric<T>
     {
         public T DataItem1 { get; set; }
+    }
+
+    public enum TestEnum
+    {
+        None,
+        Value1,
+        Value2
     }
 }

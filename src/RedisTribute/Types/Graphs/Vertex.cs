@@ -114,7 +114,7 @@ namespace RedisTribute.Types.Graphs
                 {
                     _nodeData.Remove(item.uri);
 
-                    if (traverse && item.edge.OriginalDirection != Direction.Out)
+                    if (traverse)
                     {
                         var v = (Vertex<T>)await item.edge.TargetVertex.GetVertex(cancellation);
 
@@ -134,29 +134,19 @@ namespace RedisTribute.Types.Graphs
                 {
                     _nodeData[item.uri] = _edgeFactory.Serialize(item.edge);
 
-                    if (traverse && item.edge.OriginalDirection == Direction.Bidirectional)
+                    if (traverse)
                     {
                         var v = (Vertex<T>)await item.edge.TargetVertex.GetVertex(cancellation);
 
-                        var mirrorEdge = v.Edges.SingleOrDefault(e => e.Id == item.edge.Id);
+                        var mirrorEdge = (Edge<T>)v.Edges.SingleOrDefault(e => e.Id == item.edge.Id);
 
                         if (mirrorEdge == null)
                         {
-                            if (item.edge.IsNew)
-                            {
-                                v.Connect(item.edge.Id, Id, item.edge.Label, item.edge.OriginalDirection, item.edge.Weight);
-                                updatedVertexes.Add(v);
-                            }
-
-                            continue;
-                        }
-
-                        if (item.edge.Direction == Direction.Out)
-                        {
-                            mirrorEdge.Remove();
+                            v.Connect(item.edge.Id, Id, item.edge.Label, item.edge.Direction.Compliment(), item.edge.Weight);
                         }
                         else
                         {
+                            mirrorEdge.Direction = item.edge.Direction.Compliment();
                             mirrorEdge.Label = item.edge.Label;
                             mirrorEdge.Weight = item.edge.Weight;
                         }

@@ -55,11 +55,19 @@ namespace RedisTribute.Types.Graphs
 
         public Query<T> Out(Expression<Func<IEdge, bool>> edgeFilter)
         {
-            _edgeFilters.Add(edgeFilter);
+            _edgeFilters.Add(ConjunctiveJoin(e => e.Direction == Direction.Out || e.Direction == Direction.Bidirectional, edgeFilter));
+            return this;
+        }
+
+        public Query<T> In(Expression<Func<IEdge, bool>> edgeFilter)
+        {
+            _edgeFilters.Add(ConjunctiveJoin(e => e.Direction == Direction.In || e.Direction == Direction.Bidirectional, edgeFilter));
             return this;
         }
 
         public Query<T> Out(string edgeLabel) => Out(e => string.Equals(e.Label, edgeLabel));
+
+        public Query<T> In(string edgeLabel) => In(e => string.Equals(e.Label, edgeLabel));
 
         public IQuery<T> Build()
         {
@@ -77,15 +85,25 @@ namespace RedisTribute.Types.Graphs
                 var e = conditions[0].Body;
                 var parameters = conditions[0].Parameters;
 
-                foreach (var label in conditions.Skip(1))
+                foreach (var condition in conditions.Skip(1))
                 {
-                    e = Expression.And(e, UpdateParameter(label, parameters[0]).Body);
+                    e = Expression.And(e, UpdateParameter(condition, parameters[0]).Body);
                 }
 
                 return Expression.Lambda(e, parameters).Compile() as Func<TInput, bool>;
             }
 
             return null;
+        }
+
+        static Expression<Func<TInput, bool>> ConjunctiveJoin<TInput>(Expression<Func<TInput, bool>> condition1, Expression<Func<TInput, bool>> condition2)
+        {
+            var e = condition1.Body;
+            var parameters = condition1.Parameters;
+
+            e = Expression.And(e, UpdateParameter(condition2, parameters[0]).Body);
+
+            return Expression.Lambda(e, parameters) as Expression<Func<TInput, bool>>;
         }
 
         static Expression<Func<TParam, bool>> UpdateParameter<TParam>(

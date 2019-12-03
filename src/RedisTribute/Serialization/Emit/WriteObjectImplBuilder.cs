@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 
@@ -16,7 +17,7 @@ namespace RedisTribute.Serialization.Emit
             : base(newType, typeof(IObjectGraphExporter<T>).GetMethod(nameof(IObjectGraphExporter<T>.WriteObjectData)), properties)
         {
             var objectWriterType = typeof(IObjectWriter);
-            _objectWriterMethods = OverloadedMethodLookupExtensions.CreateParameterOverload<IObjectWriter>(nameof(IObjectWriter.WriteItem), "data");
+            _objectWriterMethods = OverloadedMethodLookupExtensions.CreateParameterOverload<IObjectWriter>("Write", "data");
             _beginWriteMethod = objectWriterType.GetMethod(nameof(IObjectWriter.BeginWrite), BindingFlags.Public | BindingFlags.Instance);
 
             var paramz = TargetMethod.GetParameters();
@@ -51,7 +52,7 @@ namespace RedisTribute.Serialization.Emit
                     LoadExtractor(property.PropertyType);
 
                     writeMethod = _objectWriterMethods
-                        .BindByGenericParam(p => p.ParameterType.IsGenericParameter, property.PropertyType);
+                       .BindByGenericParam(nameof(IObjectWriter.WriteItem), p => p.ParameterType.IsGenericParameter, property.PropertyType);
                 }
                 else
                 {
@@ -60,13 +61,26 @@ namespace RedisTribute.Serialization.Emit
                     var targetType = typeof(IEnumerable<>);
 
                     writeMethod = _objectWriterMethods
-                        .BindByGenericParam(p => p.ParameterType.IsGenericType 
+                        .BindByGenericParam(nameof(IObjectWriter.WriteItem), p => p.ParameterType.IsGenericType 
                                             && p.ParameterType.GetGenericTypeDefinition() == targetType, collectionType);
                     }
             }
             else
             {
-                writeMethod = _objectWriterMethods.Bind(property.PropertyType);
+                if (property.PropertyType.IsEnum)
+                {
+                    writeMethod = _objectWriterMethods
+                        .BindGenericByMethod(m => m.Name == nameof(IObjectWriter.WriteEnum), property.PropertyType);
+                }
+                else
+                {
+                    writeMethod = _objectWriterMethods.Bind(property.PropertyType);
+                }
+            }
+
+            if (writeMethod == null)
+            {
+                throw new ArgumentException(property.PropertyType.FullName);
             }
 
             methodBuilder.CallMethod(_writerParam,

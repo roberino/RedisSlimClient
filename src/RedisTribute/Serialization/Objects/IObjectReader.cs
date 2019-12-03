@@ -18,6 +18,7 @@ namespace RedisTribute.Serialization
         decimal ReadDecimal(string name);
         double ReadDouble(string name);
         float ReadFloat(string name);
+        T ReadEnum<T>(string name, T defaultValue);
         T ReadObject<T>(string name, T defaultValue);
         IEnumerable<T> ReadEnumerable<T>(string name, ICollection<T> defaultValue);
 

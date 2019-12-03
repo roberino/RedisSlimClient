@@ -43,6 +43,25 @@ namespace RedisTribute.UnitTests.Serialization
         }
 
         [Fact]
+        public void WriteData_Enum_CanSerializeAndDeserialize()
+        {
+            WhenWritingObject(TestEnum.Value2);
+
+            ThenOutputIsValid<TestEnum>(x => Assert.Equal(TestEnum.Value2, x));
+        }
+
+        [Fact]
+        public void WriteData_SimpleTypeWithEnum_CanSerializeAndDeserialize()
+        {
+            WhenWritingObject(new TestDtoWithEnum()
+            {
+                 DataItem1 = TestEnum.Value2
+            });
+
+            ThenOutputIsValid<TestDtoWithEnum>(x => Assert.Equal(TestEnum.Value2, x.DataItem1));
+        }
+
+        [Fact]
         public void WriteData_SimpleTypeWithNullString_CanSerializeAndDeserialize()
         {
             WhenWritingObject(new TestDtoWithString
@@ -249,7 +268,7 @@ namespace RedisTribute.UnitTests.Serialization
             _output.Position = 0;
             var iterator = new StreamIterator(_output);
             var objectStream = new ArraySegmentToRedisObjectReader(iterator);
-            var reader = new ObjectReader(objectStream);
+            var reader = new ObjectReader(objectStream, _output);
             return SerializerFactory.Instance.Create<T>().ReadData(reader, default);
         }
 

@@ -49,6 +49,11 @@ namespace RedisTribute.Serialization
                 return TypeProxy<T>.Instance;
             }
 
+            if (type.IsEnum)
+            {
+                return EnumSerializer<T>.Instance;
+            }
+
             return PrimativeSerializer.CreateSerializer<T>();
         }
     }

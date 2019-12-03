@@ -89,6 +89,11 @@ namespace RedisTribute.UnitTests.Types.Graphs
                 throw new System.NotImplementedException();
             }
 
+            public void RevertChanges()
+            {
+                throw new System.NotImplementedException();
+            }
+
             public Task SaveAsync(bool forceUpdate = false, CancellationToken cancellation = default)
             {
                 SavedCounter++;
