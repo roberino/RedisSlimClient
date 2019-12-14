@@ -12,11 +12,11 @@ namespace RedisTribute.Io
     {
         readonly RedisObjectBuilder _redisObjectBuilder;
         readonly IPipelineReceiver _receiver;
-        readonly CommandQueue _commandQueue;
+        readonly ICommandWorkload _commandQueue;
         readonly IWorkScheduler _workScheduler;
         readonly RedisByteSequenceDelimitter _delimiter;
 
-        public CompletionHandler(IPipelineReceiver receiver, CommandQueue commandQueue, IWorkScheduler workScheduler)
+        public CompletionHandler(IPipelineReceiver receiver, ICommandWorkload commandQueue, IWorkScheduler workScheduler)
         {
             _receiver = receiver;
             _commandQueue = commandQueue;
@@ -52,17 +52,9 @@ namespace RedisTribute.Io
             {
                 foreach (var item in createdItems)
                 {
-                    if (!_commandQueue.ProcessNextCommand(cmd =>
-                    {
-                        _workScheduler.Schedule(() =>
-                        {
-                            cmd.Complete(item);
-                            return Task.CompletedTask;
-                        });
-                    }))
-                    {
-                        Trace?.Invoke(("What?", new byte[0]));
-                    }
+                    var binding = _commandQueue.BindResult(item);
+
+                    _workScheduler.Schedule(binding);
                 }
             }
             catch (Exception ex)

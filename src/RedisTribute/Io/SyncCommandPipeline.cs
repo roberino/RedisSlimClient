@@ -133,16 +133,20 @@ namespace RedisTribute.Io
 
                 try
                 {
-                    var redisResult = _reader.ToObjects().FirstOrDefault();
-
-                    if (redisResult == null)
+                    foreach (var redisResult in _reader.ToObjects())
                     {
-                        throw new IOException("No data received");
+                        if (redisResult == null)
+                        {
+                            throw new IOException("No data received");
+                        }
+
+                        cancellation.ThrowIfCancellationRequested();
+
+                        if (command.SetResult(redisResult))
+                        {
+                            break;
+                        }
                     }
-
-                    cancellation.ThrowIfCancellationRequested();
-
-                    command.Complete(redisResult);
                 }
                 catch (IOException ex)
                 {

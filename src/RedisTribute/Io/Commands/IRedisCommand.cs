@@ -42,7 +42,7 @@ namespace RedisTribute.Io.Commands
         Func<object[], Task> OnExecute { set; }
         bool CanBeCompleted { get; }
         Task Execute();
-        void Complete(IRedisObject obj);
+        bool SetResult(IRedisObject obj);
         void Cancel();
         void Abandon(Exception ex);
         TaskAwaiter GetAwaiter();

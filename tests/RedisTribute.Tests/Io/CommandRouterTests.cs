@@ -31,8 +31,8 @@ namespace RedisTribute.UnitTests.Io
             _subCluster1 = CreateConnectionSubordinate(3, true);
             _subCluster2 = CreateConnectionSubordinate(4, true);
 
-            _pipelineInitialiser.InitialiseAsync().Returns(new[] { _sub1.sub, _sub2.sub });
-            _pipelineInitialiserCluster.InitialiseAsync().Returns(new[] { _subCluster1.sub, _subCluster2.sub });
+            _pipelineInitialiser.CreateNodeSetAsync().Returns(new[] { _sub1.sub, _sub2.sub });
+            _pipelineInitialiserCluster.CreateNodeSetAsync().Returns(new[] { _subCluster1.sub, _subCluster2.sub });
         }
 
         static (IConnectionSubordinate sub, ICommandPipeline pip) CreateConnectionSubordinate(int id, bool isCluster = false)

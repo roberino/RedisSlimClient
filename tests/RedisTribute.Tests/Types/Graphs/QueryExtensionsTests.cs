@@ -18,7 +18,7 @@ namespace RedisTribute.UnitTests.Types.Graphs
                 await call.Arg<IVisitor<string>>().VisitAsync(vertex, default);
             });
 
-            vertex.Id.Returns("abc");
+            vertex.Label.Returns("abc");
             vertex.Attributes.Returns("xyz");
 
             var query = Query<string>.Create()

@@ -7,6 +7,6 @@ namespace RedisTribute.Io.Server
     interface IServerNodeInitialiser
     {
         event Action ConfigurationChanged;
-        Task<IReadOnlyCollection<IConnectionSubordinate>> InitialiseAsync();
+        Task<IReadOnlyCollection<IConnectionSubordinate>> CreateNodeSetAsync();
     }
 }

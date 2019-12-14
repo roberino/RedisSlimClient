@@ -4,6 +4,7 @@ using RedisTribute.Io.Commands;
 using RedisTribute.Io.Server;
 using RedisTribute.Types;
 using RedisTribute.Types.Graphs;
+using RedisTribute.Types.Messaging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -74,6 +75,9 @@ namespace RedisTribute
 
             return resultsTransformed;
         }
+
+        public Task<int> PublishAsync(IMessage message, CancellationToken cancellation = default)
+            => _controller.GetResponse(new PublishCommand(message), cancellation);
 
         public Task<bool> DeleteHashFieldAsync(string key, string field, CancellationToken cancellation = default) 
             => _controller.GetResponse(new HDeleteCommand(key, field), cancellation);

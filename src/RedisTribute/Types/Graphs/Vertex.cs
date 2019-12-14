@@ -12,7 +12,6 @@ namespace RedisTribute.Types.Graphs
     {
         readonly NameResolver _nameResolver;
         readonly ISerializerSettings _serializerSettings;
-        readonly Func<string, CancellationToken, Task<IVertex<T>>> _lookup;
         readonly IPersistentDictionary<byte[]> _nodeData;
         readonly EdgeFactory<T> _edgeFactory;
         readonly List<Edge<T>> _edges;

@@ -17,7 +17,7 @@ namespace RedisTribute.UnitTests.Io.Server
 
             var str = new RedisString("InfoResponse.txt".OpenBinaryResourceBytes());
 
-            cmd.Complete(str);
+            cmd.SetResult(str);
 
             var result = await cmd;
 
@@ -35,7 +35,7 @@ namespace RedisTribute.UnitTests.Io.Server
 
             var str = new RedisString("InfoResponse.txt".OpenBinaryResourceBytes());
 
-            cmd.Complete(str);
+            cmd.SetResult(str);
 
             var result = await cmd;
 

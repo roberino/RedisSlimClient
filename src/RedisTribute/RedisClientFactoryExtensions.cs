@@ -33,6 +33,13 @@ namespace RedisTribute
             return client;
         }
 
+        public static ISubscriptionClient CreateSubscriberClient(this ClientConfiguration configuration)
+        {
+            var client = RedisSubscriberClient.Create(configuration);
+
+            return client;
+        }
+
         public static async Task<IRedisClient> ConnectAsync(this IRedisClient client, CancellationToken cancellation = default)
         {
             var errors = (await client.PingAllAsync(cancellation)).Where(r => !r.Ok).ToArray();

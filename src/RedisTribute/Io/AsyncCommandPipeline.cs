@@ -18,17 +18,17 @@ namespace RedisTribute.Io
 
         readonly IDuplexPipeline _pipeline;
         readonly ISocket _socket;
-        readonly CommandQueue _commandQueue;
+        readonly ICommandQueue _commandQueue;
 
         readonly CancellationTokenSource _cancellation;
 
         volatile PipelineStatus _status;
 
-        public AsyncCommandPipeline(IDuplexPipeline pipeline, ISocket socket, IWorkScheduler workScheduler, ITelemetryWriter telemetryWriter)
+        public AsyncCommandPipeline(IDuplexPipeline pipeline, ISocket socket, IWorkScheduler workScheduler, ITelemetryWriter telemetryWriter, ICommandQueue commandQueue = null)
         {
             _pipeline = pipeline;
             _socket = socket;
-            _commandQueue = new CommandQueue();
+            _commandQueue = commandQueue ?? new CommandQueue();
             _cancellation = new CancellationTokenSource();
 
             new CompletionHandler(_pipeline.Receiver, _commandQueue, workScheduler).AttachTelemetry(telemetryWriter, Severity.Diagnostic);

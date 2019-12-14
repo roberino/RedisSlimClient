@@ -1,6 +1,6 @@
 ﻿using RedisTribute.Io.Server;
-using RedisTribute.Types;
 using RedisTribute.Types.Graphs;
+using RedisTribute.Types.Messaging;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -54,6 +54,16 @@ namespace RedisTribute
         IGraph GetGraph(string graphNamespace);
     }
 
+    public interface ISubscriptionClient : IRedisDiagnosticClient
+    {
+        Task<ISubscription> SubscribeAsync(string[] channels, Func<IMessage, Task> handler, CancellationToken cancellation = default);
+    }
+
+    public interface IPublisherClient
+    {
+        Task<int> PublishAsync(IMessage message, CancellationToken cancellation = default);
+    }
+
     public interface IRedisClient : 
         IRedisReaderWriter, 
         IRedisObjectReaderWriter, 
@@ -61,7 +71,8 @@ namespace RedisTribute
         IHashSetClient, 
         IPersistentDictionaryProvider,
         IRedLock,
-        IGraphClient
+        IGraphClient,
+        IPublisherClient
     {
     }
 }

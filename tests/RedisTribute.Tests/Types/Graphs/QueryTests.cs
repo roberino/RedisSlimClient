@@ -18,7 +18,7 @@ namespace RedisTribute.UnitTests.Types.Graphs
 
             var vertex = Substitute.For<IVertex<TestComplexDto>>();
 
-            vertex.Id.Returns("abc");
+            vertex.Label.Returns("abc");
 
             Assert.True(await query.ExecuteAsync(vertex));
         }
