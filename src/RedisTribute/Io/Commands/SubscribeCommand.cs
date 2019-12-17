@@ -13,12 +13,12 @@ namespace RedisTribute.Io.Commands
         const string ConfirmIdentifier = "subscribe";
 
         readonly TaskCompletionSource<bool> _completionSource;
-        readonly Func<IMessage, Task> _handler;
+        readonly Func<IMessageData, Task> _handler;
         readonly HashSet<string> _channels;
 
         volatile bool _ready;
 
-        public SubscribeCommand(Func<IMessage, Task> handler, params RedisKey[] channels) : base("SUBSCRIBE", false, channels.Length > 0 ? channels[0] : default)
+        public SubscribeCommand(Func<IMessageData, Task> handler, params RedisKey[] channels) : base("SUBSCRIBE", false, channels.Length > 0 ? channels[0] : default)
         {
             if (channels.Length == 0)
             {
@@ -112,7 +112,6 @@ namespace RedisTribute.Io.Commands
             }
 
             return args;
-
         }
     }
 }

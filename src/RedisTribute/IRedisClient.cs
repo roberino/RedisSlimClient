@@ -1,4 +1,5 @@
-﻿using RedisTribute.Io.Server;
+﻿using RedisTribute.Configuration;
+using RedisTribute.Io.Server;
 using RedisTribute.Types.Graphs;
 using RedisTribute.Types.Messaging;
 using System;
@@ -56,12 +57,14 @@ namespace RedisTribute
 
     public interface ISubscriptionClient : IRedisDiagnosticClient
     {
-        Task<ISubscription> SubscribeAsync(string[] channels, Func<IMessage, Task> handler, CancellationToken cancellation = default);
+        Task<ISubscription> SubscribeAsync<T>(string[] channels, Func<IMessage<T>, Task> handler, CancellationToken cancellation = default);
+        Task<ISubscription> SubscribeAsync(string[] channels, Func<IMessageData, Task> handler, CancellationToken cancellation = default);
     }
 
     public interface IPublisherClient
     {
-        Task<int> PublishAsync(IMessage message, CancellationToken cancellation = default);
+        Task<int> PublishAsync(IMessageData message, CancellationToken cancellation = default);
+        Task<int> PublishAsync(Func<ISerializerSettings, IMessageData> messageFactory, CancellationToken cancellation = default);
     }
 
     public interface IRedisClient : 

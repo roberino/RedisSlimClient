@@ -39,12 +39,11 @@ namespace RedisTribute.Io
 
         protected override Func<Task> Bind(IRedisObject result)
         {
-            foreach (var sub in _persistentCommands.Keys)
+            var subs = _persistentCommands.Keys.Where(k => k.CanReceive(result)).ToList();
+
+            if (subs.Any())
             {
-                if (sub.CanReceive(result))
-                {
-                    return () => sub.ReceiveAsync(result);
-                }
+                return () => Task.WhenAll(subs.Select(s => s.ReceiveAsync(result)));
             }
 
             return base.Bind(result);
@@ -59,6 +58,11 @@ namespace RedisTribute.Io
             }
 
             base.Attach(command);
+
+            foreach (var csub in _persistentCommands.Keys.Where(k => k.HasFinished).ToArray())
+            {
+                _persistentCommands.TryRemove(csub, out _);
+            }
         }
 
         public override void Dispose()
@@ -67,7 +71,10 @@ namespace RedisTribute.Io
 
             foreach(var item in _persistentCommands.Keys)
             {
-                item.Abandon(new ObjectDisposedException(nameof(SubscriberCommandQueue)));
+                if (item is IRedisCommand cmd && cmd.CanBeCompleted)
+                {
+                    item.Abandon(new ObjectDisposedException(nameof(SubscriberCommandQueue)));
+                }
             }
 
             _persistentCommands.Clear();

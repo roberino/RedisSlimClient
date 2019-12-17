@@ -5,11 +5,31 @@ using RedisTribute.Types.Primatives;
 using System;
 using System.Collections;
 using System.IO;
+using System.Xml;
 
 namespace RedisTribute.Serialization
 {
     static class SerializationExtensions
     {
+        public static string ToPrimativeString(this object value)
+        {
+            if (value == null)
+            {
+                return null;
+            }
+
+            switch (Type.GetTypeCode(value.GetType()))
+            {
+                case TypeCode.DateTime:
+                    return XmlConvert.ToString((DateTime)value, XmlDateTimeSerializationMode.Utc);
+                case TypeCode.Double:
+                    return ((double)value).ToString("C");
+
+            }
+
+            return value.ToString();
+        }
+
         public static bool AreBinaryEqual<T>(this ISerializerSettings serializerSettings, byte[] serializedData, T preSerializedValue)
         {
             var originalLocal = serializerSettings.SerializeAsBytes(preSerializedValue);

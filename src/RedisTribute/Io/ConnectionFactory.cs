@@ -11,10 +11,12 @@ namespace RedisTribute.Io
     class ConnectionFactory
     {
         readonly Func<ICommandQueue> _queueFactory;
+        readonly PipelineMode? _requiredPipelineMode;
 
-        public ConnectionFactory(Func<ICommandQueue> queueFactory = null)
+        public ConnectionFactory(Func<ICommandQueue> queueFactory = null, PipelineMode? requiredPipelineMode = null)
         {
             _queueFactory = queueFactory ?? (() => new CommandQueue());
+            _requiredPipelineMode = requiredPipelineMode;
         }
 
         public ICommandRouter Create(ClientConfiguration configuration)
@@ -33,9 +35,10 @@ namespace RedisTribute.Io
         {
             ConnectionInitialiser connectionInit;
 
+            var pipelineMode = _requiredPipelineMode.GetValueOrDefault(configuration.PipelineMode);
             var endPointInfo = new ServerEndPointInfo(endPoint.Host, endPoint.Port, configuration.NetworkConfiguration.PortMappings.Map(endPoint.Port), configuration.NetworkConfiguration.DnsResolver);
 
-            if (configuration.PipelineMode == PipelineMode.AsyncPipeline || configuration.PipelineMode == PipelineMode.Default)
+            if (pipelineMode == PipelineMode.AsyncPipeline || pipelineMode == PipelineMode.Default)
             {
                 connectionInit = new ConnectionInitialiser(endPointInfo, configuration.NetworkConfiguration, configuration, CreateAsyncPipe(configuration), configuration.TelemetryWriter, configuration.ConnectTimeout);
             }

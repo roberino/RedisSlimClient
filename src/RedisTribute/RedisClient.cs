@@ -8,6 +8,7 @@ using RedisTribute.Types.Messaging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -76,8 +77,11 @@ namespace RedisTribute
             return resultsTransformed;
         }
 
-        public Task<int> PublishAsync(IMessage message, CancellationToken cancellation = default)
+        public Task<int> PublishAsync(IMessageData message, CancellationToken cancellation = default)
             => _controller.GetResponse(new PublishCommand(message), cancellation);
+
+        public Task<int> PublishAsync(Func<ISerializerSettings, IMessageData> messageFactory, CancellationToken cancellation = default)
+            => _controller.GetResponse(new PublishCommand(messageFactory(_controller.Configuration)), cancellation);
 
         public Task<bool> DeleteHashFieldAsync(string key, string field, CancellationToken cancellation = default) 
             => _controller.GetResponse(new HDeleteCommand(key, field), cancellation);

@@ -8,7 +8,7 @@ namespace RedisTribute.Io.Commands
     {
         readonly byte[] _message;
 
-        public PublishCommand(IMessage message) : this(message.Body, message.Channel)
+        public PublishCommand(IMessageData message) : this(message.GetBytes(), message.Channel)
         {
         }
 
