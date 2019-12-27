@@ -13,9 +13,7 @@ namespace RedisTribute.Types.Messaging
     {
         string Id { get; }
 
-        DateTime Timestamp { get; }
-
-        MessageFlags Flags { get; }
+        IMessageHeader Header { get; }
 
         IDictionary<string, string> Properties { get; }
 

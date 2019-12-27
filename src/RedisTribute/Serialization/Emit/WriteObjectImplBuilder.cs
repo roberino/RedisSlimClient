@@ -74,7 +74,22 @@ namespace RedisTribute.Serialization.Emit
                 }
                 else
                 {
-                    writeMethod = _objectWriterMethods.Bind(property.PropertyType);
+                    if (property.PropertyType.IsNullableType())
+                    {
+                        var ut = Nullable.GetUnderlyingType(property.PropertyType);
+
+                        var nullWriteMethod = _objectWriterMethods.BindGenericByMethod(m => m.Name == nameof(IObjectWriter.WriteNullable), ut);
+
+                        writeMethod = _objectWriterMethods.Bind(ut);
+
+                        methodBuilder.CallMethod(_writerParam, nullWriteMethod, property.Name, propertyValueLocal, writeMethod.Name);
+
+                        return;
+                    }
+                    else
+                    {
+                        writeMethod = _objectWriterMethods.Bind(property.PropertyType);
+                    }
                 }
             }
 

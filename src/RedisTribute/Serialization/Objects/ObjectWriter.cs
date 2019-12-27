@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using RedisTribute.Serialization.Protocol;
 
@@ -43,6 +44,23 @@ namespace RedisTribute.Serialization
         public void WriteItem(string name, string data)
         {
             Write(name, TypeCode.String, SubType.None, data == null ? null : _textEncoding.GetBytes(data));
+        }
+
+        public void WriteNullable<T>(string name, T? data, string method) where T : struct
+        {
+            if (data.HasValue)
+            {
+                GetType()
+                    .GetMethods()
+                    .Where(m => m.Name == method && m.GetParameters().Length == 2 && m.GetParameters()[1].ParameterType == typeof(T))
+                    .Single()
+                    .Invoke(this, new object[] { name, data.Value });
+            }
+        }
+
+        public void WriteItem(string name, TimeSpan data)
+        {
+            Write(name, TypeCode.String, SubType.None, _dataFormatter.ToBytes(data));
         }
 
         public void WriteItem(string name, byte[] data)

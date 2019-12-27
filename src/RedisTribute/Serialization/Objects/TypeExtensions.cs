@@ -15,6 +15,15 @@ namespace RedisTribute.Serialization
                 .ToArray();
         }
 
+        public static T? MakeNullable<T>(T value) where T : struct
+        {
+            return new T?(value);
+        }
+        public static ConstructorInfo GetNullableCstr(this Type innerType)
+        {
+            return typeof(Nullable<>).MakeGenericType(innerType).GetConstructor(new[] { innerType });
+        }
+
         static bool HasNonSerializeMarker(this MemberInfo member)
         {
             var attribs = member.GetCustomAttributes();
@@ -29,7 +38,24 @@ namespace RedisTribute.Serialization
 
         public static bool RequiresDecomposition(this Type type)
         {
-            return Type.GetTypeCode(type) == TypeCode.Object && type != typeof(byte[]);
+            if (Type.GetTypeCode(type) == TypeCode.Object && type != typeof(byte[]) && type != typeof(TimeSpan))
+            {
+                if (IsNullableType(type))
+                {
+                    var inner = Nullable.GetUnderlyingType(type);
+
+                    return RequiresDecomposition(inner);
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+
+        public static bool IsNullableType(this Type type)
+        {
+            return type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>);
         }
 
         public static bool ContainsGenericParameter(this Type type)

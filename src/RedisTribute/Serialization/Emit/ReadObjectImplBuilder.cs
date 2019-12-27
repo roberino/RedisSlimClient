@@ -89,12 +89,34 @@ namespace RedisTribute.Serialization.Emit
                 }
                 else
                 {
-                    readMethod = _objectReaderMethods.Bind(property.PropertyType);
+                    if (property.PropertyType.IsNullableType())
+                    {
+                        var innerType = Nullable.GetUnderlyingType(property.PropertyType);
 
-                    methodBuilder.CallFunction(propertyLocal,
-                        _readerParam,
-                        readMethod,
-                        property.Name);
+                        readMethod = _objectReaderMethods.Bind(innerType);
+
+                        methodBuilder.CallFunction(propertyLocal,
+                            _readerParam,
+                            readMethod,
+                            property.Name);
+
+                        var ctor = property.PropertyType.GetConstructor(new[] { innerType });
+
+                        methodBuilder.Il.Emit(OpCodes.Ldloc, propertyLocal.Index);
+
+                        methodBuilder.Il.Emit(OpCodes.Newobj, ctor);
+
+                        methodBuilder.Il.Emit(OpCodes.Stloc, propertyLocal.Index);
+                    }
+                    else
+                    {
+                        readMethod = _objectReaderMethods.Bind(property.PropertyType);
+
+                        methodBuilder.CallFunction(propertyLocal,
+                            _readerParam,
+                            readMethod,
+                            property.Name);
+                    }
                 }
             }
 

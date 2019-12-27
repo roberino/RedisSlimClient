@@ -44,53 +44,52 @@ namespace RedisTribute.Types.Messaging
     {
         private readonly ISerializerSettings _serializerSettings;
 
-        public Message(T body, string channel, ISerializerSettings serializerSettings, MessageFlags flags = MessageFlags.None)
+        public Message(string channel, T body, MessageHeader header, ISerializerSettings serializerSettings)
+            : this(Guid.NewGuid().ToString("N"), channel, header, new Dictionary<string, string>(), body, serializerSettings)
         {
-            _serializerSettings = serializerSettings;
-
-            Id = Guid.NewGuid().ToString("N");
-            Timestamp = DateTime.UtcNow;
-            Properties = new Dictionary<string, string>();
-            Channel = channel;
-            Body = body;
         }
 
-        Message(string id, DateTime timestamp, IDictionary<string, string> properties, T body, string channel, MessageFlags flags, ISerializerSettings serializerSettings)
+        Message(string id, string channel, MessageHeader header, IDictionary<string, string> properties, T body, ISerializerSettings serializerSettings)
         {
             _serializerSettings = serializerSettings;
 
             Id = id;
-            Timestamp = timestamp;
+            Header = header;
             Body = body;
             Properties = properties;
             Channel = channel;
-            Flags = flags;
         }
 
         public string Id { get; }
         public IDictionary<string, string> Properties { get; }
         public T Body { get; }
         public string Channel { get; }
-        public DateTime Timestamp { get; }
-        public MessageFlags Flags { get; }
+        public IMessageHeader Header { get; }
 
         public static IMessage<T> FromBytes(ISerializerSettings serializerSettings, string channel, byte[] data)
         {
-            var sm = serializerSettings.Deserialize<SerializableMessage<T>>(data);
+            try
+            {
+                var sm = serializerSettings.Deserialize<SerializableMessage<T>>(data);
 
-            var msg = new Message<T>(sm.Id, sm.Timestamp, sm.Properties, sm.Body, channel, sm.Flags, serializerSettings);
+                var msg = new Message<T>(sm.Id, channel, sm.Header, sm.Properties, sm.Body, serializerSettings);
 
-            return msg;
+                return msg;
+            }
+            catch(Exception ex)
+            {
+                throw ex;
+            }
         }
 
         public byte[] GetBytes()
         {
             var sm = new SerializableMessage<T>
             {
-                 Id = Id,
-                 Timestamp = Timestamp,
-                 Body = Body,
-                 Properties = Properties
+                Id = Id,
+                Header = (MessageHeader)Header,
+                Body = Body,
+                Properties = Properties
             };
 
             return _serializerSettings.SerializeAsBytes(sm);

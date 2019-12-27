@@ -106,6 +106,11 @@ namespace RedisTribute.Serialization
             return ReadPrimativeValue(name, _dataFormatter.ToDateTime);
         }
 
+        public TimeSpan ReadTimeSpan(string name)
+        {
+            return ReadPrimativeValue(name, _dataFormatter.ToTimeSpan);
+        }
+
         public int ReadInt32(string name)
         {
             return ReadPrimativeValue(name, _dataFormatter.ToInt32);

@@ -20,7 +20,8 @@ namespace RedisTribute.Serialization
             [typeof(Dictionary<string, string>)] = new DictionarySerializer<string>(),
             [typeof(KeyValuePair<string, string>)] = new KeyValueSerializer<string>(),
             [typeof(string)] = new StringSerializer(Encoding.UTF8),
-            [typeof(byte[])] = new ByteArraySerializer()
+            [typeof(byte[])] = new ByteArraySerializer(),
+            [typeof(TimeSpan)] = TimeSpanSerializer.Instance
         };
 
         SerializerFactory()

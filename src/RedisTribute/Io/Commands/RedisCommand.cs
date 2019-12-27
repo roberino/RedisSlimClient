@@ -63,7 +63,7 @@ namespace RedisTribute.Io.Commands
         }
 
 
-        public void Abandon(Exception ex)
+        public virtual void Abandon(Exception ex)
         {
             if (ex is TaskCanceledException)
             {

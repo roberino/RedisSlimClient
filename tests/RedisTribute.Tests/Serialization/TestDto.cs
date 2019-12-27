@@ -44,6 +44,11 @@ namespace RedisTribute.UnitTests.Serialization
         public TestEnum DataItem1 { get; set; }
     }
 
+    public class TestDtoWithTimeSpan
+    {
+        public TimeSpan Time1 { get; set; }
+    }
+
     public class TestDtoWithGeneric<T>
     {
         public T DataItem1 { get; set; }
@@ -54,5 +59,14 @@ namespace RedisTribute.UnitTests.Serialization
         None,
         Value1,
         Value2
+    }
+
+    [Flags]
+    public enum TestFlagEnum : byte
+    {
+        None = 0,
+        Value1 = 1,
+        Value2 = 2,
+        Value3 = 4
     }
 }

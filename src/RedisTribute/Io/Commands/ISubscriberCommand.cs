@@ -6,6 +6,8 @@ namespace RedisTribute.Io.Commands
 {
     interface ISubscriberCommand
     {
+        event Action<Exception> ConnectionBroken;
+
         bool HasFinished { get; }
 
         bool CanReceive(IRedisObject message);

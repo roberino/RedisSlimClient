@@ -12,6 +12,7 @@ namespace RedisTribute.Serialization
         byte[] ReadBytes(string name);
         string ReadString(string name);
         DateTime ReadDateTime(string name);
+        TimeSpan ReadTimeSpan(string name);
         int ReadInt32(string name);
         long ReadInt64(string name);
         char ReadChar(string name);

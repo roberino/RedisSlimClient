@@ -8,6 +8,7 @@ namespace RedisTribute.Types.Messaging
         public string Id { get; set; }
         public DateTime Timestamp { get; set; }
         public MessageFlags Flags { get; set; }
+        public MessageHeader Header { get; set; }
         public IDictionary<string, string> Properties { get; set; }
         public T Body { get; set; }
     }

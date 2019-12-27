@@ -51,6 +51,25 @@ namespace RedisTribute.UnitTests.Serialization
         }
 
         [Fact]
+        public void WriteData_FlagEnum_CanSerializeAndDeserialize()
+        {
+            WhenWritingObject(TestFlagEnum.Value2 | TestFlagEnum.Value3);
+
+            ThenOutputIsValid<TestFlagEnum>(x => Assert.Equal(TestFlagEnum.Value2 | TestFlagEnum.Value3, x));
+        }
+
+        [Fact]
+        public void WriteData_SimpleTypeWithTimeSpan_CanSerializeAndDeserialize()
+        {
+            WhenWritingObject(new TestDtoWithTimeSpan()
+            {
+                Time1 = TimeSpan.FromMilliseconds(156)
+            });
+
+            ThenOutputIsValid<TestDtoWithTimeSpan>(x => Assert.Equal(TimeSpan.FromMilliseconds(156), x.Time1));
+        }
+
+        [Fact]
         public void WriteData_SimpleTypeWithEnum_CanSerializeAndDeserialize()
         {
             WhenWritingObject(new TestDtoWithEnum()
@@ -188,6 +207,17 @@ namespace RedisTribute.UnitTests.Serialization
             WhenWritingObject(new TestDtoWithGeneric<bool> { DataItem1 = true });
 
             ThenOutputIsValid<TestDtoWithGeneric<bool>>(x =>
+            {
+                Assert.True(x.DataItem1);
+            });
+        }
+
+        [Fact]
+        public void WriteData_NullableBoolGenericProperty_CanWriteAndRead()
+        {
+            WhenWritingObject(new TestDtoWithGeneric<bool?> { DataItem1 = true });
+
+            ThenOutputIsValid<TestDtoWithGeneric<bool?>>(x =>
             {
                 Assert.True(x.DataItem1);
             });

@@ -7,6 +7,7 @@ using Xunit;
 using Xunit.Abstractions;
 using RedisTribute.Stubs;
 using System.Collections.Generic;
+using RedisTribute.Types.Messaging;
 
 namespace RedisTribute.IntegrationTests
 {
@@ -34,7 +35,7 @@ namespace RedisTribute.IntegrationTests
 
                 var channel = Guid.NewGuid().ToString().Substring(0, 6);
 
-                var x = await client.PublishAsync("hey", channel);
+                var x = await client.PublishStringAsync(channel, "hey");
 
                 Assert.Equal(0, x);
             }
@@ -69,7 +70,7 @@ namespace RedisTribute.IntegrationTests
                     return Task.CompletedTask;
                 });
 
-                var x = await client.PublishAsync(channel, "Hey");
+                var x = await client.PublishStringAsync(channel, "Hey");
 
                 waitHandle.WaitOne(15000);
 
@@ -176,6 +177,66 @@ namespace RedisTribute.IntegrationTests
 
                 Assert.Equal("Hey", msg1);
                 Assert.Equal("Hey", msg2);
+            }
+        }
+
+        [Theory]
+        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
+        public async Task PublishAsync_ObjectMessageTwoSubscribersWithLock_SubscriberReceivesMessage(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
+        {
+            var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine);
+
+            config.HealthCheckInterval = TimeSpan.Zero;
+
+            using (var client = config.CreateClient())
+            using (var subClient1 = config.CreateSubscriberClient())
+            using (var subClient2 = config.CreateSubscriberClient())
+            using (var waitHandle1 = new ManualResetEvent(false))
+            using (var waitHandle2 = new ManualResetEvent(false))
+            {
+                await client.PingAllAsync();
+                await subClient1.PingAllAsync();
+
+                string msg1 = null, msg2 = null;
+
+                var channel = Guid.NewGuid().ToString().Substring(0, 6);
+
+                var subscription1 = await subClient1.SubscribeAsync<TestComplexDto>(channel, m =>
+                {
+                    msg1 = m.Body.DataItem1;
+
+                    waitHandle1.Set();
+
+                    return Task.CompletedTask;
+                });
+
+                var subscription2 = await subClient2.SubscribeAsync<TestComplexDto>(channel, m =>
+                {
+                    msg2 = m.Body.DataItem1;
+
+                    waitHandle2.Set();
+
+                    return Task.CompletedTask;
+                });
+
+                var x = await client.PublishAsync(channel, new TestComplexDto()
+                {
+                    DataItem1 = "Hey"
+                }, flags: MessageFlags.SingleConsumer);
+
+
+                var count = 0;
+
+                while (msg1 == null && msg2 == null && count++ < 1000)
+                {
+                    waitHandle1.WaitOne(10);
+                    waitHandle2.WaitOne(10);
+                }
+
+                await subscription1.Unsubscribe();
+                await subscription2.Unsubscribe();
+
+                Assert.Equal("Hey", $"{msg1}{msg2}");
             }
         }
     }

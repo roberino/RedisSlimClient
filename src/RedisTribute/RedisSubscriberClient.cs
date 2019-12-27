@@ -15,18 +15,22 @@ namespace RedisTribute
     class RedisSubscriberClient : ISubscriptionClient
     {
         readonly RedisController _controller;
-        readonly RedisLock _redisLock;
+        readonly Lazy<RedisController> _lockController;
+        readonly Lazy<RedisLock> _redisLock;
         readonly HashSet<string> _channels;
 
-        internal RedisSubscriberClient(RedisController controller)
+        RedisSubscriberClient(RedisController controller, Func<RedisController> lockControllerFactory)
         {
             _controller = controller;
-            _redisLock = new RedisLock(_controller);
+            _lockController = new Lazy<RedisController>(lockControllerFactory, LazyThreadSafetyMode.ExecutionAndPublication);
+            _redisLock = new Lazy<RedisLock>(() => new RedisLock(_lockController.Value), LazyThreadSafetyMode.ExecutionAndPublication);
             _channels = new HashSet<string>();
         }
 
         internal static ISubscriptionClient Create(ClientConfiguration configuration, Action onDisposing = null) =>
-            new RedisSubscriberClient(new RedisController(configuration, e => new ConnectionFactory(() => new SubscriberCommandQueue(), PipelineMode.AsyncPipeline).Create(e), onDisposing));
+            new RedisSubscriberClient(new RedisController(configuration, 
+                e => new ConnectionFactory(() => new SubscriberCommandQueue(), PipelineMode.AsyncPipeline).Create(e), onDisposing), 
+                () => new RedisController(configuration, c => new ConnectionFactory().Create(c)));
 
         public string ClientName => _controller.Configuration.ClientName;
 
@@ -43,11 +47,11 @@ namespace RedisTribute
             {
                 var msg = Message<T>.FromBytes(_controller.Configuration, m.Channel, m.GetBytes());
 
-                if (msg.Flags.HasFlag(MessageFlags.SingleConsumer))
+                if (msg.Header.Flags.HasFlag(MessageFlags.SingleConsumer))
                 {
                     try
                     {
-                        using (var msgLock = await AquireLockAsync(msg.Id, new LockOptions(TimeSpan.FromSeconds(60), false)))
+                        using (var msgLock = await AquireLockAsync(msg.Id, new LockOptions(msg.Header.LockTime, false)))
                         {
                             try
                             {
@@ -96,6 +100,14 @@ namespace RedisTribute
             {
                 cmd.Stop();
 
+                lock (_channels)
+                {
+                    foreach (var chan in channels)
+                    {
+                        _channels.Remove(chan);
+                    }
+                }
+
                 var ucmd = new UnsubscribeCommand(channels.Select(c => (RedisKey)c).ToArray());
 
                 await _controller.GetResponse(ucmd, cancellation);
@@ -105,11 +117,16 @@ namespace RedisTribute
         public void Dispose()
         {
             _controller.Dispose();
+
+            if (_lockController.IsValueCreated)
+            {
+                _lockController.Value.Dispose();
+            }
         }
 
         Task<IDistributedLock> AquireLockAsync(string key, LockOptions options = default)
         {
-            return _redisLock.AquireLockAsync($"$$_msglock:{key}", options);
+            return _redisLock.Value.AquireLockAsync($"$$_msglock:{key}", options);
         }
     }
 }

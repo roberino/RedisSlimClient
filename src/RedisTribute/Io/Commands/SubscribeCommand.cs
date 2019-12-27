@@ -30,6 +30,22 @@ namespace RedisTribute.Io.Commands
             _handler = handler;
         }
 
+        public event Action<Exception> ConnectionBroken;
+
+        public override void Abandon(Exception ex)
+        {
+            Stop();
+
+            if (!_ready)
+            {
+                base.Abandon(ex);
+            }
+            else
+            {
+                ConnectionBroken?.Invoke(ex);
+            }
+        }
+
         public void Stop()
         {
             HasFinished = true;
