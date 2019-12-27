@@ -3,9 +3,12 @@ using RedisTribute.Io;
 using RedisTribute.Io.Commands;
 using RedisTribute.Io.Server;
 using RedisTribute.Types;
+using RedisTribute.Types.Graphs;
+using RedisTribute.Types.Messaging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -74,6 +77,12 @@ namespace RedisTribute
             return resultsTransformed;
         }
 
+        public Task<int> PublishAsync(IMessageData message, CancellationToken cancellation = default)
+            => _controller.GetResponse(new PublishCommand(message), cancellation);
+
+        public Task<int> PublishAsync(Func<ISerializerSettings, IMessageData> messageFactory, CancellationToken cancellation = default)
+            => _controller.GetResponse(new PublishCommand(messageFactory(_controller.Configuration)), cancellation);
+
         public Task<bool> DeleteHashFieldAsync(string key, string field, CancellationToken cancellation = default) 
             => _controller.GetResponse(new HDeleteCommand(key, field), cancellation);
 
@@ -101,7 +110,7 @@ namespace RedisTribute
 
         public async Task<IPersistentDictionary<T>> GetHashSetAsync<T>(string key, CancellationToken cancellation = default)
         {
-            return await RedisHashSet<T>.CreateAsync(key, this, _controller.Configuration, cancellation);
+            return await RedisHashSet<T>.CreateAsync(key, this, _controller.Configuration, GetLock(), cancellation);
         }
 
         public async Task<long> ScanKeysAsync(ScanOptions scanOptions, CancellationToken cancellation = default)
@@ -139,12 +148,35 @@ namespace RedisTribute
 
         public Task<IDistributedLock> AquireLockAsync(string key, LockOptions options = default, CancellationToken cancellation = default)
         {
-            return _redisLock.AquireLockAsync(key, options, cancellation);
+            return _redisLock.AquireLockAsync($"$$_redlock:{key}", options, cancellation);
+        }
+
+        public IGraph GetGraph(string graphNamespace)
+        {
+            if (string.IsNullOrEmpty(graphNamespace))
+            {
+                throw new ArgumentNullException(nameof(graphNamespace));
+            }
+
+            return new Graph(this, _controller.Configuration, new GraphOptions(graphNamespace));
         }
 
         public void Dispose()
         {
             _controller.Dispose();
+        }
+
+        IAsyncLockStrategy<IAsyncLock> GetLock()
+        {
+            switch (_controller.Configuration.LockStrategy)
+            {
+                case LockStrategy.Local:
+                    return new LocalLockStrategy();
+                case LockStrategy.Distributed:
+                    return new RedisLock(_controller);
+                default:
+                    return new NullLock();
+            }
         }
 
         Task<T> GetInternalAsync<T>(string key, CancellationToken cancellation = default)

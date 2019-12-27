@@ -99,7 +99,11 @@ namespace RedisTribute.Io.Pipelines
                 {
                     break;
                 }
-                catch (AggregateException ex) when (ex.InnerException is TaskCanceledException)
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
+                catch (AggregateException ex) when (ex.InnerException is TaskCanceledException || ex.InnerException is OperationCanceledException)
                 {
                     break;
                 }
@@ -206,7 +210,11 @@ namespace RedisTribute.Io.Pipelines
                 {
                     break;
                 }
-                catch (AggregateException ex) when (ex.InnerException is TaskCanceledException)
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
+                catch (AggregateException ex) when (ex.InnerException is TaskCanceledException || ex.InnerException is OperationCanceledException)
                 {
                     break;
                 }

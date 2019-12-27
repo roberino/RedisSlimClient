@@ -27,7 +27,7 @@ namespace RedisTribute.Serialization
         {
             var type = (ResponseType)data.GetValue(0);
 
-            if (type != ResponseType.StringType && type != ResponseType.ErrorType)
+            if (type == ResponseType.ArrayType || type == ResponseType.BulkStringType || type == ResponseType.IntType)
             {
                 return (type, data.ToInteger(1), 0);
             }

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using RedisTribute.Serialization.Protocol;
 
@@ -32,18 +33,44 @@ namespace RedisTribute.Serialization
 
         public void Raw(byte[] data, int? length = null)
         {
-            //_stream.WriteBytes(data, length);
+            if (data == null || (length.HasValue && length.Value == 0))
+            {
+                return;
+            }
+
             _stream.Write(data, 0, length.GetValueOrDefault(data.Length));
         }
 
         public void WriteItem(string name, string data)
         {
-            Write(name, TypeCode.String, SubType.None, _textEncoding.GetBytes(data));
+            Write(name, TypeCode.String, SubType.None, data == null ? null : _textEncoding.GetBytes(data));
+        }
+
+        public void WriteNullable<T>(string name, T? data, string method) where T : struct
+        {
+            if (data.HasValue)
+            {
+                GetType()
+                    .GetMethods()
+                    .Where(m => m.Name == method && m.GetParameters().Length == 2 && m.GetParameters()[1].ParameterType == typeof(T))
+                    .Single()
+                    .Invoke(this, new object[] { name, data.Value });
+            }
+        }
+
+        public void WriteItem(string name, TimeSpan data)
+        {
+            Write(name, TypeCode.String, SubType.None, _dataFormatter.ToBytes(data));
         }
 
         public void WriteItem(string name, byte[] data)
         {
             Write(name, TypeCode.Object, SubType.ByteArray, data);
+        }
+
+        public void WriteEnum<T>(string name, T data)
+        {
+            Write(name, TypeCode.String, SubType.None, Encoding.ASCII.GetBytes($"{data}"));
         }
 
         public void WriteItem<T>(string name, T data)

@@ -1,5 +1,7 @@
-﻿using RedisTribute.Io.Server;
-using RedisTribute.Types;
+﻿using RedisTribute.Configuration;
+using RedisTribute.Io.Server;
+using RedisTribute.Types.Graphs;
+using RedisTribute.Types.Messaging;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -43,9 +45,26 @@ namespace RedisTribute
         Task<byte[]> GetHashFieldAsync(string key, string field, CancellationToken cancellation = default);
     }
 
-    public interface IPersistentDictionaryClient
+    public interface IPersistentDictionaryProvider
     {
         Task<IPersistentDictionary<T>> GetHashSetAsync<T>(string key, CancellationToken cancellation = default);
+    }
+
+    public interface IGraphClient
+    {
+        IGraph GetGraph(string graphNamespace);
+    }
+
+    public interface ISubscriptionClient : IRedisDiagnosticClient
+    {
+        Task<ISubscription> SubscribeAsync<T>(string[] channels, Func<IMessage<T>, Task> handler, CancellationToken cancellation = default);
+        Task<ISubscription> SubscribeAsync(string[] channels, Func<IMessageData, Task> handler, CancellationToken cancellation = default);
+    }
+
+    public interface IPublisherClient
+    {
+        Task<int> PublishAsync(IMessageData message, CancellationToken cancellation = default);
+        Task<int> PublishAsync(Func<ISerializerSettings, IMessageData> messageFactory, CancellationToken cancellation = default);
     }
 
     public interface IRedisClient : 
@@ -53,8 +72,10 @@ namespace RedisTribute
         IRedisObjectReaderWriter, 
         IRedisDiagnosticClient, 
         IHashSetClient, 
-        IPersistentDictionaryClient,
-        IRedLock
+        IPersistentDictionaryProvider,
+        IRedLock,
+        IGraphClient,
+        IPublisherClient
     {
     }
 }

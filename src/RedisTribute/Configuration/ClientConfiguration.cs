@@ -77,6 +77,8 @@ namespace RedisTribute.Configuration
 
         public PipelineMode PipelineMode { get; set; } = PipelineMode.Default;
 
+        public LockStrategy LockStrategy { get; set; } = LockStrategy.Local;
+
         public int ConnectionPoolSize { get; set; } = 1;
 
         public int ReadBufferSize { get; set; } = 4096;

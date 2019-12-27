@@ -8,6 +8,8 @@ RedisTribute is a dotnet standard client for Redis, written from the ground up.
 
 [Download NuGet package](https://www.nuget.org/packages/RedisTribute/)
 
+![logo](docs/logo.png "RedisTribute")
+
 The main aims of the client are:
 
 * To create a pluggable, fault tolerant Redis client for .NET (with a focus on supporting DotNet Core / Standard)
@@ -92,6 +94,7 @@ ProactiveRetry will begin to retry the operation on another connection if the pr
 * Scan / Get / MGet / Set
 * [Distributed Locks](docs/DistributedLocks.md)
 * [HashSets](docs/HashSets.md)
+* Simple Pub/sub support
 
 # Extension packages
 
@@ -118,4 +121,3 @@ This package adds Application Insights integration into the client so that calls
 * Better memory management
 * Slimmer object serialization
 * Support for GEO commands
-* Pub/sub

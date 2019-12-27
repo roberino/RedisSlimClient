@@ -18,7 +18,7 @@ namespace RedisTribute.Io
             IServerNodeInitialiser serverNodeInitialiser)
         {
             _serverNodeInitialiser = serverNodeInitialiser;
-            _subConnections = new SyncronizedInstance<IReadOnlyCollection<IConnectionSubordinate>>(_serverNodeInitialiser.InitialiseAsync);
+            _subConnections = new SyncronizedInstance<IReadOnlyCollection<IConnectionSubordinate>>(_serverNodeInitialiser.CreateNodeSetAsync);
 
             _serverNodeInitialiser.ConfigurationChanged += () => _subConnections.Reset().SyncExec();
         }

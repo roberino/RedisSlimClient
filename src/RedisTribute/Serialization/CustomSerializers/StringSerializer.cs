@@ -17,6 +17,11 @@ namespace RedisTribute.Serialization.CustomSerializers
         {
             using (var data = reader.Raw())
             {
+                if (data.CanSeek && data.Length == 0)
+                {
+                    return null;
+                }
+
                 if (data is PooledStream ps)
                 {
                     var seg = ps.GetBuffer();
@@ -34,7 +39,7 @@ namespace RedisTribute.Serialization.CustomSerializers
 
         public void WriteData(string instance, IObjectWriter writer)
         {
-            var bytes = _encoding.GetBytes(instance);
+            var bytes = instance == null ? null : _encoding.GetBytes(instance);
 
             writer.Raw(bytes);
         }

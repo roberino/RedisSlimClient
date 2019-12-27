@@ -102,6 +102,14 @@ namespace RedisTribute.Serialization.Emit
             CallFunction(outputLocal, null, method, parameters);
         }
 
+        public void CallMethodOnCondition(object target, MethodInfo method, object condition, params object[] parameters)
+        {
+            EmitValue(condition);
+            Il.Emit(OpCodes.Beq);
+
+            CallMethod(null, target, method, parameters); // TODO: This
+        }
+
         public void Add(LocalVar outputVar, object left, object right)
         {
             EmitValue(left, typeof(int));
@@ -174,6 +182,7 @@ namespace RedisTribute.Serialization.Emit
                     return;
                 case long l:
                     Il.Emit(OpCodes.Ldc_I8, l);
+                    return;
                     return;
                 case ParameterInfo p:
                     EmitLocal(_locals[p.Name], requiredType);

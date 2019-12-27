@@ -1,25 +1,23 @@
 ﻿using RedisTribute.Configuration;
 using RedisTribute.Io.Commands;
 using RedisTribute.Io.Net;
+using RedisTribute.Io.Server;
 using RedisTribute.Io.Server.Clustering;
 using RedisTribute.Telemetry;
-using RedisTribute.Util;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Security.Authentication;
 using System.Threading.Tasks;
 
-namespace RedisTribute.Io.Server
+namespace RedisTribute.Io
 {
     class ConnectionInitialiser : IServerNodeInitialiser
     {
-        readonly IDictionary<ServerEndPointInfo, IConnectionSubordinate> _connectionCache;
+        readonly ConnectionSubordinateFactory _connectionSubordinateFactory;
+
         readonly ServerEndPointInfo _initialEndPoint;
         readonly NetworkConfiguration _networkConfiguration;
-        readonly IClientCredentials _clientCredentials;
-        readonly Func<IServerEndpointFactory, Task<ICommandPipeline>> _pipelineFactory;
         readonly ITelemetryWriter _telemetryWriter;
         readonly TimeSpan _timeout;
 
@@ -31,45 +29,31 @@ namespace RedisTribute.Io.Server
         {
             _initialEndPoint = endPointInfo;
             _networkConfiguration = networkConfiguration;
-            _clientCredentials = clientCredentials;
-            _pipelineFactory = pipelineFactory;
             _telemetryWriter = telemetryWriter;
             _timeout = timeout;
-            _connectionCache = new Dictionary<ServerEndPointInfo, IConnectionSubordinate>();
+            _connectionSubordinateFactory = new ConnectionSubordinateFactory(endPointInfo, clientCredentials, pipelineFactory, telemetryWriter, timeout);
         }
 
         public event Action ConfigurationChanged;
 
-        public async Task<IReadOnlyCollection<IConnectionSubordinate>> InitialiseAsync()
+        public async Task<IReadOnlyCollection<IConnectionSubordinate>> CreateNodeSetAsync()
         {
-            try
-            {
-                var pipelines = await InitialiseAsync(CreatePipelineConnection(_initialEndPoint));
+            var cache = new Dictionary<ServerEndPointInfo, IConnectionSubordinate>();
+            var pipelines = await InitialiseAsync(cache, _initialEndPoint);
 
-                if (pipelines.Any(p => p.EndPointInfo.IsCluster))
-                {
-                    return pipelines.Select(p => (IConnectionSubordinate)new RedirectingConnection(p, pipelines, OnChangeDetected)).ToArray();
-                }
-
-                return pipelines;
-            }
-            finally
+            if (pipelines.Any(p => p.EndPointInfo.IsCluster))
             {
-                _connectionCache.Clear();
+                return pipelines.Select(p => (IConnectionSubordinate)new RedirectingConnection(p, pipelines, OnChangeDetected)).ToArray();
             }
+
+            return pipelines;
         }
-
-        AuthCommand AuthCommand(string password) => new AuthCommand(password).AttachTelemetry(_telemetryWriter);
-
-        ClientSetNameCommand ClientSetName => new ClientSetNameCommand(_clientCredentials.ClientName).AttachTelemetry(_telemetryWriter);
 
         RoleCommand RoleCommand => new RoleCommand(_networkConfiguration).AttachTelemetry(_telemetryWriter);
 
         InfoCommand InfoCommand => new InfoCommand().AttachTelemetry(_telemetryWriter);
 
         ClusterNodesCommand ClusterCommand => new ClusterNodesCommand(_networkConfiguration).AttachTelemetry(_telemetryWriter);
-
-        SelectCommand DatabaseSelectCommand(int index) => new SelectCommand(index).AttachTelemetry(_telemetryWriter);
 
         void OnChangeDetected(IRedirectionInfo redirectionInfo)
         {
@@ -85,12 +69,14 @@ namespace RedisTribute.Io.Server
             ConfigurationChanged?.Invoke();
         }
 
-        async Task<IReadOnlyCollection<IConnectionSubordinate>> InitialiseAsync(IConnectionSubordinate initialPipeline, int level = 0)
+        async Task<IReadOnlyCollection<IConnectionSubordinate>> InitialiseAsync(IDictionary<ServerEndPointInfo, IConnectionSubordinate> connectionCache, ServerEndPointInfo endPointInfo, int level = 0)
         {
             if (level > 5)
             {
-                throw new InvalidOperationException();
+                throw new InvalidOperationException("Cannot find master");
             }
+
+            var initialPipeline = CreatePipelineConnection(connectionCache, endPointInfo);
 
             var pipeline = await initialPipeline.GetPipeline();
 
@@ -104,9 +90,9 @@ namespace RedisTribute.Io.Server
 
                 if (info.TryGetValue("cluster", out var cluster) && cluster.TryGetValue("cluster_enabled", out var ce) && (long)ce == 1)
                 {
-                    if (_clientCredentials.Database > 0)
+                    if (!_connectionSubordinateFactory.IsDefaultDatabase)
                     {
-                        throw new InvalidOperationException($"Database invalid when cluster enabled: {_clientCredentials.Database}");
+                        throw new InvalidOperationException($"Database invalid when cluster enabled: {_connectionSubordinateFactory.ClientCredentials.Database}");
                     }
 
                     var clusterNodes = await pipeline.ExecuteAdminWithTimeout(ClusterCommand, _timeout);
@@ -119,15 +105,15 @@ namespace RedisTribute.Io.Server
                         updatedPipe = initialPipeline.Clone(me);
                     }
 
-                    return new[] { updatedPipe }.Concat(clusterNodes.Where(n => !n.IsMyself).Select(CreatePipelineConnection)).ToArray();
+                    return new[] { updatedPipe }.Concat(clusterNodes.Where(n => !n.IsMyself).Select(e => CreatePipelineConnection(connectionCache, e))).ToArray();
                 }
 
-                return new[] { initialPipeline }.Concat(roles.Slaves.Where(IsPublicSlave).Select(CreatePipelineConnection)).ToArray();
+                return new[] { initialPipeline }.Concat(roles.Slaves.Where(IsPublicSlave).Select(e => CreatePipelineConnection(connectionCache, e))).ToArray();
             }
 
             if (roles.RoleType == ServerRoleType.Slave)
             {
-                return await InitialiseAsync(CreatePipelineConnection(roles.Master), level + 1);
+                return await InitialiseAsync(connectionCache, roles.Master, level + 1);
             }
 
             throw new NotSupportedException(roles.RoleType.ToString());
@@ -152,73 +138,14 @@ namespace RedisTribute.Io.Server
             return true;
         }
 
-        IConnectionSubordinate CreatePipelineConnection(ServerEndPointInfo endPointInfo)
+        IConnectionSubordinate CreatePipelineConnection(IDictionary<ServerEndPointInfo, IConnectionSubordinate> connectionCache, ServerEndPointInfo endPointInfo)
         {
-            if (!_connectionCache.TryGetValue(endPointInfo, out var connection))
+            if (!connectionCache.TryGetValue(endPointInfo, out var connection))
             {
-                _connectionCache[endPointInfo] = connection = CreateConnectionSubordinate(endPointInfo);
+                connectionCache[endPointInfo] = connection = _connectionSubordinateFactory.CreateConnectionSubordinate(endPointInfo);
             }
 
             return connection;
-        }
-
-        ConnectionSubordinate CreateConnectionSubordinate(ServerEndPointInfo endPointInfo)
-        {
-            return new ConnectionSubordinate(endPointInfo, new SyncronizedInstance<ICommandPipeline>(async () =>
-            {
-                try
-                {
-                    var result = await _telemetryWriter.ExecuteAsync(async ctx =>
-                    {
-                        ctx.Dimensions[nameof(endPointInfo.Host)] = endPointInfo.Host;
-                        ctx.Dimensions[nameof(endPointInfo.Port)] = endPointInfo.Port;
-                        ctx.Dimensions[nameof(endPointInfo.MappedPort)] = endPointInfo.MappedPort;
-
-                        var subPipe = await _pipelineFactory(endPointInfo);
-
-                        var password = _clientCredentials.PasswordManager.GetPassword(endPointInfo);
-
-                        int? dbIndex = null;
-
-                        if (_clientCredentials.Database > 0 && !(endPointInfo is ClusterNodeInfo))
-                        {
-                            dbIndex = _clientCredentials.Database;
-                            endPointInfo.SetDatabase(dbIndex.Value);
-                        }
-
-                        await Auth(subPipe, password, dbIndex);
-
-                        subPipe.Initialising.Subscribe(p => Auth(p, password, dbIndex));
-
-                        return subPipe;
-                    }, nameof(CreatePipelineConnection));
-
-                    return result;
-                }
-                catch (Exception ex)
-                {
-                    throw new ConnectionInitialisationException(endPointInfo, ex);
-                }
-            }));
-        }
-
-        async Task<ICommandPipeline> Auth(ICommandPipeline pipeline, string password, int? dbIndex)
-        {
-            if (password != null)
-            {
-                if (!await pipeline.ExecuteAdminWithTimeout(AuthCommand(password), _timeout))
-                {
-                    throw new AuthenticationException();
-                }
-            }
-
-            await pipeline.ExecuteAdminWithTimeout(ClientSetName, _timeout);
-
-            if (dbIndex.HasValue)
-            {
-                await pipeline.ExecuteAdminWithTimeout(DatabaseSelectCommand(dbIndex.Value), _timeout);
-            }
-            return pipeline;
         }
     }
 }

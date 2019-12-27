@@ -16,7 +16,7 @@ namespace RedisTribute.Serialization.Emit
             : base(newType, typeof(IObjectGraphExporter<T>).GetMethod(nameof(IObjectGraphExporter<T>.ReadObjectData)), properties)
         {
             _objectReaderType = typeof(IObjectReader);
-            _objectReaderMethods = new OverloadedMethodLookup<IObjectReader, Type>(m => m.Name.StartsWith(nameof(IObjectReader.ReadChar).Substring(0, 4)), x => x.ReturnType);
+            _objectReaderMethods = new OverloadedMethodLookup<IObjectReader, Type>("Read", x => x.ReturnType);
 
             var paramz = TargetMethod.GetParameters();
 
@@ -51,7 +51,7 @@ namespace RedisTribute.Serialization.Emit
                     LoadExtractor(property.PropertyType);
 
                     readMethod = _objectReaderMethods
-                        .BindByGenericReturnValue(t => t.IsGenericParameter, property.PropertyType);
+                       .BindByGenericReturnValue(nameof(IObjectReader.ReadObject), t => t.IsGenericParameter, property.PropertyType);
                 }
                 else
                 {
@@ -60,7 +60,7 @@ namespace RedisTribute.Serialization.Emit
                     var targetType = typeof(IEnumerable<>);
 
                     readMethod = _objectReaderMethods
-                        .BindByGenericReturnValue(t => t.IsGenericType && t.GetGenericTypeDefinition() == targetType, 
+                        .BindByGenericReturnValue(nameof(IObjectReader.ReadEnumerable), t => t.IsGenericType && t.GetGenericTypeDefinition() == targetType, 
                             collectionType);
                 }
 
@@ -74,12 +74,50 @@ namespace RedisTribute.Serialization.Emit
             }
             else
             {
-                readMethod = _objectReaderMethods.Bind(property.PropertyType);
+                if (property.PropertyType.IsEnum)
+                {
+                    readMethod = _objectReaderMethods
+                        .BindGenericByMethod(m => m.Name == nameof(IObjectReader.ReadEnum), property.PropertyType);
 
-                methodBuilder.CallFunction(propertyLocal,
-                    _readerParam,
-                    readMethod,
-                    property.Name);
+                    methodBuilder.CallFunction(propertyLocal, _targetParam, property.GetMethod);
+
+                    methodBuilder.CallFunction(propertyLocal,
+                        _readerParam,
+                        readMethod,
+                        property.Name,
+                        propertyLocal);
+                }
+                else
+                {
+                    if (property.PropertyType.IsNullableType())
+                    {
+                        var innerType = Nullable.GetUnderlyingType(property.PropertyType);
+
+                        readMethod = _objectReaderMethods.Bind(innerType);
+
+                        methodBuilder.CallFunction(propertyLocal,
+                            _readerParam,
+                            readMethod,
+                            property.Name);
+
+                        var ctor = property.PropertyType.GetConstructor(new[] { innerType });
+
+                        methodBuilder.Il.Emit(OpCodes.Ldloc, propertyLocal.Index);
+
+                        methodBuilder.Il.Emit(OpCodes.Newobj, ctor);
+
+                        methodBuilder.Il.Emit(OpCodes.Stloc, propertyLocal.Index);
+                    }
+                    else
+                    {
+                        readMethod = _objectReaderMethods.Bind(property.PropertyType);
+
+                        methodBuilder.CallFunction(propertyLocal,
+                            _readerParam,
+                            readMethod,
+                            property.Name);
+                    }
+                }
             }
 
             methodBuilder.CallMethod(_targetParam, property.SetMethod, propertyLocal);

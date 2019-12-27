@@ -35,6 +35,64 @@ namespace RedisTribute.UnitTests.Serialization
         }
 
         [Fact]
+        public void WriteData_SimpleTypeWithDouble_CanSerializeAndDeserialize()
+        {
+            WhenWritingObject(new TestDtoWithDouble());
+
+            ThenOutputIsValid<TestDtoWithDouble>(x => Assert.Equal(0d, x.DataItem1));
+        }
+
+        [Fact]
+        public void WriteData_Enum_CanSerializeAndDeserialize()
+        {
+            WhenWritingObject(TestEnum.Value2);
+
+            ThenOutputIsValid<TestEnum>(x => Assert.Equal(TestEnum.Value2, x));
+        }
+
+        [Fact]
+        public void WriteData_FlagEnum_CanSerializeAndDeserialize()
+        {
+            WhenWritingObject(TestFlagEnum.Value2 | TestFlagEnum.Value3);
+
+            ThenOutputIsValid<TestFlagEnum>(x => Assert.Equal(TestFlagEnum.Value2 | TestFlagEnum.Value3, x));
+        }
+
+        [Fact]
+        public void WriteData_SimpleTypeWithTimeSpan_CanSerializeAndDeserialize()
+        {
+            WhenWritingObject(new TestDtoWithTimeSpan()
+            {
+                Time1 = TimeSpan.FromMilliseconds(156)
+            });
+
+            ThenOutputIsValid<TestDtoWithTimeSpan>(x => Assert.Equal(TimeSpan.FromMilliseconds(156), x.Time1));
+        }
+
+        [Fact]
+        public void WriteData_SimpleTypeWithEnum_CanSerializeAndDeserialize()
+        {
+            WhenWritingObject(new TestDtoWithEnum()
+            {
+                 DataItem1 = TestEnum.Value2
+            });
+
+            ThenOutputIsValid<TestDtoWithEnum>(x => Assert.Equal(TestEnum.Value2, x.DataItem1));
+        }
+
+        [Fact]
+        public void WriteData_SimpleTypeWithNullString_CanSerializeAndDeserialize()
+        {
+            WhenWritingObject(new TestDtoWithString
+            {
+                DataItem1 = null
+            }
+            );
+
+            ThenOutputIsValid<TestDtoWithString>(x => Assert.Empty(x.DataItem1));
+        }
+
+        [Fact]
         public void WriteData_ObjectCollection_CanWriteAndRead()
         {
             WhenWritingObject(new TestDtoWithGenericCollection<TestDtoWithInt> { Items = new[] { new TestDtoWithInt() { DataItem1 = 123 }, new TestDtoWithInt() { DataItem1 = 456 } } } );
@@ -155,6 +213,17 @@ namespace RedisTribute.UnitTests.Serialization
         }
 
         [Fact]
+        public void WriteData_NullableBoolGenericProperty_CanWriteAndRead()
+        {
+            WhenWritingObject(new TestDtoWithGeneric<bool?> { DataItem1 = true });
+
+            ThenOutputIsValid<TestDtoWithGeneric<bool?>>(x =>
+            {
+                Assert.True(x.DataItem1);
+            });
+        }
+
+        [Fact]
         public void WriteData_MultiPropertyType_ReturnsPropertyData()
         {
             var now = DateTime.UtcNow;
@@ -229,7 +298,7 @@ namespace RedisTribute.UnitTests.Serialization
             _output.Position = 0;
             var iterator = new StreamIterator(_output);
             var objectStream = new ArraySegmentToRedisObjectReader(iterator);
-            var reader = new ObjectReader(objectStream);
+            var reader = new ObjectReader(objectStream, _output);
             return SerializerFactory.Instance.Create<T>().ReadData(reader, default);
         }
 

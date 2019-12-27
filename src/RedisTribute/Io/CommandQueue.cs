@@ -1,5 +1,6 @@
 ﻿using RedisTribute.Io.Commands;
 using RedisTribute.Io.Scheduling;
+using RedisTribute.Types;
 using RedisTribute.Util;
 using System;
 using System.Collections.Generic;
@@ -8,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace RedisTribute.Io
 {
-    class CommandQueue : IDisposable
+    class CommandQueue : ICommandQueue
     {
         readonly AsyncLock _lock;
         readonly Queue<IRedisCommand> _commandQueue;
@@ -19,9 +20,9 @@ namespace RedisTribute.Io
             _lock = new AsyncLock();
         }
 
-        public int QueueSize => _commandQueue.Count;
+        public virtual int QueueSize => _commandQueue.Count;
 
-        public async Task AbortAll(Exception ex, IWorkScheduler scheduler)
+        public virtual async Task AbortAll(Exception ex, IWorkScheduler scheduler)
         {
             IRedisCommand[] cmds = null;
 
@@ -44,7 +45,7 @@ namespace RedisTribute.Io
             }
         }
 
-        public async Task Requeue(Func<Task> synchronisedWork)
+        public virtual async Task Requeue(Func<Task> synchronisedWork)
         {
             IRedisCommand[] salvagable;
 
@@ -84,25 +85,30 @@ namespace RedisTribute.Io
             {
                 await command.Execute();
 
-                _commandQueue.Enqueue(command);
+                Attach(command);
             }
         }
 
-        public bool ProcessNextCommand(Action<IRedisCommand> action)
+        public Func<Task> BindResult(IRedisObject result)
         {
-            return AccessQueue(x => ProcessNextCommandInternal(action)).ConfigureAwait(false).GetAwaiter().GetResult();
+            return AccessQueue(_ => Bind(result)).ConfigureAwait(false).GetAwaiter().GetResult();
         }
 
-        bool ProcessNextCommandInternal(Action<IRedisCommand> action)
+        protected virtual void Attach(IRedisCommand command)
+        {
+            _commandQueue.Enqueue(command);
+        }
+
+        protected virtual Func<Task> Bind(IRedisObject result)
         {
             if (_commandQueue.Count > 0)
             {
-                action(_commandQueue.Dequeue());
+                var next = _commandQueue.Dequeue();
 
-                return true;
+                return () => Task.FromResult(next.SetResult(result));
             }
 
-            return false;
+            return () => Task.CompletedTask;
         }
 
         async Task<T> AccessQueue<T>(Func<Queue<IRedisCommand>, T> work, CancellationToken cancellation = default)
@@ -118,7 +124,7 @@ namespace RedisTribute.Io
             _commandQueue.Clear();
         }
 
-        public void Dispose()
+        public virtual void Dispose()
         {
             _lock.Dispose();
         }

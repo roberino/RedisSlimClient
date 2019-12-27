@@ -11,5 +11,15 @@ namespace RedisTribute.Io.Commands
         {
             return value != null && !value.IsNull && value.Type == RedisType.String && string.Equals(value.ToString(), SuccessResponse, StringComparison.OrdinalIgnoreCase);
         }
+
+        public static Exception AsException(this RedisError err)
+        {
+            if (ObjectMovedException.TryParse(err.Message, out var ex))
+            {
+                return ex;
+            }
+
+            return new RedisServerException(err.Message);
+        }
     }
 }

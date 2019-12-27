@@ -18,6 +18,8 @@ namespace RedisTribute.Serialization
         byte[] ToBytes(char data);
         DateTime ToDateTime(byte[] data);
         byte[] ToBytes(DateTime date);
+        TimeSpan ToTimeSpan(byte[] data);
+        byte[] ToBytes(TimeSpan time);
         byte[] ToBytes(bool data);
         bool ToBool(byte[] data);
     }

@@ -1,6 +1,5 @@
 ﻿using RedisTribute.Types;
 using System;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
@@ -11,58 +10,20 @@ namespace RedisTribute.Io.Commands
         public static readonly Uri UnassignedEndpoint = new Uri("unknown://unassigned:1");
     }
 
-    abstract class RedisCommand<T> : IRedisResult<T>
+    abstract class RedisCommand<T> : RedisTelemetricCommand, IRedisResult<T>
     {
         readonly TaskCompletionSource<T> _completionSource;
-
-        Action<CommandState> _stateChanged;
-        Stopwatch _sw;
 
         protected RedisCommand(string commandText, RedisKey key = default) : this(commandText, true, key)
         {
         }
 
-        protected RedisCommand(string commandText, bool requireMaster, RedisKey key)
+        protected RedisCommand(string commandText, bool requireMaster, RedisKey key) : base(commandText, requireMaster, key)
         {
-            RequireMaster = requireMaster;
-            CommandText = commandText;
-            Key = key;
             _completionSource = new TaskCompletionSource<T>();
         }
 
-        protected void BeginTimer()
-        {
-            if (_sw == null)
-            {
-                _sw = new Stopwatch();
-                _sw.Start();
-            }
-        }
-
-        public Func<object[], Task> OnExecute { get; set; }
-
-        public Action<CommandState> OnStateChanged
-        {
-            set
-            {
-                _stateChanged = value;
-                BeginTimer();
-            }
-        }
-
-        public TimeSpan Elapsed => _sw?.Elapsed ?? TimeSpan.Zero;
-
-        public Uri AssignedEndpoint { get; set; } = EndpointConstants.UnassignedEndpoint;
-
-        public virtual RedisKey Key { get; }
-
-        public bool RequireMaster { get; }
-
         public bool CanBeCompleted => !(_completionSource.Task.IsCanceled || _completionSource.Task.IsCompleted || _completionSource.Task.IsFaulted);
-
-        public string CommandText { get; }
-
-        public int AttemptSequence { get; set; }
 
         public async Task Execute()
         {
@@ -77,7 +38,7 @@ namespace RedisTribute.Io.Commands
             }
         }
 
-        public virtual void Complete(IRedisObject redisObject)
+        public bool SetResult(IRedisObject redisObject)
         {
             try
             {
@@ -86,7 +47,7 @@ namespace RedisTribute.Io.Commands
                     if (_completionSource.TrySetException(TranslateError(err)))
                         FireStateChange(CommandStatus.Faulted);
 
-                    return;
+                    return true;
                 }
 
                 if (_completionSource.TrySetResult(TranslateResult(redisObject)))
@@ -97,10 +58,12 @@ namespace RedisTribute.Io.Commands
                 if (_completionSource.TrySetException(ex))
                     FireStateChange(CommandStatus.Faulted);
             }
+
+            return true;
         }
 
 
-        public void Abandon(Exception ex)
+        public virtual void Abandon(Exception ex)
         {
             if (ex is TaskCanceledException)
             {
@@ -124,21 +87,8 @@ namespace RedisTribute.Io.Commands
 
         protected virtual CommandParameters GetArgs() => Key.IsNull ? new[] { CommandText } : new[] { CommandText, (object)Key.Bytes };
 
-        protected virtual Exception TranslateError(RedisError err)
-        {
-            if (ObjectMovedException.TryParse(err.Message, out var ex))
-            {
-                return ex;
-            }
-
-            return new RedisServerException(err.Message);
-        }
+        protected virtual Exception TranslateError(RedisError err) => err.AsException();
 
         protected abstract T TranslateResult(IRedisObject redisObject);
-
-        void FireStateChange(CommandStatus status)
-        {
-            _stateChanged?.Invoke(new CommandState(Elapsed, status, this));
-        }
     }
 }

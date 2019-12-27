@@ -13,7 +13,9 @@ namespace RedisTribute.Types
 
         public RedisString(byte[] value)
         {
-            _dataStream = StreamPool.Instance.CreateReadonly(value);
+            IsNull = value == null;
+
+            _dataStream = IsNull ? StreamPool.Instance.Null : StreamPool.Instance.CreateReadonly(value);
             _materializedBytes = new Lazy<byte[]>(() => value);
         }
 
@@ -23,13 +25,15 @@ namespace RedisTribute.Types
 
             _dataStream = sharedStream;
             _materializedBytes = new Lazy<byte[]>(() => sharedStream.ToArray());
+
+            IsNull = false;
         }
 
         public byte[] Value => _materializedBytes.Value;
 
         public bool IsComplete => true;
 
-        public bool IsNull => false;
+        public bool IsNull { get; }
 
         public RedisType Type => RedisType.String;
 

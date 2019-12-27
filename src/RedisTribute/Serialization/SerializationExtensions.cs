@@ -5,11 +5,31 @@ using RedisTribute.Types.Primatives;
 using System;
 using System.Collections;
 using System.IO;
+using System.Xml;
 
 namespace RedisTribute.Serialization
 {
     static class SerializationExtensions
     {
+        public static string ToPrimativeString(this object value)
+        {
+            if (value == null)
+            {
+                return null;
+            }
+
+            switch (Type.GetTypeCode(value.GetType()))
+            {
+                case TypeCode.DateTime:
+                    return XmlConvert.ToString((DateTime)value, XmlDateTimeSerializationMode.Utc);
+                case TypeCode.Double:
+                    return ((double)value).ToString("C");
+
+            }
+
+            return value.ToString();
+        }
+
         public static bool AreBinaryEqual<T>(this ISerializerSettings serializerSettings, byte[] serializedData, T preSerializedValue)
         {
             var originalLocal = serializerSettings.SerializeAsBytes(preSerializedValue);
@@ -19,6 +39,11 @@ namespace RedisTribute.Serialization
         public static T Deserialize<T>(this ISerializerSettings serializerSettings, IRedisObject result)
         {
             return Deserialize(serializerSettings, serializerSettings.SerializerFactory.Create<T>(), result);
+        }
+
+        public static T Deserialize<T>(this ISerializerSettings serializerSettings, byte[] data)
+        {
+            return Deserialize(serializerSettings, serializerSettings.SerializerFactory.Create<T>(), data);
         }
 
         public static T Deserialize<T>(this ISerializerSettings serializerSettings, IObjectSerializer<T> serializer, IRedisObject result)
@@ -44,7 +69,7 @@ namespace RedisTribute.Serialization
 
         public static T Deserialize<T>(this ISerializerSettings serializerSettings, IObjectSerializer<T> serializer, byte[] data)
         {
-            using(var ms = StreamPool.Instance.CreateReadonly(data))
+            using (var ms = StreamPool.Instance.CreateReadonly(data))
             {
                 return serializerSettings.Deserialize(serializer, ms);
             }

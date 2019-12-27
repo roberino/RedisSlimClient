@@ -16,16 +16,22 @@ namespace RedisTribute.Types
         readonly ConcurrentDictionary<string, ValueState> _values;
         readonly IHashSetClient _client;
         readonly ISerializerSettings _serializerSettings;
+        readonly IAsyncLockStrategy<IAsyncLock> _lockStrategy;
         readonly IObjectSerializer<T> _serializer;
         readonly AsyncLock _lock;
 
-        internal RedisHashSet(RedisKey key, IHashSetClient client, ISerializerSettings serializerSettings, IDictionary<string, byte[]> originalValues = null)
+        internal RedisHashSet(RedisKey key,
+            IHashSetClient client,
+            ISerializerSettings serializerSettings,
+            IDictionary<string, byte[]> originalValues = null,
+            IAsyncLockStrategy<IAsyncLock> lockStrategy = null)
         {
             Key = key;
 
             _lock = new AsyncLock();
             _client = client;
             _serializerSettings = serializerSettings;
+            _lockStrategy = lockStrategy ?? new LocalLockStrategy(TimeSpan.FromSeconds(5));
             _serializer = serializerSettings.SerializerFactory.Create<T>();
 
             _values = new ConcurrentDictionary<string, ValueState>();
@@ -40,9 +46,11 @@ namespace RedisTribute.Types
             }
         }
 
-        public static async Task<RedisHashSet<T>> CreateAsync(RedisKey key, IHashSetClient client, ISerializerSettings serializerSettings, CancellationToken cancellation = default)
+        public static async Task<RedisHashSet<T>> CreateAsync(RedisKey key, 
+            IHashSetClient client, ISerializerSettings serializerSettings, 
+            IAsyncLockStrategy<IAsyncLock> lockStrategy = null, CancellationToken cancellation = default)
         {
-            var hashSet = new RedisHashSet<T>(key, client, serializerSettings);
+            var hashSet = new RedisHashSet<T>(key, client, serializerSettings, lockStrategy: lockStrategy);
 
             await hashSet.RefreshAsync(cancellation);
 
@@ -164,7 +172,7 @@ namespace RedisTribute.Types
 
         public async Task RefreshAsync(CancellationToken cancellation = default)
         {
-            using (await _lock.LockAsync())
+            using (await _lockStrategy.AquireLockAsync($"$$_HashLock:{Id}", cancellation: cancellation))
             {
                 var originalValues = await _client.GetAllHashFieldsAsync(Key.ToString(), cancellation);
 
@@ -212,6 +220,14 @@ namespace RedisTribute.Types
             _values.Clear();
         }
 
+        public void RevertChanges()
+        {
+            foreach(var x in _values.Where(v => v.Value.IsDirty))
+            {
+                x.Value.Revert();
+            }
+        }
+
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
         class ValueState
@@ -228,7 +244,7 @@ namespace RedisTribute.Types
                 IsNew = true;
             }
 
-            public bool IsNew { get; }
+            public bool IsNew { get; private set; }
 
             public bool IsDeleted { get; private set; }
 
@@ -256,6 +272,17 @@ namespace RedisTribute.Types
                 _newValue = default;
                 IsDirty = false;
                 IsDeleted = false;
+                IsNew = false;
+            }
+
+            public void Revert()
+            {
+                if (!IsNew)
+                {
+                    _newValue = default;
+                    IsDeleted = false;
+                    IsDirty = false;
+                }
             }
 
             public bool IsDirty { get; private set; }

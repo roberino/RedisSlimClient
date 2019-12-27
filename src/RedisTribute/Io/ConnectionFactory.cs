@@ -10,6 +10,15 @@ namespace RedisTribute.Io
 {
     class ConnectionFactory
     {
+        readonly Func<ICommandQueue> _queueFactory;
+        readonly PipelineMode? _requiredPipelineMode;
+
+        public ConnectionFactory(Func<ICommandQueue> queueFactory = null, PipelineMode? requiredPipelineMode = null)
+        {
+            _queueFactory = queueFactory ?? (() => new CommandQueue());
+            _requiredPipelineMode = requiredPipelineMode;
+        }
+
         public ICommandRouter Create(ClientConfiguration configuration)
         {
             var eps = Enumerable.Range(1, configuration.ConnectionPoolSize).SelectMany(n => configuration.ServerEndpoints).ToArray();
@@ -22,13 +31,14 @@ namespace RedisTribute.Io
             return new ConnectionPool(eps.Select(e => CreateSingleRouter(configuration, e)).ToArray());
         }
 
-        static ICommandRouter CreateSingleRouter(ClientConfiguration configuration, Uri endPoint)
+        ICommandRouter CreateSingleRouter(ClientConfiguration configuration, Uri endPoint)
         {
             ConnectionInitialiser connectionInit;
 
+            var pipelineMode = _requiredPipelineMode.GetValueOrDefault(configuration.PipelineMode);
             var endPointInfo = new ServerEndPointInfo(endPoint.Host, endPoint.Port, configuration.NetworkConfiguration.PortMappings.Map(endPoint.Port), configuration.NetworkConfiguration.DnsResolver);
 
-            if (configuration.PipelineMode == PipelineMode.AsyncPipeline || configuration.PipelineMode == PipelineMode.Default)
+            if (pipelineMode == PipelineMode.AsyncPipeline || pipelineMode == PipelineMode.Default)
             {
                 connectionInit = new ConnectionInitialiser(endPointInfo, configuration.NetworkConfiguration, configuration, CreateAsyncPipe(configuration), configuration.TelemetryWriter, configuration.ConnectTimeout);
             }
@@ -40,16 +50,7 @@ namespace RedisTribute.Io
             return new CommandRouter(connectionInit);
         }
 
-        static Func<IServerEndpointFactory, Task<ICommandPipeline>> CreateSyncPipe(ClientConfiguration configuration)
-        {
-            return ep =>
-            {
-                var socket = SocketFactory.CreateSocket(configuration, ep);
-                return SyncCommandPipeline.CreateAsync(socket);
-            };
-        }
-
-        static Func<IServerEndpointFactory, Task<ICommandPipeline>> CreateAsyncPipe(ClientConfiguration configuration)
+        Func<IServerEndpointFactory, Task<ICommandPipeline>> CreateAsyncPipe(ClientConfiguration configuration)
         {
             return async ep =>
             {
@@ -60,7 +61,16 @@ namespace RedisTribute.Io
                 socket.AttachTelemetry(configuration.TelemetryWriter);
                 socketPipeline.AttachTelemetry(configuration.TelemetryWriter);
 
-                return new AsyncCommandPipeline(socketPipeline, socket, configuration.Scheduler, configuration.TelemetryWriter);
+                return new AsyncCommandPipeline(socketPipeline, socket, configuration.Scheduler, configuration.TelemetryWriter, _queueFactory());
+            };
+        }
+
+        static Func<IServerEndpointFactory, Task<ICommandPipeline>> CreateSyncPipe(ClientConfiguration configuration)
+        {
+            return ep =>
+            {
+                var socket = SocketFactory.CreateSocket(configuration, ep);
+                return SyncCommandPipeline.CreateAsync(socket);
             };
         }
     }

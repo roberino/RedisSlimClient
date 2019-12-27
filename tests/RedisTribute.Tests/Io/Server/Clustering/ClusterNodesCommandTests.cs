@@ -16,7 +16,7 @@ namespace RedisTribute.UnitTests.Io.Server.Clustering
 
             var str = new RedisString("ClusterNodesResponse.csv".OpenBinaryResourceBytes());
 
-            cmd.Complete(str);
+            cmd.SetResult(str);
 
             var result = await cmd;
 

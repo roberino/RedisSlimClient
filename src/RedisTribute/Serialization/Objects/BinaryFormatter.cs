@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 
 namespace RedisTribute.Serialization
 {
@@ -68,6 +69,16 @@ namespace RedisTribute.Serialization
         public byte[] ToBytes(decimal value)
         {
             return BitConverter.GetBytes((double)value);
+        }
+
+        public TimeSpan ToTimeSpan(byte[] data)
+        {
+            return TimeSpan.Parse(Encoding.ASCII.GetString(data));
+        }
+
+        public byte[] ToBytes(TimeSpan time)
+        {
+            return Encoding.ASCII.GetBytes(time.ToString());
         }
     }
 }

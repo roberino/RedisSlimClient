@@ -106,6 +106,11 @@ namespace RedisTribute.Serialization
             return ReadPrimativeValue(name, _dataFormatter.ToDateTime);
         }
 
+        public TimeSpan ReadTimeSpan(string name)
+        {
+            return ReadPrimativeValue(name, _dataFormatter.ToTimeSpan);
+        }
+
         public int ReadInt32(string name)
         {
             return ReadPrimativeValue(name, _dataFormatter.ToInt32);
@@ -139,6 +144,15 @@ namespace RedisTribute.Serialization
         public float ReadFloat(string name)
         {
             return (float)ReadPrimativeValue(name, _dataFormatter.ToDouble);
+        }
+
+        public T ReadEnum<T>(string name, T defaultValue)
+        {
+            return ReadPrimativeValue(name, x =>
+            {
+                return (x == null || x.Length == 0) ? defaultValue : (T)Enum.Parse(typeof(T), Encoding.ASCII.GetString(x));
+            });
+            //return ReadPrimativeValue(name, x => (x == null || x.Length == 0) ? defaultValue : (T)Enum.Parse(typeof(T), Encoding.ASCII.GetString(x)));
         }
 
         public T ReadObject<T>(string name, T defaultValue)

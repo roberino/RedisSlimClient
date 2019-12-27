@@ -19,7 +19,9 @@ namespace RedisTribute.Serialization
             [typeof(IDictionary<string, string>)] = new DictionarySerializer<string>(),
             [typeof(Dictionary<string, string>)] = new DictionarySerializer<string>(),
             [typeof(KeyValuePair<string, string>)] = new KeyValueSerializer<string>(),
-            [typeof(string)] = new StringSerializer(Encoding.UTF8)
+            [typeof(string)] = new StringSerializer(Encoding.UTF8),
+            [typeof(byte[])] = new ByteArraySerializer(),
+            [typeof(TimeSpan)] = TimeSpanSerializer.Instance
         };
 
         SerializerFactory()
@@ -46,6 +48,11 @@ namespace RedisTribute.Serialization
                 }
 
                 return TypeProxy<T>.Instance;
+            }
+
+            if (type.IsEnum)
+            {
+                return EnumSerializer<T>.Instance;
             }
 
             return PrimativeSerializer.CreateSerializer<T>();
