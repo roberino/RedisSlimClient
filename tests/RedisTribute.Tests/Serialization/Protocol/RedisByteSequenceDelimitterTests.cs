@@ -25,6 +25,22 @@ namespace RedisTribute.UnitTests.Serialization.Protocol
             Assert.Equal(expected, next.result);
         }
 
+        [Fact]
+        public void Delimit_NullStringFollowedByValue_ReturnsCorrectPosition()
+        {
+            var delimitter = new RedisByteSequenceDelimitter();
+
+            var bytes = BytesFromString("$0\r\n$3\r\n123\r\n");
+
+            var seg1 = GetNext(delimitter, bytes);
+            var seg2 = GetNext(delimitter, seg1.remaining);
+            var seg3 = GetNext(delimitter, seg2.remaining);
+
+            Assert.Equal("$0\r\n", seg1.result);
+            Assert.Equal("$3\r\n", seg2.result);
+            Assert.Equal("123\r\n", seg3.result);
+        }
+
         [Theory]
         [InlineData("$4\r\nabcd\r\n", "$4\r\n", "abcd\r\n")]
         [InlineData("$4\r\nabcd\r\n+xyz", "$4\r\n", "abcd\r\n")]

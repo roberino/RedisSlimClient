@@ -43,6 +43,10 @@ namespace RedisTribute
 
         public Task<bool> SetAsync(string key, string data, SetOptions options = default, CancellationToken cancellation = default) => _controller.GetResponse(new SetCommand(key, _controller.Configuration.Encoding.GetBytes(data), options), cancellation);
 
+        public Task<bool> SetAsync(string key, long data, SetOptions options = default, CancellationToken cancellation = default) => _controller.GetResponse(new SetCommand(key, Encoding.ASCII.GetBytes(data.ToString()), options), cancellation);
+
+        public Task<long> IncrementAsync(string key, CancellationToken cancellation = default) => _controller.GetResponse(new IncrCommand(key), cancellation);
+
         public Task<bool> SetAsync<T>(string key, T obj, SetOptions options = default, CancellationToken cancellation = default)
             => _controller.GetResponse(new ObjectSetCommand<T>(key, _controller.Configuration, obj, options), cancellation);
 
@@ -54,6 +58,16 @@ namespace RedisTribute
 
         public Task<string> GetStringAsync(string key, CancellationToken cancellation = default)
             => _controller.GetResponse(() => new GetCommand(key), cancellation, ResultConvertion.AsString);
+
+        public Task<long> GetLongAsync(string key, CancellationToken cancellation = default)
+            => _controller.GetResponse(() => new GetCommand(key), cancellation, ResultConvertion.AsLong);
+
+        public async Task<ICounter> GetCounter(string key, CancellationToken cancellation = default)
+        {
+            await SetAsync(key, 0L, new SetOptions(Expiry.Infinite, SetCondition.SetKeyIfNotExists));
+
+            return new Counter(key, this);
+        }
 
         public async Task<IDictionary<string, string>> GetStringsAsync(IReadOnlyCollection<string> keys, CancellationToken cancellation = default)
         {

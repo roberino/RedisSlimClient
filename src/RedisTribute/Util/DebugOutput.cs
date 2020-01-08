@@ -10,7 +10,8 @@ namespace RedisTribute.Util
         public static void Dump(byte[] data, int length)
         {
 #if DEBUG
-            Output?.Invoke(Encoding.ASCII.GetString(data, 0, length));
+            var msg = $"DUMP:{Encoding.ASCII.GetString(data, 0, length)}";
+            Output?.Invoke(msg);
 #endif
         }
     }

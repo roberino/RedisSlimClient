@@ -5,6 +5,7 @@ using System;
 using System.Buffers;
 using System.Threading.Tasks;
 using RedisTribute.Telemetry;
+using System.Text;
 
 namespace RedisTribute.Io
 {

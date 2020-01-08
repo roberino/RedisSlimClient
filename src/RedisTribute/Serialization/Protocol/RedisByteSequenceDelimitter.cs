@@ -88,7 +88,7 @@ namespace RedisTribute.Serialization.Protocol
             if (_readMode == ReadMode.BulkStringLength)
             {
                 _currentReadLength = ParseLength(sequence);
-                _readMode = ReadMode.BulkStringContent;
+                _readMode = _currentReadLength == 0 ? ReadMode.None : ReadMode.BulkStringContent;
                 _startBulkString = 0;
                 _currentPosition = 0;
             }

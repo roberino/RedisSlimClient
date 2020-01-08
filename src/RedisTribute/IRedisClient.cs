@@ -1,5 +1,6 @@
 ﻿using RedisTribute.Configuration;
 using RedisTribute.Io.Server;
+using RedisTribute.Types;
 using RedisTribute.Types.Graphs;
 using RedisTribute.Types.Messaging;
 using System;
@@ -30,6 +31,10 @@ namespace RedisTribute
         Task<long> DeleteAsync(string key, CancellationToken cancellation = default);
         Task<bool> SetAsync(string key, byte[] data, SetOptions options = default, CancellationToken cancellation = default);
         Task<bool> SetAsync(string key, string data, SetOptions options = default, CancellationToken cancellation = default);
+        Task<bool> SetAsync(string key, long data, SetOptions options = default, CancellationToken cancellation = default);
+        Task<long> GetLongAsync(string key, CancellationToken cancellation = default);
+        Task<long> IncrementAsync(string key, CancellationToken cancellation = default);
+        Task<ICounter> GetCounter(string key, CancellationToken cancellation = default);
     }
 
     public interface IRedisObjectReaderWriter

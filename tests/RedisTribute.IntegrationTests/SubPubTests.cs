@@ -8,6 +8,7 @@ using Xunit.Abstractions;
 using RedisTribute.Stubs;
 using System.Collections.Generic;
 using RedisTribute.Types.Messaging;
+using System.Collections.Concurrent;
 
 namespace RedisTribute.IntegrationTests
 {
@@ -44,6 +45,7 @@ namespace RedisTribute.IntegrationTests
         [Theory]
         [InlineData(PipelineMode.Sync, ConfigurationScenario.NonSslBasic)]
         [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
+        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslClusterSet)]
         public async Task PublishAsync_OneSubscriber_SubscriberReceivesMessage(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
         {
             var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine);
@@ -77,6 +79,47 @@ namespace RedisTribute.IntegrationTests
                 await subscription.Unsubscribe();
 
                 Assert.Equal("Hey", msg);
+            }
+        }
+
+        [Theory]
+        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslClusterSet)]
+        public async Task PublishAsync_OneSubscriberTwoChannels_SubscriberReceivesMessage(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
+        {
+            var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine);
+
+            config.HealthCheckInterval = TimeSpan.Zero;
+
+            using (var client = config.CreateClient())
+            using (var subClient = config.CreateSubscriberClient())
+            using (var waitHandle = new ManualResetEvent(false))
+            {
+                await client.PingAllAsync();
+                await subClient.PingAllAsync();
+
+                var msg = new ConcurrentDictionary<string, string>();
+
+                var channel1 = Guid.NewGuid().ToString().Substring(0, 6);
+                var channel2 = Guid.NewGuid().ToString().Substring(0, 6);
+
+                var subscription = await subClient.SubscribeAsync(new[] { channel1, channel2 }, m =>
+                {
+                    msg[m.Channel] = m.ToString();
+
+                    waitHandle.Set();
+
+                    return Task.CompletedTask;
+                });
+
+                await client.PublishStringAsync(channel1, "Hey");
+                await client.PublishStringAsync(channel2, "You");
+
+                waitHandle.WaitOne(15000);
+
+                await subscription.Unsubscribe();
+
+                Assert.Equal("Hey", msg[channel1]);
+                Assert.Equal("You", msg[channel2]);
             }
         }
 
