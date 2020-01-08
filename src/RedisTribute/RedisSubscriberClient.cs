@@ -255,7 +255,7 @@ namespace RedisTribute
 
         Task<IDistributedLock> AquireLockAsync(string key, LockOptions options = default)
         {
-            return _redisLock.Value.AquireLockAsync($"$$_msglock:{key}", options);
+            return _redisLock.Value.AquireLockAsync(KeySpace.Default.GetMessageLockKey(key), options);
         }
     }
 }

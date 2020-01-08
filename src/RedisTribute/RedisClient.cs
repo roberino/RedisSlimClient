@@ -64,9 +64,11 @@ namespace RedisTribute
 
         public async Task<ICounter> GetCounter(string key, CancellationToken cancellation = default)
         {
-            await SetAsync(key, 0L, new SetOptions(Expiry.Infinite, SetCondition.SetKeyIfNotExists));
+            var qkey = KeySpace.Default.GetCounterKey(key);
 
-            return new Counter(key, this);
+            await SetAsync(qkey, 0L, new SetOptions(Expiry.Infinite, SetCondition.SetKeyIfNotExists));
+
+            return new Counter(qkey, this);
         }
 
         public async Task<IDictionary<string, string>> GetStringsAsync(IReadOnlyCollection<string> keys, CancellationToken cancellation = default)
@@ -162,7 +164,7 @@ namespace RedisTribute
 
         public Task<IDistributedLock> AquireLockAsync(string key, LockOptions options = default, CancellationToken cancellation = default)
         {
-            return _redisLock.AquireLockAsync($"$$_redlock:{key}", options, cancellation);
+            return _redisLock.AquireLockAsync(KeySpace.Default.GetLockKey(key), options, cancellation);
         }
 
         public IGraph GetGraph(string graphNamespace)

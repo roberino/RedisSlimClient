@@ -60,7 +60,7 @@ namespace RedisTribute.IntegrationTests
 
                 var id = Guid.NewGuid().ToString();
 
-                await client.SetAsync(id, "123");
+                await client.SetAsync($"counter://" + id, "123");
 
                 var counter = await client.GetCounter(id);
 

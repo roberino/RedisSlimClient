@@ -101,20 +101,25 @@ namespace RedisTribute.IntegrationTests
 
                 var channel1 = Guid.NewGuid().ToString().Substring(0, 6);
                 var channel2 = Guid.NewGuid().ToString().Substring(0, 6);
+                var count = 0;
 
                 var subscription = await subClient.SubscribeAsync(new[] { channel1, channel2 }, m =>
                 {
                     msg[m.Channel] = m.ToString();
 
-                    waitHandle.Set();
+                    if (Interlocked.Increment(ref count) == 2)
+                    {
+                        waitHandle.Set();
+                    }
 
                     return Task.CompletedTask;
                 });
 
-                await client.PublishStringAsync(channel1, "Hey");
-                await client.PublishStringAsync(channel2, "You");
+                await Task.WhenAll(
+                    client.PublishStringAsync(channel1, "Hey"), 
+                    client.PublishStringAsync(channel2, "You"));
 
-                waitHandle.WaitOne(15000);
+                waitHandle.WaitOne(3000);
 
                 await subscription.Unsubscribe();
 
