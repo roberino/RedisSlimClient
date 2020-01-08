@@ -29,8 +29,8 @@ namespace RedisTribute
         }
 
         internal static ISubscriptionClient Create(ClientConfiguration configuration, Action onDisposing = null) =>
-            new RedisSubscriberClient(new RedisController(configuration, 
-                e => new ConnectionFactory(() => new SubscriberCommandQueue(), PipelineMode.AsyncPipeline).Create(e), onDisposing), 
+            new RedisSubscriberClient(new RedisController(configuration,
+                e => new ConnectionFactory(() => new SubscriberCommandQueue(), PipelineMode.AsyncPipeline).Create(e), onDisposing),
                 () => new RedisController(configuration, c => new ConnectionFactory().Create(c)));
 
         public string ClientName => _controller.Configuration.ClientName;
@@ -56,22 +56,21 @@ namespace RedisTribute
                 {
                     try
                     {
-                        using (var msgLock = await AquireLockAsync(msg.Id, new LockOptions(msg.Header.LockTime, false)))
-                        {
-                            var op = WriteTelemetry(msg);
+                        var msgLock = await AquireLockAsync(msg.Id, new LockOptions(msg.Header.LockTime, false));
 
-                            try
-                            {
-                                await handler(msg);
-                                WriteTelemetryEnd(msg, sw.Elapsed, op);
-                                return;
-                            }
-                            catch(Exception ex)
-                            {
-                                await msgLock.ReleaseLockAsync();
-                                WriteTelemetryEnd(msg, sw.Elapsed, op, ex);
-                                throw;
-                            }
+                        var op = WriteTelemetry(msg);
+
+                        try
+                        {
+                            await handler(msg);
+                            WriteTelemetryEnd(msg, sw.Elapsed, op);
+                            return;
+                        }
+                        catch (Exception ex)
+                        {
+                            await msgLock.ReleaseLockAsync();
+                            WriteTelemetryEnd(msg, sw.Elapsed, op, ex);
+                            throw;
                         }
                     }
                     catch (SynchronizationLockException)
@@ -201,7 +200,7 @@ namespace RedisTribute
 
                     await unsubscriber.UnsubscribeWithoutRemoteCommand();
 
-                    while (true)
+                    while (!unsubscriber.Unsubscribed)
                     {
                         try
                         {
@@ -242,7 +241,9 @@ namespace RedisTribute
             public bool Unsubscribed => Interlocked.Read(ref _unFlags) == 1;
 
             public SubscribeCommand CurrentCommand { get; set; }
+
             public Func<SubscribeCommand, bool, CancellationToken, Task> Unsubscribing;
+
             public Task Unsubscribe(CancellationToken cancellation)
             {
                 Interlocked.Exchange(ref _unFlags, 1);
