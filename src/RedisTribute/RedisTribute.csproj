@@ -1,8 +1,8 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;netcoreapp2.1;netcoreapp2.2</TargetFrameworks>
     <LangVersion>7.2</LangVersion>
-    <Version>0.2.1-beta0017</Version>
+    <Version>0.2.1-beta0021</Version>
     <Authors>Rob Eyres</Authors>
     <Company />
     <Description>A slim and configurable DotNet Standard client for Redis</Description>
