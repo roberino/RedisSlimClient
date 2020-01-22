@@ -63,6 +63,53 @@ namespace RedisTribute.IntegrationTests
 
         [Theory]
         [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
+        public async Task Tuple_GetSet_CanStoreAndRetrieve(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
+        {
+            var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine);
+
+            using (var client = config.CreateClient())
+            {
+                await client.PingAsync();
+
+                var key = Guid.NewGuid().ToString();
+
+                await client.SetAsync(key, (x : 123, y : 456, z : 789));
+
+                var result = await client.GetAsync(key, (x: 0, y: 0, z: 0));
+                var result2 = await client.GetAsync(key, (x: 0, y: 0));
+                var value = result.AsValue();
+                var value2 = result2.AsValue();
+
+                Assert.Equal(123, value.x);
+                Assert.Equal(456, value.y);
+                Assert.Equal(789, value.z);
+                Assert.Equal(123, value2.x);
+                Assert.Equal(456, value2.y);
+            }
+        }
+
+        [Theory]
+        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
+        public async Task Tuple_GetMissingValue_ReturnsDefault(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
+        {
+            var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine);
+
+            using (var client = config.CreateClient())
+            {
+                await client.PingAsync();
+
+                var result = await client.GetAsync(Guid.NewGuid().ToString(), (x: 987, y: 654, z: 321));
+
+                var value = result.AsValue();
+
+                Assert.Equal(987, value.x);
+                Assert.Equal(654, value.y);
+                Assert.Equal(321, value.z);
+            }
+        }
+
+        [Theory]
+        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
         public async Task XDocument_Serialise_SerialisedAsXmlContent(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
         {
             var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine);

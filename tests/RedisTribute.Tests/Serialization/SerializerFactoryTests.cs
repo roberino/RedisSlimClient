@@ -23,6 +23,56 @@ namespace RedisTribute.UnitTests.Serialization
         }
 
         [Fact]
+        public void WriteData_AnonType_ThrowsArgumentException()
+        {
+            Assert.Throws<ArgumentException>(() => WhenWritingObject(new { x = 123, y = "hey" }));
+
+            // TODO: 
+            //ThenOutputIsValid(x =>
+            //{
+            //    Assert.Equal(123, x.x);
+            //    Assert.Equal("hey", x.y);
+            //}, new { x = 0, y = "" });
+        }
+
+        [Fact]
+        public void WriteData_TupleType_WritesTupleElements()
+        {
+            WhenWritingObject((x: 123, y: "hey"));
+
+            ThenOutputIsValid<(int x, string y)>(x =>
+            {
+                Assert.Equal(123, x.x);
+                Assert.Equal("hey", x.y);
+            });
+        }
+
+        [Fact]
+        public void ReadData_TupleTypeWithExcessMembers_WritesTupleElements()
+        {
+            WhenWritingObject((x: 123, y: 456));
+
+            ThenOutputIsValid<(int x, int y, int z)>(x =>
+            {
+                Assert.Equal(123, x.x);
+                Assert.Equal(456, x.y);
+                Assert.Equal(0, x.z);
+            });
+        }
+
+        [Fact]
+        public void ReadData_TupleTypeWithLessMembers_WritesTupleElements()
+        {
+            WhenWritingObject((x: 123, y: 456, z : 789));
+
+            ThenOutputIsValid<(int x, int y)>(x =>
+            {
+                Assert.Equal(123, x.x);
+                Assert.Equal(456, x.y);
+            });
+        }
+
+        [Fact]
         public void WriteData_SimpleType_WritesPropertyData()
         {
             WhenWritingObject(new TestDtoWithString
@@ -308,6 +358,15 @@ namespace RedisTribute.UnitTests.Serialization
         }
 
         void ThenOutputIsValid<T>(Action<T> assertion = null)
+        {
+            ThenOutputIsValid();
+
+            var obj = ReadObject<T>();
+
+            assertion?.Invoke(obj);
+        }
+
+        void ThenOutputIsValid<T>(Action<T> assertion, T example)
         {
             ThenOutputIsValid();
 

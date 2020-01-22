@@ -4,7 +4,7 @@ using RedisTribute.Types;
 
 namespace RedisTribute.Io.Commands
 {
-    class ObjectGetCommand<T> : RedisCommand<T>
+    class ObjectGetCommand<T> : RedisCommand<(T value, bool found)>
     {
         static readonly bool IsPrimative = typeof(T).IsValueType;
 
@@ -17,19 +17,14 @@ namespace RedisTribute.Io.Commands
             _serializer = config.SerializerFactory.Create<T>();
         }
 
-        protected override T TranslateResult(IRedisObject result)
+        protected override (T value, bool found) TranslateResult(IRedisObject result)
         {
             if (result.Type == RedisType.Null)
             {
-                if (IsPrimative)
-                {
-                    return default;
-                }
-
-                throw new KeyNotFoundException();
+                return (default, false);
             }
 
-            return _configuration.Deserialize<T>(result);
+            return (_configuration.Deserialize<T>(result), true);
         }
     }
 }

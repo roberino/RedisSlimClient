@@ -40,6 +40,7 @@ namespace RedisTribute
     public interface IRedisObjectReaderWriter
     {
         Task<Result<T>> GetAsync<T>(string key, CancellationToken cancellation = default);
+        Task<Result<T>> GetAsync<T>(string key, T defaultValue, CancellationToken cancellation = default);
         Task<bool> SetAsync<T>(string key, T obj, SetOptions options = default, CancellationToken cancellation = default);
     }
 

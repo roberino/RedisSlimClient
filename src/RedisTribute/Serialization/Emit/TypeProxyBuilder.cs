@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 
@@ -10,19 +11,21 @@ namespace RedisTribute.Serialization.Emit
         readonly MethodBuilder _methodWriter;
         readonly IDictionary<Type, (MethodInfo prop, MethodInfo meth)> _extractMethods;
 
-        protected TypeProxyBuilder(TypeBuilder newType, MethodInfo method, IReadOnlyCollection<PropertyInfo> properties)
+        protected TypeProxyBuilder(TypeBuilder newType, MethodInfo method, IReadOnlyCollection<MemberInfo> properties)
         {
             _methodWriter = new MethodBuilder(newType, method);
             _extractMethods = new Dictionary<Type, (MethodInfo prop, MethodInfo meth)>();
 
-            Properties = properties;
+            Members = properties;
         }
 
         protected MethodInfo TargetMethod => _methodWriter.TargetMethod;
 
-        protected IReadOnlyCollection<PropertyInfo> Properties { get; }
+        protected IReadOnlyCollection<MemberInfo> Members { get; }
 
-        protected abstract void OnProperty(MethodBuilder methodBuilder, PropertyInfo property);
+        protected virtual void OnProperty(MethodBuilder methodBuilder, PropertyInfo property) { }
+
+        protected virtual void OnField(MethodBuilder methodBuilder, FieldInfo field) { }
 
         protected abstract void OnInit(MethodBuilder methodBuilder);
 
@@ -57,17 +60,32 @@ namespace RedisTribute.Serialization.Emit
 
             OnInit(_methodWriter);
 
-            foreach (var property in Properties)
+            foreach (var property in Members)
             {
                 _methodWriter.Scope(() =>
                 {
-                    OnProperty(_methodWriter, property);
+                    if (property is PropertyInfo p)
+                    {
+                        OnProperty(_methodWriter, p);
+                        return;
+                    }
+
+                    if (property is FieldInfo f)
+                    {
+                        OnField(_methodWriter, f);
+                        return;
+                    }
                 });
             }
 
             OnFinalize(_methodWriter);
 
-            _methodWriter.Return(returnLocal);
+            OnReturn(_methodWriter, returnLocal);
+        }
+
+        protected virtual void OnReturn(MethodBuilder methodBuilder, LocalVar returnLocal)
+        {
+            methodBuilder.Return(returnLocal);
         }
     }
 }

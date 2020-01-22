@@ -19,7 +19,7 @@ namespace RedisTribute
         public bool WasFound { get; }
         public bool WasCancelled { get; }
 
-        internal static async Task<Result<T>> FromOperation(Func<Task<T>> op, CancellationToken cancellation)
+        internal static async Task<Result<T>> FromOperation(Func<Task<(T value, bool found)>> op, CancellationToken cancellation)
         {
             if (cancellation.IsCancellationRequested)
             {
@@ -28,9 +28,9 @@ namespace RedisTribute
 
             try
             {
-                var value = await op();
+                var result = await op();
 
-                return value == null ? NotFound() : Found(value);
+                return !result.found ? NotFound() : Found(result.value);
             }
             catch (TaskCanceledException)
             {
