@@ -174,6 +174,10 @@ namespace RedisTribute
                 {
                     throw;
                 }
+                catch (ArgumentException)
+                {
+                    throw;
+                }
                 catch (TaskCanceledException)
                 {
                     throw;
@@ -247,6 +251,10 @@ namespace RedisTribute
                     }
                 }
                 catch (SerializationException)
+                {
+                    throw;
+                }
+                catch (ArgumentException)
                 {
                     throw;
                 }

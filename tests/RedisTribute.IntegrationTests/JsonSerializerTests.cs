@@ -1,7 +1,9 @@
 ﻿using RedisTribute.Configuration;
 using RedisTribute.Stubs;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -53,6 +55,30 @@ namespace RedisTribute.IntegrationTests
 
                 Assert.Equal(1, deleted);
             }
-        } 
+        }
+
+        [Theory]
+        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.SslBasic)]
+        public async Task UseJsonSerialization_TupleWithXmlGetAndSetAsync_CanSerialize(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
+        {
+            var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine).UseJsonSerialization();
+
+            using (var client = config.CreateClient())
+            {
+                await client.PingAsync();
+
+                var xml = XDocument.Parse("<data id='15'>x</data>");
+                var key = Guid.NewGuid().ToString();
+
+                await client.SetAsync(key, (x: "a", y: xml));
+
+                var result = await client.GetAsync<(string x, XDocument y)>(key);
+
+                var value = result.AsValue();
+
+                Assert.Equal("a", value.x);
+                Assert.Equal("15", value.y.Root.Attribute("id").Value);
+            }
+        }
     }
 }
