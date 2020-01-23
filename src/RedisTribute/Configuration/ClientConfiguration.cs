@@ -63,6 +63,7 @@ namespace RedisTribute.Configuration
         public Uri[] ServerEndpoints { get; private set; }
 
         public FallbackStrategy FallbackStrategy { get; set; } = FallbackStrategy.Retry;
+        public TimeSpan RetryBackoffTime { get; set; } = TimeSpan.FromMilliseconds(150);
 
         public TimeSpan HealthCheckInterval { get; set; } = TimeSpan.FromSeconds(5);
 

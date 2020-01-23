@@ -4,6 +4,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Xml.Linq;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -33,6 +34,21 @@ namespace RedisTribute.UnitTests.Serialization
             //    Assert.Equal(123, x.x);
             //    Assert.Equal("hey", x.y);
             //}, new { x = 0, y = "" });
+        }
+
+        [Fact]
+        public void WriteData_TupleWithXElement_WritesCorrectly()
+        {
+            var data = XDocument.Parse("<data id='3'>xxy</data>");
+            var value = (key: 123, data: data.Root);
+
+            WhenWritingObject(value);
+
+            ThenOutputIsValid<(int key, XElement data)>(x =>
+            {
+                Assert.Equal(123, x.key);
+                Assert.Equal("3", x.data.Attribute("id").Value);
+            });
         }
 
         [Fact]

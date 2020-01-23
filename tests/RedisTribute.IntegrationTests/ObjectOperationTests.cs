@@ -110,6 +110,30 @@ namespace RedisTribute.IntegrationTests
 
         [Theory]
         [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
+        public async Task TupleWithXElement_SetAndGet_ReturnsCorrectResult(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
+        {
+            var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine);
+
+            using (var client = config.CreateClient())
+            {
+                await client.PingAsync();
+
+                var key = Guid.NewGuid().ToString();
+
+                var data = XDocument.Parse("<data id='3'>123</data>");
+
+                await client.SetAsync(key, (name: "x", data: data.Root));
+
+                var result = await client.GetAsync<(string name, XElement data)>(key);
+
+                var value = result.AsValue();
+
+                Assert.Equal("3", value.data.Attribute("id").Value);
+            }
+        }
+
+        [Theory]
+        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
         public async Task XDocument_Serialise_SerialisedAsXmlContent(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
         {
             var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine);

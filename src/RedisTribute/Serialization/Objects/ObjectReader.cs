@@ -87,8 +87,7 @@ namespace RedisTribute.Serialization
 
             var str = (RedisString)obj.ToObjects().Single();
 
-            using (str)
-                return str.AsStream();
+            return str.AsStream();
         }
 
         public string ReadString(string name)
@@ -152,7 +151,6 @@ namespace RedisTribute.Serialization
             {
                 return (x == null || x.Length == 0) ? defaultValue : (T)Enum.Parse(typeof(T), Encoding.ASCII.GetString(x));
             });
-            //return ReadPrimativeValue(name, x => (x == null || x.Length == 0) ? defaultValue : (T)Enum.Parse(typeof(T), Encoding.ASCII.GetString(x)));
         }
 
         public T ReadObject<T>(string name, T defaultValue)
