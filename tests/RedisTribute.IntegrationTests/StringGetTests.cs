@@ -1,6 +1,7 @@
 ﻿using RedisTribute.Configuration;
-using RedisTribute.Types;
+using RedisTribute.Serialization;
 using System;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,6 +17,44 @@ namespace RedisTribute.IntegrationTests
         public StringGetTests(ITestOutputHelper output)
         {
             _output = output;
+        }
+
+        [Theory]
+        [InlineData(PipelineMode.Sync, ConfigurationScenario.NonSslBasic)]
+        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
+        public async Task GetStringAsync_MultipleConcurrentEntries_DataIntegrityMaintained(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
+        {
+            var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine, 5);
+
+            config.HealthCheckInterval = TimeSpan.Zero;
+
+            var entries = new ConcurrentDictionary<string, string>();
+
+            const int numberOfItems = 100;
+
+            using (var client = config.CreateClient())
+            {
+                await client.PingAsync();
+
+                await Task.WhenAll(Enumerable.Range(1, numberOfItems).Select(async n =>
+                {
+                    var id = Guid.NewGuid().ToString();
+                    var data = ByteGeneration.RandomBytes();
+
+                    entries[id] = data.hash;
+
+                    await client.SetAsync(id, data.data);
+                }));
+
+                Assert.Equal(numberOfItems, entries.Count);
+
+                await Task.WhenAll(entries.Select(async kv =>
+                {
+                    var data = await client.GetAsync(kv.Key);
+
+                    Assert.True(data.Verify(kv.Value), "Invalid entry");
+                }));
+            }
         }
 
         [Theory]

@@ -32,6 +32,8 @@ namespace RedisTribute.Types.Graphs
             Label = data.Label;
         }
 
+        public event Action Saved;
+
         public string Namespace => _nameResolver.Namespace;
         public string Id { get; }
         public string Label { get; set; }
@@ -94,6 +96,8 @@ namespace RedisTribute.Types.Graphs
             _nodeData[_nameResolver.GetLocation(GraphObjectType.Label, Id).PathAndQuery] = _serializerSettings.SerializeAsBytes(Label);
 
             await UpdateEdges(true, cancellation);
+
+            Saved?.Invoke();
         }
 
         public async Task UpdateEdges(bool traverse, CancellationToken cancellation = default)

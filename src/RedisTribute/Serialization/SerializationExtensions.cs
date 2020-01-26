@@ -5,11 +5,27 @@ using RedisTribute.Types.Primatives;
 using System;
 using System.Collections;
 using System.IO;
+using System.Runtime.Serialization;
+using System.Security.Cryptography;
 using System.Xml;
 
 namespace RedisTribute.Serialization
 {
-    static class SerializationExtensions
+    public static class SerializationExtensions
+    {
+        public static string CreateHash(this byte[] data)
+        {
+            using (var sha1 = new SHA1CryptoServiceProvider())
+            {
+                return Convert.ToBase64String(sha1.ComputeHash(data));
+            }
+        }
+
+        public static bool Verify(this byte[] data, string hash)
+            => string.Equals(data.CreateHash(), hash);
+    }
+
+    static class SerializationExtensionsInternal
     {
         public static string ToPrimativeString(this object value)
         {
@@ -110,6 +126,23 @@ namespace RedisTribute.Serialization
             {
                 var ms = StreamPool.Instance.CreateWritable(_currentMaxBufferSize);
 
+                void DisposeAndIncrementBuffer(IDisposable disposable, Exception ex)
+                {
+                    disposable.Dispose();
+
+                    lock (_lockObj)
+                    {
+                        var nextMaxBufferSize = _currentMaxBufferSize << 1;
+
+                        if (nextMaxBufferSize > MaxBufferSize)
+                        {
+                            throw new NotSupportedException($"Max buffer size of {MaxBufferSize} bytes exceeded", ex);
+                        }
+
+                        _currentMaxBufferSize = nextMaxBufferSize;
+                    }
+                }
+
                 try
                 {
                     var objWriter = new ObjectWriter(ms, _configuration.Encoding, null, _configuration.SerializerFactory);
@@ -118,19 +151,13 @@ namespace RedisTribute.Serialization
 
                     return ms;
                 }
-                catch (NotSupportedException)
+                catch (SerializationException ex) when  (ex.InnerException is NotSupportedException && ex.InnerException.Message.Contains("not expandable"))
                 {
-                    ms.Dispose();
-
-                    lock (_lockObj)
-                    {
-                        _currentMaxBufferSize = _currentMaxBufferSize << 1;
-
-                        if (_currentMaxBufferSize > MaxBufferSize)
-                        {
-                            throw new NotSupportedException();
-                        }
-                    }
+                    DisposeAndIncrementBuffer(ms, ex);
+                }
+                catch (NotSupportedException ex)
+                {
+                    DisposeAndIncrementBuffer(ms, ex);
                 }
 
                 return GetObjectData(objectData);
