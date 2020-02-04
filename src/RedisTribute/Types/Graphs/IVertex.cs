@@ -14,6 +14,7 @@ namespace RedisTribute.Types.Graphs
         IReadOnlyCollection<IEdge<T>> Edges { get; }
 
         IEdge<T> Connect(string vertexId, string edgeLabel = null, Direction direction = Direction.Out, double weight = 0);
+
         Task SaveAsync(CancellationToken cancellation = default);
     }
 }

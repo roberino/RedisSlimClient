@@ -58,12 +58,12 @@ namespace RedisTribute.Types.Graphs
                 {
                     if (!await visitor.ShouldTraverseAsync(e, cancellation))
                     {
-                        return false;
+                        return;
                     }
 
                     var ev = await e.TargetVertex.GetVertex(cancellation);
 
-                    return await visitor.VisitAsync(ev, cancellation);
+                    await ev.TraverseAsync(visitor, cancellation);
                 });
 
                 await Task.WhenAll(tasks);
@@ -71,24 +71,7 @@ namespace RedisTribute.Types.Graphs
         }
 
         public IEdge<T> Connect(string vertexId, string edgeLabel = null, Direction direction = Direction.Out, double weight = 1)
-            => Connect(CreateEdgeId(), vertexId, edgeLabel, direction, weight);
-
-        public IEdge<T> Connect(string edgeId, string vertexId, string edgeLabel = null, Direction direction = Direction.Out, double weight = 1)
-        {
-            lock (_edges)
-            {
-                if (_edges.Any(e => string.Equals(e.Label, edgeLabel) && string.Equals(e.TargetVertex.Id, vertexId)))
-                {
-                    throw new InvalidOperationException($"Edge already exists: {edgeLabel} => {vertexId}");
-                }
-
-                var newEdge = _edgeFactory.Create(edgeId, vertexId, edgeLabel, direction, weight);
-
-                _edges.Add(newEdge);
-
-                return newEdge;
-            }
-        }
+            => Connect(CreateEdgeId(Id, vertexId), vertexId, false, edgeLabel, direction, weight);
 
         public async Task SaveAsync(CancellationToken cancellation = default)
         {
@@ -145,7 +128,7 @@ namespace RedisTribute.Types.Graphs
 
                         if (mirrorEdge == null)
                         {
-                            v.Connect(item.edge.Id, Id, item.edge.Label, item.edge.Direction.Compliment(), item.edge.Weight);
+                            v.Connect(item.edge.Id, Id, false, item.edge.Label, item.edge.Direction.Compliment(), item.edge.Weight);
                         }
                         else
                         {
@@ -177,16 +160,29 @@ namespace RedisTribute.Types.Graphs
             }
         }
 
-        string CreateEdgeId()
-        {
-            while (true)
-            {
-                var id = Guid.NewGuid().ToString("N").Substring(0, 4);
+        string CreateEdgeId(string fromId, string toId) => $"{fromId}.{toId}";
 
-                if (!_edges.Any(e => e.Id == id))
+        IEdge<T> Connect(string edgeId, string vertexId, bool checkId, string edgeLabel = null, Direction direction = Direction.Out, double weight = 1)
+        {
+            if (checkId)
+                _nameResolver.ValidateId(edgeId);
+
+            lock (_edges)
+            {
+                var existing = _edges.FirstOrDefault(e => string.Equals(e.Id, edgeId));
+
+                if (existing != null)
                 {
-                    return id;
+                    existing.Weight += 1;
+
+                    return existing;
                 }
+
+                var newEdge = _edgeFactory.Create(edgeId, vertexId, edgeLabel, direction, weight);
+
+                _edges.Add(newEdge);
+
+                return newEdge;
             }
         }
 

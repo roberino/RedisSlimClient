@@ -8,12 +8,21 @@ namespace RedisTribute.Io.Commands
     {
         public HGetAllCommand(RedisKey key) : base("HGETALL", key)
         {
+            if (key.IsNull)
+            {
+                throw new ArgumentNullException(nameof(key));
+            }
         }
 
         protected override IDictionary<RedisKey, byte[]> TranslateResult(IRedisObject redisObject)
         {
             if(!(redisObject is RedisArray values))
             {
+                if (redisObject.IsNull)
+                {
+                    // return new Dictionary<RedisKey, byte[]>();
+                }
+
                 throw new Exception("Invalid response from server");
             }
 

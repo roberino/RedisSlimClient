@@ -23,6 +23,26 @@ namespace RedisTribute.Types.Graphs
 
         public Uri BaseUri { get; }
 
+        public void ValidateId(string id)
+        {
+            if (id == null)
+            {
+                throw new ArgumentNullException(nameof(id));
+            }
+            if (id.Length == 0)
+            {
+                throw new ArgumentException(nameof(id));
+            }
+            if (!char.IsLetter(id[0]))
+            {
+                throw new ArgumentException($"{nameof(id)} must start with a letter");
+            }
+            if (id.Any(c => !char.IsLetterOrDigit(c) || c == '_' || c == '-'))
+            {
+                throw new ArgumentException($"{nameof(id)} must only contain chars [a-z_-]");
+            }
+        }
+
         public bool IsType(string localPath, GraphObjectType type) => GetType(localPath) == type;
 
         public GraphObjectType GetType(string localPath) => GetType(new Uri(BaseUri, localPath));

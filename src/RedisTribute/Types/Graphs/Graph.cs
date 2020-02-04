@@ -20,6 +20,9 @@ namespace RedisTribute.Types.Graphs
         public async Task<IVertex<T>> GetVertexAsync<T>(string id, CancellationToken cancellation = default)
         {
             var nameResolver = new NameResolver(_options.Namespace);
+
+            nameResolver.ValidateId(id);
+
             var uri = nameResolver.GetLocation(GraphObjectType.Vertex, id);
             var edgeFactory = new EdgeFactory<T>(nameResolver, null, _serializerSettings, GetVertexAsync<T>);
             var nodeData = await _client.GetHashSetAsync<byte[]>(uri.ToString(), cancellation);

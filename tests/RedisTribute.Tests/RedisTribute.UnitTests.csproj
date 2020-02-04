@@ -9,6 +9,7 @@
   <ItemGroup>
     <EmbeddedResource Include="Io\Server\Clustering\ClusterNodesResponse.csv" />
     <EmbeddedResource Include="Io\Server\InfoResponse.txt" />
+    <EmbeddedResource Include="Serialization\Protocol\example1.txt" />
   </ItemGroup>
 
   <ItemGroup>

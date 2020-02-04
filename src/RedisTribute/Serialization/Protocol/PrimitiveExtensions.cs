@@ -1,8 +1,7 @@
-﻿using System;
-using System.Text;
-using RedisTribute.Types;
+﻿using RedisTribute.Types;
 using RedisTribute.Types.Primatives;
-using RedisTribute.Util;
+using System;
+using System.Text;
 
 namespace RedisTribute.Serialization
 {
@@ -32,8 +31,6 @@ namespace RedisTribute.Serialization
             {
                 return (type, data.ToInteger(1), 0);
             }
-
-            DebugOutput.Dump(data.ToArray(), data.Length);
 
             return (type, data.Length - 1, 1);
         }
