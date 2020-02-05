@@ -57,7 +57,7 @@ namespace RedisTribute.IntegrationTests
 
         [Theory]
         [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
-        public async Task CreateConnectedGraph(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
+        public async Task CreateConnectedWordGraph_TraverseAndExport(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
         {
             var config = Environments.GetConfiguration(configurationScenario, pipelineMode);
 
@@ -77,10 +77,8 @@ namespace RedisTribute.IntegrationTests
 
                 IVertex<bool> last = null;
 
-                foreach (var word in TextSample.Words().Take(3000))
+                foreach (var word in TextSample.Words().Take(300))
                 {
-                    //_output.WriteLine(word);
-
                     if (word != ".")
                     {
                         if (word0 == null)
@@ -114,11 +112,12 @@ namespace RedisTribute.IntegrationTests
                     count++;
                 }
 
-                var vertex0 = await graph.GetVertexAsync<bool>(word0);
-                var traversal = vertex0.ApplyQuery(Query<bool>.Create().In("i"));
-                var data = await vertex0.ExportGmlAsync();
+                var startWord = "alice";
+                var vertex0 = await graph.GetVertexAsync<bool>(startWord);
+                var traversal = vertex0.ApplyQuery(Query<bool>.Create().In(startWord));
+                var data = await traversal.ExportGmlAsync();
 
-                data.Save("c:\\dev\\query.xml");
+                _output.WriteLine(data.ToString());
             }
 
             _output.WriteLine($"Count: {count}");
