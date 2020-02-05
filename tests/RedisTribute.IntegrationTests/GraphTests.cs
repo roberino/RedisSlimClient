@@ -1,9 +1,7 @@
 ﻿using RedisTribute.Configuration;
 using RedisTribute.Types.Graphs;
-using RedisTribute.Util;
 using System;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
@@ -34,10 +32,10 @@ namespace RedisTribute.IntegrationTests
 
                 var graphNamespace = Guid.NewGuid().ToString();
 
-                var graph = client.GetGraph(graphNamespace);
+                var graph = client.GetGraph<string>(graphNamespace);
 
-                var x = await graph.GetVertexAsync<string>("x");
-                var y = await graph.GetVertexAsync<string>("y");
+                var x = await graph.GetVertexAsync("x");
+                var y = await graph.GetVertexAsync("y");
 
                 x.Label = "x";
 
@@ -45,8 +43,8 @@ namespace RedisTribute.IntegrationTests
 
                 await x.SaveAsync();
 
-                var results = await x.ExecuteAsync(Query<string>
-                    .Create()
+                var results = await x.ExecuteAsync(q =>
+                    q
                     .HasLabel("x")
                     .Out("eq")
                     .Build());
@@ -73,7 +71,7 @@ namespace RedisTribute.IntegrationTests
 
                 var graphNamespace = Guid.NewGuid().ToString();
 
-                var graph = client.GetGraph(graphNamespace);
+                var graph = client.GetGraph<bool>(graphNamespace);
 
                 IVertex<bool> last = null;
 
@@ -86,7 +84,7 @@ namespace RedisTribute.IntegrationTests
                             word0 = word;
                         }
 
-                        var next = await graph.GetVertexAsync<bool>(new string(word.Where(w => char.IsLetter(w)).ToArray()));
+                        var next = await graph.GetVertexAsync(new string(word.Where(w => char.IsLetter(w)).ToArray()));
 
                         next.Label = word;
 
@@ -113,8 +111,8 @@ namespace RedisTribute.IntegrationTests
                 }
 
                 var startWord = "alice";
-                var vertex0 = await graph.GetVertexAsync<bool>(startWord);
-                var traversal = vertex0.ApplyQuery(Query<bool>.Create().In(startWord));
+                var vertex0 = await graph.GetVertexAsync(startWord);
+                var traversal = vertex0.Filter(q => q.In(startWord));
                 var data = await traversal.ExportGmlAsync();
 
                 _output.WriteLine(data.ToString());

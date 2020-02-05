@@ -2,7 +2,6 @@
 using RedisTribute.Configuration;
 using RedisTribute.Serialization;
 using RedisTribute.Types.Graphs;
-using RedisTribute.Util;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -37,9 +36,9 @@ namespace RedisTribute.UnitTests.Types.Graphs
         [Fact]
         public async Task GetVertexAsync_SomeLabel_CallsPersistentDictionaryClient()
         {
-            var factory = new Graph(_client, _serializerSettings);
+            var factory = new Graph<string>(_client, _serializerSettings);
 
-            var vertex = await factory.GetVertexAsync<string>("x");
+            var vertex = await factory.GetVertexAsync("x");
 
             Assert.Equal("x", vertex.Id);
             Assert.Empty(vertex.Edges);
@@ -48,9 +47,9 @@ namespace RedisTribute.UnitTests.Types.Graphs
         [Fact]
         public async Task Connect_SomeLabel_AddsEdge()
         {
-            var factory = new Graph(_client, _serializerSettings);
+            var factory = new Graph<string>(_client, _serializerSettings);
 
-            var vertex = await factory.GetVertexAsync<string>("x");
+            var vertex = await factory.GetVertexAsync("x");
 
             vertex.Connect("y");
 
@@ -60,15 +59,15 @@ namespace RedisTribute.UnitTests.Types.Graphs
         [Fact]
         public async Task Connect_ThenSave_RemoteDataUpdated()
         {
-            var factory = new Graph(_client, _serializerSettings);
+            var factory = new Graph<string>(_client, _serializerSettings);
 
-            var vertex = await factory.GetVertexAsync<string>("x");
+            var vertex = await factory.GetVertexAsync("x");
 
             vertex.Connect("y");
 
             await vertex.SaveAsync();
 
-            var vertex2 = await factory.GetVertexAsync<string>("x");
+            var vertex2 = await factory.GetVertexAsync("x");
 
             Assert.Equal("y", vertex2.Edges.Single().TargetVertex.Id);
         }

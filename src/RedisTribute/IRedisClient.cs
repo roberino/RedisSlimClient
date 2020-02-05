@@ -58,7 +58,7 @@ namespace RedisTribute
 
     public interface IGraphClient
     {
-        IGraph GetGraph(string graphNamespace);
+        IGraph<T> GetGraph<T>(string graphNamespace);
     }
 
     public interface ISubscriptionClient : IRedisDiagnosticClient

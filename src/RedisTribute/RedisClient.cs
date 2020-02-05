@@ -174,14 +174,14 @@ namespace RedisTribute
             return _redisLock.AquireLockAsync(KeySpace.Default.GetLockKey(key), options, cancellation);
         }
 
-        public IGraph GetGraph(string graphNamespace)
+        public IGraph<T> GetGraph<T>(string graphNamespace)
         {
             if (string.IsNullOrEmpty(graphNamespace))
             {
                 throw new ArgumentNullException(nameof(graphNamespace));
             }
 
-            return new Graph(this, _controller.Configuration, new GraphOptions(graphNamespace));
+            return new Graph<T>(this, _controller.Configuration, new GraphOptions(graphNamespace));
         }
 
         public void Dispose()
