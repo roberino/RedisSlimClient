@@ -1,4 +1,5 @@
 ﻿using RedisTribute.Configuration;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -6,7 +7,7 @@ namespace RedisTribute.Types.Graphs
 {
     class Graph<T> : IGraph<T>
     {
-        // readonly IDictionary<string, IVertex<Task>>
+        readonly IDictionary<string, Vertex<T>> _cache;
         readonly IPersistentDictionaryProvider _client;
         readonly ISerializerSettings _serializerSettings;
         readonly GraphOptions _options;
@@ -16,6 +17,7 @@ namespace RedisTribute.Types.Graphs
             _client = client;
             _serializerSettings = serializerSettings;
             _options = options;
+            _cache = new Dictionary<string, Vertex<T>>();
         }
 
         public async Task<IVertex<T>> GetVertexAsync(string id, CancellationToken cancellation = default)

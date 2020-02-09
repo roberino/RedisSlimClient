@@ -83,7 +83,7 @@ namespace RedisTribute.Types.Graphs
             Saved?.Invoke();
         }
 
-        public async Task UpdateEdges(bool traverse, CancellationToken cancellation = default)
+        async Task UpdateEdges(bool traverse, CancellationToken cancellation = default)
         {
             var modified = _edges.Where(e => e.Dirty).Select(e => new
             {
