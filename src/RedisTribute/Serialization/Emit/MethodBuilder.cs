@@ -78,7 +78,7 @@ namespace RedisTribute.Serialization.Emit
 
             _locals[name] = (local.LocalIndex, type, false);
 
-            if (initialise)
+            if (initialise && returnTypeConstructor != null)
             {
                 Il.Emit(OpCodes.Newobj, returnTypeConstructor);
                 Il.Emit(OpCodes.Stloc, local.LocalIndex);
@@ -95,6 +95,32 @@ namespace RedisTribute.Serialization.Emit
         public void CallFunction(LocalVar outputLocal, object target, MethodInfo method, params object[] parameters)
         {
             CallMethod(outputLocal, target, method, parameters);
+        }
+
+        public void AccessField(LocalVar localStore, FieldInfo fld, object target)
+        {
+            EmitValue(target, fld.DeclaringType);
+            Il.Emit(OpCodes.Ldfld, fld);
+            StoreLocal(localStore, fld.FieldType);
+        }
+
+        public void SetField(FieldInfo fld, object value)
+        {
+            EmitValue(value, fld.FieldType);
+            Il.Emit(OpCodes.Stfld, fld);
+        }
+
+        public void NewObj(Type type, params object[] args)
+        {
+            var argTypes = args.Select(a => GetRuntimeType(a)).ToArray();
+            var ctor = type.GetConstructor(argTypes);
+
+            foreach(var arg in args)
+            {
+                EmitValue(arg);
+            }
+
+            Il.Emit(OpCodes.Newobj, ctor);
         }
 
         public void CallStaticFunction(LocalVar outputLocal, MethodInfo method, params object[] parameters)
@@ -150,22 +176,48 @@ namespace RedisTribute.Serialization.Emit
 
             Il.EmitCall(op, method, null);
 
-            if (localStore != null)
+            StoreLocal(localStore, method.ReturnType);
+        }
+
+        void StoreLocal(LocalVar localStore, Type expectedType)
+        {
+            if (localStore == null)
             {
-                if (method.ReturnType == typeof(void))
-                {
-                    throw new ArgumentException();
-                }
-
-                var localInf = _locals[localStore.Name];
-
-                if (localInf.type.IsClass && method.ReturnType.IsValueType)
-                {
-                    Il.Emit(OpCodes.Box, localInf.type);
-                }
-                
-                Il.Emit(OpCodes.Stloc, localInf.index);
+                return;
             }
+
+            if (expectedType == typeof(void))
+            {
+                throw new ArgumentException();
+            }
+
+            var localInf = _locals[localStore.Name];
+
+            if (localInf.type.IsClass && expectedType.IsValueType)
+            {
+                Il.Emit(OpCodes.Box, localInf.type);
+            }
+
+            Il.Emit(OpCodes.Stloc, localInf.index);
+        }
+
+        Type GetRuntimeType(object value)
+        {
+            if (value is ParameterInfo p)
+            {
+                return p.ParameterType;
+            }
+            if (value is LocalVar lv)
+            {
+                return lv.Type;
+            }
+
+            if (value == null)
+            {
+                return null;
+            }
+
+            return value.GetType();
         }
 
         void EmitValue(object value, Type requiredType = null)
@@ -182,7 +234,6 @@ namespace RedisTribute.Serialization.Emit
                     return;
                 case long l:
                     Il.Emit(OpCodes.Ldc_I8, l);
-                    return;
                     return;
                 case ParameterInfo p:
                     EmitLocal(_locals[p.Name], requiredType);

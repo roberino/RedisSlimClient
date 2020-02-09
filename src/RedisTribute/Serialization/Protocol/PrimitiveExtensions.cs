@@ -1,7 +1,7 @@
-﻿using System;
-using System.Text;
-using RedisTribute.Types;
+﻿using RedisTribute.Types;
 using RedisTribute.Types.Primatives;
+using System;
+using System.Text;
 
 namespace RedisTribute.Serialization
 {

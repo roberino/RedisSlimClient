@@ -1,6 +1,8 @@
 ﻿using RedisTribute.Configuration;
+using RedisTribute.Serialization;
 using RedisTribute.Stubs;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -58,6 +60,118 @@ namespace RedisTribute.IntegrationTests
 
                     Assert.Equal(1, deleted);
                 }
+            }
+        }
+
+
+
+        [Theory]
+        [InlineData(PipelineMode.Sync, ConfigurationScenario.NonSslBasic)]
+        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
+        public async Task GetAndSetAsync_MultipleConcurrentEntries_DataIntegrityMaintained(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
+        {
+            var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine, 5);
+
+            config.HealthCheckInterval = TimeSpan.Zero;
+
+            var entries = new ConcurrentDictionary<string, string>();
+
+            const int numberOfItems = 100;
+
+            using (var client = config.CreateClient())
+            {
+                await client.PingAsync();
+
+                await Task.WhenAll(Enumerable.Range(1, numberOfItems).Select(async n =>
+                {
+                    var id = Guid.NewGuid().ToString();
+                    var data = ByteGeneration.RandomBytes();
+
+                    entries[id] = data.hash;
+
+                    await client.SetAsync(id, (x: data.hash, y: data.data));
+                }));
+
+                Assert.Equal(numberOfItems, entries.Count);
+
+                await Task.WhenAll(entries.Select(async kv =>
+                {
+                    var data = (await client.GetAsync<(string x, byte[] y)>(kv.Key)).AsValue();
+
+                    Assert.Equal(data.x, kv.Value);
+                    Assert.True(data.y.Verify(kv.Value), "Invalid entry");
+                }));
+            }
+        }
+
+        [Theory]
+        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
+        public async Task Tuple_GetSet_CanStoreAndRetrieve(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
+        {
+            var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine);
+
+            using (var client = config.CreateClient())
+            {
+                await client.PingAsync();
+
+                var key = Guid.NewGuid().ToString();
+
+                await client.SetAsync(key, (x : 123, y : 456, z : 789));
+
+                var result = await client.GetAsync(key, (x: 0, y: 0, z: 0));
+                var result2 = await client.GetAsync(key, (x: 0, y: 0));
+                var value = result.AsValue();
+                var value2 = result2.AsValue();
+
+                Assert.Equal(123, value.x);
+                Assert.Equal(456, value.y);
+                Assert.Equal(789, value.z);
+                Assert.Equal(123, value2.x);
+                Assert.Equal(456, value2.y);
+            }
+        }
+
+        [Theory]
+        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
+        public async Task Tuple_GetMissingValue_ReturnsDefault(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
+        {
+            var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine);
+
+            using (var client = config.CreateClient())
+            {
+                await client.PingAsync();
+
+                var result = await client.GetAsync(Guid.NewGuid().ToString(), (x: 987, y: 654, z: 321));
+
+                var value = result.AsValue();
+
+                Assert.Equal(987, value.x);
+                Assert.Equal(654, value.y);
+                Assert.Equal(321, value.z);
+            }
+        }
+
+        [Theory]
+        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
+        public async Task TupleWithXElement_SetAndGet_ReturnsCorrectResult(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
+        {
+            var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine);
+
+            using (var client = config.CreateClient())
+            {
+                await client.PingAsync();
+
+                var key = Guid.NewGuid().ToString();
+
+                var data = XDocument.Parse("<data id='3'>123</data>");
+
+                await client.SetAsync(key, (name: "x", data: data.Root));
+
+                var result = await client.GetAsync<(string name, XElement data)>(key);
+
+                var value = result.AsValue();
+
+                Assert.Equal("3", value.data.Attribute("id").Value);
             }
         }
 

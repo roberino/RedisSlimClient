@@ -9,7 +9,7 @@ namespace RedisTribute.UnitTests.Types.Graphs
     public class QueryExtensionsTests
     {
         [Fact]
-        public async Task QueryAsync_SomeQuery_ReturnsResults()
+        public async Task ExecuteAsync_SomeQuery_ReturnsResults()
         {
             var vertex = Substitute.For<IVertex<string>>();
 
@@ -25,7 +25,7 @@ namespace RedisTribute.UnitTests.Types.Graphs
                 .HasLabel("abc")
                 .HasAttributes(a => a.Contains("x")).Build();
 
-            var results = await vertex.QueryAsync(query);
+            var results = await vertex.ExecuteAsync(query);
 
             Assert.True(results.Any());
         }

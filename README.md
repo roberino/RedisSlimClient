@@ -94,7 +94,9 @@ ProactiveRetry will begin to retry the operation on another connection if the pr
 * Scan / Get / MGet / Set
 * [Distributed Locks](docs/DistributedLocks.md)
 * [HashSets](docs/HashSets.md)
-* Simple Pub/sub support
+* [Counters](docs/Counters.md)
+* [Graphs](docs/Graphs.md)
+* [Simple Pub/sub support](docs/PubSub.md)
 
 # Extension packages
 

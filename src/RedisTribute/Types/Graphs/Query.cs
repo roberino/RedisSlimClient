@@ -13,12 +13,7 @@ namespace RedisTribute.Types.Graphs
         Task<bool> MatchesEdgeAsync(IEdge edge);
     }
 
-    public class Traversal
-    {
-
-    }
-
-    public class Query<T>
+    public class Query<T> : IQueryBuilder<T>
     {
         readonly List<Expression<Func<string, bool>>> _labelFilters;
         readonly List<Expression<Func<T, bool>>> _attributeFilters;
@@ -31,43 +26,43 @@ namespace RedisTribute.Types.Graphs
             _edgeFilters = new List<Expression<Func<IEdge, bool>>>();
         }
 
-        public static Query<T> Create()
+        public static IQueryBuilder<T> Create()
         {
             return new Query<T>();
         }
 
-        public Query<T> HasLabel(Expression<Func<string, bool>> labelFilter)
+        public IQueryBuilder<T> HasLabel(Expression<Func<string, bool>> labelFilter)
         {
             _labelFilters.Add(labelFilter);
             return this;
         }
 
-        public Query<T> HasLabel(string label)
+        public IQueryBuilder<T> HasLabel(string label)
         {
             return HasLabel(x => string.Equals(x, label));
         }
 
-        public Query<T> HasAttributes(Expression<Func<T, bool>> attributeFilter)
+        public IQueryBuilder<T> HasAttributes(Expression<Func<T, bool>> attributeFilter)
         {
             _attributeFilters.Add(attributeFilter);
             return this;
         }
 
-        public Query<T> Out(Expression<Func<IEdge, bool>> edgeFilter)
+        public IQueryBuilder<T> Out(Expression<Func<IEdge, bool>> edgeFilter)
         {
             _edgeFilters.Add(ConjunctiveJoin(e => e.Direction == Direction.Out || e.Direction == Direction.Bidirectional, edgeFilter));
             return this;
         }
 
-        public Query<T> In(Expression<Func<IEdge, bool>> edgeFilter)
+        public IQueryBuilder<T> In(Expression<Func<IEdge, bool>> edgeFilter)
         {
             _edgeFilters.Add(ConjunctiveJoin(e => e.Direction == Direction.In || e.Direction == Direction.Bidirectional, edgeFilter));
             return this;
         }
 
-        public Query<T> Out(string edgeLabel) => Out(e => string.Equals(e.Label, edgeLabel));
+        public IQueryBuilder<T> Out(string edgeLabel) => Out(e => string.Equals(e.Label, edgeLabel));
 
-        public Query<T> In(string edgeLabel) => In(e => string.Equals(e.Label, edgeLabel));
+        public IQueryBuilder<T> In(string edgeLabel) => In(e => string.Equals(e.Label, edgeLabel));
 
         public IQuery<T> Build()
         {

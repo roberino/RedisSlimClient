@@ -35,11 +35,6 @@ namespace RedisTribute.Serialization.Protocol
                             _readMode = ReadMode.StartMarker;
                             continue;
                         }
-
-                        if (_readMode == ReadMode.BulkStringLength)
-                        {
-                            return GetCurrentPosition(sequence, 1);
-                        }
                     }
                     else
                     {
@@ -48,6 +43,13 @@ namespace RedisTribute.Serialization.Protocol
                             if (_readMode == ReadMode.StartMarker)
                             {
                                 return GetCurrentPosition(sequence);
+                            }
+                            else
+                            {
+                                if (_readMode == ReadMode.BulkStringLength)
+                                {
+                                    return GetCurrentPosition(sequence);
+                                }
                             }
                         }
                         else
@@ -80,7 +82,7 @@ namespace RedisTribute.Serialization.Protocol
         {
             var index = _currentPosition + offset - 1;
 
-            if(index >= sequence.Length)
+            if (index >= sequence.Length)
             {
                 return default;
             }
@@ -88,7 +90,7 @@ namespace RedisTribute.Serialization.Protocol
             if (_readMode == ReadMode.BulkStringLength)
             {
                 _currentReadLength = ParseLength(sequence);
-                _readMode = ReadMode.BulkStringContent;
+                _readMode = _currentReadLength == 0 ? ReadMode.None : ReadMode.BulkStringContent;
                 _startBulkString = 0;
                 _currentPosition = 0;
             }
@@ -102,7 +104,8 @@ namespace RedisTribute.Serialization.Protocol
 
         long ParseLength(ReadOnlySequence<byte> sequence)
         {
-            var seq = sequence.Slice(_startBulkString, _currentPosition - _startBulkString - 1);
+            var len = _currentPosition - _startBulkString - 1;
+            var seq = sequence.Slice(_startBulkString, len);
             var txt = Encoding.ASCII.GetString(seq.ToArray());
 
             try
@@ -113,7 +116,8 @@ namespace RedisTribute.Serialization.Protocol
             }
             catch (FormatException)
             {
-                throw new ArgumentException(txt);
+                var dump = Encoding.ASCII.GetString(sequence.Slice(0, _currentPosition - 1).ToArray());
+                throw new ArgumentException($"Seq: {sequence.Length}/{sequence.IsSingleSegment}/ {dump} Start:{_startBulkString}/{_currentPosition}, Len: {len}=>  {txt}");
             }
         }
 

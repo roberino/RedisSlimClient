@@ -43,17 +43,40 @@ namespace RedisTribute
 
         public Task<bool> SetAsync(string key, string data, SetOptions options = default, CancellationToken cancellation = default) => _controller.GetResponse(new SetCommand(key, _controller.Configuration.Encoding.GetBytes(data), options), cancellation);
 
+        public Task<bool> SetAsync(string key, long data, SetOptions options = default, CancellationToken cancellation = default) => _controller.GetResponse(new SetCommand(key, Encoding.ASCII.GetBytes(data.ToString()), options), cancellation);
+
+        public Task<long> IncrementAsync(string key, CancellationToken cancellation = default) => _controller.GetResponse(new IncrCommand(key), cancellation);
+
         public Task<bool> SetAsync<T>(string key, T obj, SetOptions options = default, CancellationToken cancellation = default)
             => _controller.GetResponse(new ObjectSetCommand<T>(key, _controller.Configuration, obj, options), cancellation);
 
         public Task<Result<T>> GetAsync<T>(string key, CancellationToken cancellation = default)
             => Result<T>.FromOperation(() => GetInternalAsync<T>(key, cancellation), cancellation);
 
+        public async Task<Result<T>> GetAsync<T>(string key, T defaultValue, CancellationToken cancellation = default)
+        {
+            var result = await GetAsync<T>(key, cancellation);
+
+            return result.ResolveNotFound(() => defaultValue);
+        }
+
         public Task<byte[]> GetAsync(string key, CancellationToken cancellation = default)
             => _controller.GetResponse(() => new GetCommand(key), cancellation, ResultConvertion.AsBytes);
 
         public Task<string> GetStringAsync(string key, CancellationToken cancellation = default)
             => _controller.GetResponse(() => new GetCommand(key), cancellation, ResultConvertion.AsString);
+
+        public Task<long> GetLongAsync(string key, CancellationToken cancellation = default)
+            => _controller.GetResponse(() => new GetCommand(key), cancellation, ResultConvertion.AsLong);
+
+        public async Task<ICounter> GetCounter(string key, CancellationToken cancellation = default)
+        {
+            var qkey = KeySpace.Default.GetCounterKey(key);
+
+            await SetAsync(qkey, 0L, new SetOptions(Expiry.Infinite, SetCondition.SetKeyIfNotExists));
+
+            return new Counter(qkey, this);
+        }
 
         public async Task<IDictionary<string, string>> GetStringsAsync(IReadOnlyCollection<string> keys, CancellationToken cancellation = default)
         {
@@ -148,17 +171,17 @@ namespace RedisTribute
 
         public Task<IDistributedLock> AquireLockAsync(string key, LockOptions options = default, CancellationToken cancellation = default)
         {
-            return _redisLock.AquireLockAsync($"$$_redlock:{key}", options, cancellation);
+            return _redisLock.AquireLockAsync(KeySpace.Default.GetLockKey(key), options, cancellation);
         }
 
-        public IGraph GetGraph(string graphNamespace)
+        public IGraph<T> GetGraph<T>(string graphNamespace)
         {
             if (string.IsNullOrEmpty(graphNamespace))
             {
                 throw new ArgumentNullException(nameof(graphNamespace));
             }
 
-            return new Graph(this, _controller.Configuration, new GraphOptions(graphNamespace));
+            return new Graph<T>(this, _controller.Configuration, new GraphOptions(graphNamespace));
         }
 
         public void Dispose()
@@ -179,18 +202,22 @@ namespace RedisTribute
             }
         }
 
-        Task<T> GetInternalAsync<T>(string key, CancellationToken cancellation = default)
+        async Task<(T value, bool found)> GetInternalAsync<T>(string key, CancellationToken cancellation = default)
         {
             if (typeof(T) == typeof(byte[]))
             {
-                return (Task<T>)(object)GetAsync(key, cancellation);
+                var r = await GetAsync(key, cancellation);
+
+                return ((T)(object)r, r != default);
             }
             if (typeof(T) == typeof(string))
             {
-                return (Task<T>)(object)GetStringAsync(key, cancellation);
+                var r = await GetStringAsync(key, cancellation);
+
+                return ((T)(object)r, r != default);
             }
 
-            return _controller.GetResponse(() => new ObjectGetCommand<T>(key, _controller.Configuration), cancellation, (x, _) => x);
+            return await _controller.GetResponse(() => new ObjectGetCommand<T>(key, _controller.Configuration), cancellation, (x, _) => x);
         }
     }
 }

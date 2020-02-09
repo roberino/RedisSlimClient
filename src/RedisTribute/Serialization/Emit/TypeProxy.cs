@@ -42,7 +42,7 @@ namespace RedisTribute.Serialization.Emit
                 newObject = defaultValue;
             }
 
-            _dataExtractor.ReadObjectData(newObject, reader);
+            newObject = _dataExtractor.ReadObjectData(newObject, reader);
 
             return newObject;
         }
@@ -71,10 +71,7 @@ namespace RedisTribute.Serialization.Emit
 
             newAccessorType.DefineDefaultConstructor(MethodAttributes.Public);
 
-            var targetProps = TargetType.SerializableProperties();
-
-            new WriteObjectImplBuilder<T>(newAccessorType, targetProps).Build();
-            new ReadObjectImplBuilder<T>(newAccessorType, targetProps).Build();
+            newAccessorType.Build<T>();
 
             return newAccessorType.CreateTypeInfo();
         }

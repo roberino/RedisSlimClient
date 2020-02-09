@@ -18,6 +18,8 @@ namespace RedisTribute
             }
         }
 
+        public static long AsLong(IRedisObject redisValue, ISerializerSettings settings) => redisValue.ToLong();
+
         public static byte[] AsBytes(IRedisObject redisString, ISerializerSettings settings)
         {
             if (redisString == null || redisString.Type == RedisType.Null)

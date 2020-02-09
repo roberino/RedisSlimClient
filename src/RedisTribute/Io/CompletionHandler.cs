@@ -1,31 +1,32 @@
 ﻿using RedisTribute.Io.Pipelines;
 using RedisTribute.Io.Scheduling;
 using RedisTribute.Serialization.Protocol;
+using RedisTribute.Telemetry;
 using System;
 using System.Buffers;
-using System.Threading.Tasks;
-using RedisTribute.Telemetry;
 
 namespace RedisTribute.Io
 {
     class CompletionHandler : ITraceable
     {
         readonly RedisObjectBuilder _redisObjectBuilder;
-        readonly IPipelineReceiver _receiver;
         readonly ICommandWorkload _commandQueue;
         readonly IWorkScheduler _workScheduler;
         readonly RedisByteSequenceDelimitter _delimiter;
 
-        public CompletionHandler(IPipelineReceiver receiver, ICommandWorkload commandQueue, IWorkScheduler workScheduler)
+        public CompletionHandler(ICommandWorkload commandQueue, IWorkScheduler workScheduler)
         {
-            _receiver = receiver;
             _commandQueue = commandQueue;
             _workScheduler = workScheduler;
             _redisObjectBuilder = new RedisObjectBuilder();
             _delimiter = new RedisByteSequenceDelimitter();
+        }
 
-            _receiver.RegisterHandler(_delimiter.Delimit, OnReceive);
-            _receiver.Error += OnError;
+        public CompletionHandler Attach(IPipelineReceiver receiver)
+        {
+            receiver.RegisterHandler(_delimiter.Delimit, OnReceive);
+            receiver.Error += OnError;
+            return this;
         }
 
         public event Action<(string Action, byte[] Data)> Trace;
@@ -39,6 +40,17 @@ namespace RedisTribute.Io
 
         void OnReceive(ReadOnlySequence<byte> objData)
         {
+#if DEBUG1
+            if (objData.Length > 0)
+            {
+                var endByte = objData.Slice((int)(objData.Length - 1), 1).First.Span[0];
+
+                if (endByte != (byte)'\n')
+                {
+                    throw new ArgumentException(((char)endByte).ToString());
+                }
+            }
+#endif
             var nextData = objData.Length > 2 ? objData.Slice(0, objData.Length - 2) : ReadOnlySequence<byte>.Empty;
             
             var createdItems = _redisObjectBuilder.AppendObjectData(nextData);

@@ -38,9 +38,9 @@ namespace RedisTribute.UnitTests.Io
 
             var queue = new CommandQueue();
 
-            await queue.Enqueue((IRedisCommand)cmd);
+            await queue.Enqueue(cmd);
 
-            var handler = new CompletionHandler(receiver, queue, ThreadPoolScheduler.Instance);
+            var handler = new CompletionHandler(queue, ThreadPoolScheduler.Instance).Attach(receiver);
 
             handlerAction?.Invoke(data[0]);
             handlerAction?.Invoke(data[1]);

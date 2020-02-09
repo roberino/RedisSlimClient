@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 
@@ -13,8 +12,8 @@ namespace RedisTribute.Serialization.Emit
         readonly ParameterInfo _writerParam;
         readonly ParameterInfo _targetParam;
 
-        public WriteObjectImplBuilder(TypeBuilder newType, IReadOnlyCollection<PropertyInfo> properties)
-            : base(newType, typeof(IObjectGraphExporter<T>).GetMethod(nameof(IObjectGraphExporter<T>.WriteObjectData)), properties)
+        public WriteObjectImplBuilder(TypeBuilder newType, IReadOnlyCollection<MemberInfo> members)
+            : base(newType, typeof(IObjectGraphExporter<T>).GetMethod(nameof(IObjectGraphExporter<T>.WriteObjectData)), members)
         {
             var objectWriterType = typeof(IObjectWriter);
             _objectWriterMethods = OverloadedMethodLookupExtensions.CreateParameterOverload<IObjectWriter>("Write", "data");
@@ -28,31 +27,56 @@ namespace RedisTribute.Serialization.Emit
 
         protected override void OnInit(MethodBuilder methodBuilder)
         {
-            methodBuilder.CallMethod(_writerParam, _beginWriteMethod, Properties.Count);
+            methodBuilder.CallMethod(_writerParam, _beginWriteMethod, Members.Count);
         }
 
         protected override void OnFinalize(MethodBuilder methodBuilder)
         {
         }
 
+        protected override void OnField(MethodBuilder methodBuilder, FieldInfo field)
+        {
+            OnMember(methodBuilder, new MemberFacade(field));
+        }
+
         protected override void OnProperty(MethodBuilder methodBuilder, PropertyInfo property)
         {
-            var propertyValueLocal = methodBuilder.Define(property.GetMethod.ReturnType);
+            OnMember(methodBuilder, new MemberFacade(property));
+        }
 
-            methodBuilder.CallFunction(propertyValueLocal, _targetParam, property.GetMethod);
+        void OnMember(MethodBuilder methodBuilder, MemberFacade member)
+        {
+            var propertyValueLocal = methodBuilder.Define(member.Type);
+
+            void LoadValue()
+            {
+                if (member.HasGetMethod)
+                {
+                    methodBuilder.CallFunction(propertyValueLocal, _targetParam, member.GetMethod);
+                }
+                else
+                {
+                    if (member.IsField)
+                    {
+                        methodBuilder.AccessField(propertyValueLocal, (FieldInfo)member.Member, _targetParam);
+                    }
+                }
+            }
+
+            LoadValue();
 
             MethodInfo writeMethod;
 
-            if (property.PropertyType.RequiresDecomposition())
+            if (member.Type.RequiresDecomposition())
             {
-                var collectionType = property.PropertyType.CollectionType();
+                var collectionType = member.Type.CollectionType();
 
                 if (collectionType == null)
                 {
-                    LoadExtractor(property.PropertyType);
+                    LoadExtractor(member.Type);
 
                     writeMethod = _objectWriterMethods
-                       .BindByGenericParam(nameof(IObjectWriter.WriteItem), p => p.ParameterType.IsGenericParameter, property.PropertyType);
+                       .BindByGenericParam(nameof(IObjectWriter.WriteItem), p => p.ParameterType.IsGenericParameter, member.Type);
                 }
                 else
                 {
@@ -67,40 +91,40 @@ namespace RedisTribute.Serialization.Emit
             }
             else
             {
-                if (property.PropertyType.IsEnum)
+                if (member.Type.IsEnum)
                 {
                     writeMethod = _objectWriterMethods
-                        .BindGenericByMethod(m => m.Name == nameof(IObjectWriter.WriteEnum), property.PropertyType);
+                        .BindGenericByMethod(m => m.Name == nameof(IObjectWriter.WriteEnum), member.Type);
                 }
                 else
                 {
-                    if (property.PropertyType.IsNullableType())
+                    if (member.Type.IsNullableType())
                     {
-                        var ut = Nullable.GetUnderlyingType(property.PropertyType);
+                        var ut = Nullable.GetUnderlyingType(member.Type);
 
                         var nullWriteMethod = _objectWriterMethods.BindGenericByMethod(m => m.Name == nameof(IObjectWriter.WriteNullable), ut);
 
                         writeMethod = _objectWriterMethods.Bind(ut);
 
-                        methodBuilder.CallMethod(_writerParam, nullWriteMethod, property.Name, propertyValueLocal, writeMethod.Name);
+                        methodBuilder.CallMethod(_writerParam, nullWriteMethod, member.Name, propertyValueLocal, writeMethod.Name);
 
                         return;
                     }
                     else
                     {
-                        writeMethod = _objectWriterMethods.Bind(property.PropertyType);
+                        writeMethod = _objectWriterMethods.Bind(member.Type);
                     }
                 }
             }
 
             if (writeMethod == null)
             {
-                throw new ArgumentException(property.PropertyType.FullName);
+                throw new ArgumentException(member.Type.FullName);
             }
 
             methodBuilder.CallMethod(_writerParam,
                 writeMethod,
-                property.Name, propertyValueLocal);
+                member.Name, propertyValueLocal);
         }
 
         void LoadExtractor(Type type)

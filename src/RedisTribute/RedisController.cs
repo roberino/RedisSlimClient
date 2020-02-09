@@ -6,6 +6,7 @@ using RedisTribute.Types;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -169,6 +170,14 @@ namespace RedisTribute
 
                     return await cmdPipe.ExecuteWithCancellation(currentResult, cancellation, Configuration.DefaultOperationTimeout);
                 }
+                catch (SerializationException)
+                {
+                    throw;
+                }
+                catch (ArgumentException)
+                {
+                    throw;
+                }
                 catch (TaskCanceledException)
                 {
                     throw;
@@ -178,6 +187,11 @@ namespace RedisTribute
                     if (cancellation.IsCancellationRequested)
                     {
                         throw;
+                    }
+
+                    if (Configuration.RetryBackoffTime > TimeSpan.Zero)
+                    {
+                        await Task.Delay(Configuration.RetryBackoffTime);
                     }
                 }
             }
@@ -235,6 +249,14 @@ namespace RedisTribute
                     {
                         return resultTask.Result.value;
                     }
+                }
+                catch (SerializationException)
+                {
+                    throw;
+                }
+                catch (ArgumentException)
+                {
+                    throw;
                 }
                 catch (TaskCanceledException)
                 {

@@ -1,5 +1,6 @@
 ﻿using RedisTribute.Serialization.CustomSerializers;
 using RedisTribute.Serialization.Emit;
+using RedisTribute.Serialization.Objects;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -9,53 +10,68 @@ using System.Xml.Linq;
 
 namespace RedisTribute.Serialization
 {
-    public class SerializerFactory : IObjectSerializerFactory
+    public sealed class SerializerFactory : IObjectSerializerFactory
     {
-        readonly IDictionary<Type, object> _knownSerializers = new Dictionary<Type, object>
-        {
-            [typeof(XDocument)] = new XDocumentSerializer(),
-            [typeof(XmlDocument)] = new XmlDocumentSerializer(),
-            [typeof(Stream)] = new StreamSerializer(),
-            [typeof(IDictionary<string, string>)] = new DictionarySerializer<string>(),
-            [typeof(Dictionary<string, string>)] = new DictionarySerializer<string>(),
-            [typeof(KeyValuePair<string, string>)] = new KeyValueSerializer<string>(),
-            [typeof(string)] = new StringSerializer(Encoding.UTF8),
-            [typeof(byte[])] = new ByteArraySerializer(),
-            [typeof(TimeSpan)] = TimeSpanSerializer.Instance
-        };
+        readonly IObjectSerializerFactory _innerImpl;
 
-        SerializerFactory()
+        SerializerFactory(IObjectSerializerFactory innerImpl)
         {
+            _innerImpl = innerImpl;
         }
 
-        public static readonly SerializerFactory Instance = new SerializerFactory();
+        public static readonly SerializerFactory Instance = CreateFactory(new InnerSerializerFactory());
+
+        public static SerializerFactory CreateFactory(IObjectSerializerFactory innerFactory) => new SerializerFactory(innerFactory);
 
         public IObjectSerializer<T> Create<T>()
         {
-            var type = typeof(T);
-            var tc = Type.GetTypeCode(type);
+            return SerializerExceptionDecorator<T>.Default(_innerImpl.Create<T>);
+        }
 
-            if (tc == TypeCode.Object || tc == TypeCode.String)
+        class InnerSerializerFactory : IObjectSerializerFactory
+        {
+            readonly IDictionary<Type, object> _knownSerializers = new Dictionary<Type, object>
             {
-                if (_knownSerializers.TryGetValue(type, out var sz))
+                [typeof(XDocument)] = new XDocumentSerializer(),
+                [typeof(XElement)] = new XDocumentSerializer(),
+                [typeof(XmlDocument)] = new XmlDocumentSerializer(),
+                [typeof(XmlElement)] = new XmlDocumentSerializer(),
+                [typeof(Stream)] = new StreamSerializer(),
+                [typeof(IDictionary<string, string>)] = new DictionarySerializer<string>(),
+                [typeof(Dictionary<string, string>)] = new DictionarySerializer<string>(),
+                [typeof(KeyValuePair<string, string>)] = new KeyValueSerializer<string>(),
+                [typeof(string)] = new StringSerializer(Encoding.UTF8),
+                [typeof(byte[])] = new ByteArraySerializer(),
+                [typeof(TimeSpan)] = TimeSpanSerializer.Instance
+            };
+
+            public IObjectSerializer<T> Create<T>()
+            {
+                var type = typeof(T);
+                var tc = Type.GetTypeCode(type);
+
+                if (tc == TypeCode.Object || tc == TypeCode.String)
                 {
-                    return (IObjectSerializer<T>)sz;
+                    if (_knownSerializers.TryGetValue(type, out var sz))
+                    {
+                        return (IObjectSerializer<T>)sz;
+                    }
+
+                    if (!type.IsPublic)
+                    {
+                        throw new ArgumentException($"Can't serialize private type: {type.FullName}");
+                    }
+
+                    return TypeProxy<T>.Instance;
                 }
 
-                if (!type.IsPublic)
+                if (type.IsEnum)
                 {
-                    throw new ArgumentException($"Can't serialize private type: {type.FullName}");
+                    return EnumSerializer<T>.Instance;
                 }
 
-                return TypeProxy<T>.Instance;
+                return PrimativeSerializer.CreateSerializer<T>();
             }
-
-            if (type.IsEnum)
-            {
-                return EnumSerializer<T>.Instance;
-            }
-
-            return PrimativeSerializer.CreateSerializer<T>();
         }
     }
 }

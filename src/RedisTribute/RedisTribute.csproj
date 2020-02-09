@@ -2,7 +2,7 @@
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;netcoreapp2.1;netcoreapp2.2</TargetFrameworks>
     <LangVersion>7.2</LangVersion>
-    <Version>0.2.1-beta0017</Version>
+    <Version>0.3.1-beta0001</Version>
     <Authors>Rob Eyres</Authors>
     <Company />
     <Description>A slim and configurable DotNet Standard client for Redis</Description>
@@ -12,6 +12,7 @@
     <RepositoryUrl>https://github.com/roberino/RedisSlimClient/</RepositoryUrl>
     <PackageTags>Redis Client Cache Azure</PackageTags>
     <PackageIcon>icon.png</PackageIcon>
+    <PackageIconUrl>https://raw.githubusercontent.com/roberino/RedisSlimClient/master/docs/logo.png</PackageIconUrl>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(TargetFramework)' == 'netcoreapp2.1' or '$(TargetFramework)' == 'netcoreapp2.2'">

@@ -1,10 +1,9 @@
-﻿using System;
+﻿using RedisTribute.Serialization.Protocol;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text;
-using RedisTribute.Serialization.Protocol;
 
 namespace RedisTribute.Serialization
 {
@@ -14,6 +13,8 @@ namespace RedisTribute.Serialization
         readonly IBinaryFormatter _dataFormatter;
         readonly IObjectSerializerFactory _serializerFactory;
         readonly Encoding _textEncoding;
+
+        bool _isSub;
 
         public ObjectWriter(Stream stream, 
             Encoding textEncoding = null,
@@ -28,11 +29,18 @@ namespace RedisTribute.Serialization
 
         public void BeginWrite(int itemCount)
         {
+            _isSub = true;
             _stream.WriteStartArray(itemCount);
         }
 
         public void Raw(byte[] data, int? length = null)
         {
+            if (_isSub)
+            {
+                _stream.WriteBytes(data, length.GetValueOrDefault((data?.Length).GetValueOrDefault()));
+                return;
+            }
+
             if (data == null || (length.HasValue && length.Value == 0))
             {
                 return;

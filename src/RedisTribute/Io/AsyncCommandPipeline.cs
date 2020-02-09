@@ -31,7 +31,9 @@ namespace RedisTribute.Io
             _commandQueue = commandQueue ?? new CommandQueue();
             _cancellation = new CancellationTokenSource();
 
-            new CompletionHandler(_pipeline.Receiver, _commandQueue, workScheduler).AttachTelemetry(telemetryWriter, Severity.Diagnostic);
+            new CompletionHandler(_commandQueue, workScheduler)
+                .Attach(_pipeline.Receiver)
+                .AttachTelemetry(telemetryWriter, Severity.Diagnostic);
 
             var throttledScheduler = new TimeThrottledScheduler(ThreadPoolScheduler.Instance, TimeSpan.FromMilliseconds(500));
 

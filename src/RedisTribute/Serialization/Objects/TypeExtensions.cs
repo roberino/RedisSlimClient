@@ -7,12 +7,24 @@ namespace RedisTribute.Serialization
 {
     static class TypeExtensions
     {
-        internal static PropertyInfo[] SerializableProperties(this Type type)
+        public static PropertyInfo[] SerializableProperties(this Type type)
         {
             return type.GetProperties(BindingFlags.Instance | BindingFlags.Public)
                 .Where(p => p.CanRead && p.CanWrite)
                 .Where(p => !p.HasNonSerializeMarker())
                 .ToArray();
+        }
+
+        public static FieldInfo[] SerializableFields(this Type type)
+        {
+            return type.GetFields(BindingFlags.Instance | BindingFlags.Public)
+                .Where(p => !p.HasNonSerializeMarker())
+                .ToArray();
+        }
+
+        public static bool IsValueTuple(this Type type)
+        {
+            return type.IsValueType && type.IsGenericType && type.GetGenericTypeDefinition().Name.Contains("ValueTuple");
         }
 
         public static T? MakeNullable<T>(T value) where T : struct

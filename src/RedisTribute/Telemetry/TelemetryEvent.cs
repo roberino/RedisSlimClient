@@ -95,7 +95,8 @@ namespace RedisTribute.Telemetry
         None = 0,
         Internal = 1,
         Request = 2,
-        Health = 4
+        Health = 4,
+        Subscriber = 8
     }
 
     [Flags]

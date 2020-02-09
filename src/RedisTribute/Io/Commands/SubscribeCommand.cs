@@ -42,6 +42,11 @@ namespace RedisTribute.Io.Commands
             }
             else
             {
+                if (ex is TaskCanceledException || ex is OperationCanceledException)
+                {
+                    return;
+                }
+
                 ConnectionBroken?.Invoke(ex);
             }
         }

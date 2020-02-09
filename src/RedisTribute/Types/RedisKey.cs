@@ -4,7 +4,7 @@ using System.Text;
 
 namespace RedisTribute.Types
 {
-    readonly struct RedisKey : IEquatable<RedisKey>
+    public readonly struct RedisKey : IEquatable<RedisKey>
     {
         RedisKey(byte[] bytes)
         {

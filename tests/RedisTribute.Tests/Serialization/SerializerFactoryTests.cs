@@ -4,6 +4,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Xml.Linq;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -20,6 +21,71 @@ namespace RedisTribute.UnitTests.Serialization
             _testOutput = testOutput;
             _output = new MemoryStream();
             _writer = new ObjectWriter(_output);
+        }
+
+        [Fact]
+        public void WriteData_AnonType_ThrowsArgumentException()
+        {
+            Assert.Throws<ArgumentException>(() => WhenWritingObject(new { x = 123, y = "hey" }));
+
+            // TODO: 
+            //ThenOutputIsValid(x =>
+            //{
+            //    Assert.Equal(123, x.x);
+            //    Assert.Equal("hey", x.y);
+            //}, new { x = 0, y = "" });
+        }
+
+        [Fact]
+        public void WriteData_TupleWithXElement_WritesCorrectly()
+        {
+            var data = XDocument.Parse("<data id='3'>xxy</data>");
+            var value = (key: 123, data: data.Root);
+
+            WhenWritingObject(value);
+
+            ThenOutputIsValid<(int key, XElement data)>(x =>
+            {
+                Assert.Equal(123, x.key);
+                Assert.Equal("3", x.data.Attribute("id").Value);
+            });
+        }
+
+        [Fact]
+        public void WriteData_TupleType_WritesTupleElements()
+        {
+            WhenWritingObject((x: 123, y: "hey"));
+
+            ThenOutputIsValid<(int x, string y)>(x =>
+            {
+                Assert.Equal(123, x.x);
+                Assert.Equal("hey", x.y);
+            });
+        }
+
+        [Fact]
+        public void ReadData_TupleTypeWithExcessMembers_WritesTupleElements()
+        {
+            WhenWritingObject((x: 123, y: 456));
+
+            ThenOutputIsValid<(int x, int y, int z)>(x =>
+            {
+                Assert.Equal(123, x.x);
+                Assert.Equal(456, x.y);
+                Assert.Equal(0, x.z);
+            });
+        }
+
+        [Fact]
+        public void ReadData_TupleTypeWithLessMembers_WritesTupleElements()
+        {
+            WhenWritingObject((x: 123, y: 456, z : 789));
+
+            ThenOutputIsValid<(int x, int y)>(x =>
+            {
+                Assert.Equal(123, x.x);
+                Assert.Equal(456, x.y);
+            });
         }
 
         [Fact]
@@ -308,6 +374,15 @@ namespace RedisTribute.UnitTests.Serialization
         }
 
         void ThenOutputIsValid<T>(Action<T> assertion = null)
+        {
+            ThenOutputIsValid();
+
+            var obj = ReadObject<T>();
+
+            assertion?.Invoke(obj);
+        }
+
+        void ThenOutputIsValid<T>(Action<T> assertion, T example)
         {
             ThenOutputIsValid();
 
