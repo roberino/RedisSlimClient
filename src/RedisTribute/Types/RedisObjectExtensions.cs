@@ -67,5 +67,20 @@ namespace RedisTribute.Types
 
             return 0;
         }
+
+        public static double ToDouble(this IRedisObject value)
+        {
+            if (value is RedisInteger i)
+            {
+                return i.Value;
+            }
+
+            if (value is RedisString && double.TryParse(value.ToString(), out var x))
+            {
+                return x;
+            }
+
+            return 0;
+        }
     }
 }

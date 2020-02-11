@@ -17,7 +17,7 @@
     <None Include="LICENSE.txt" Pack="true" PackagePath="$(PackageLicenseFile)" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.ApplicationInsights" Version="2.11.0" />
+    <PackageReference Include="Microsoft.ApplicationInsights" Version="2.12.1" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\RedisTribute\RedisTribute.csproj" />

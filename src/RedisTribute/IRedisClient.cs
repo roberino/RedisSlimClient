@@ -1,6 +1,7 @@
 ﻿using RedisTribute.Configuration;
 using RedisTribute.Io.Server;
 using RedisTribute.Types;
+using RedisTribute.Types.Geo;
 using RedisTribute.Types.Graphs;
 using RedisTribute.Types.Messaging;
 using System;
@@ -61,6 +62,13 @@ namespace RedisTribute
         IGraph<T> GetGraph<T>(string graphNamespace);
     }
 
+    public interface IGeoClient
+    {
+        Task<int> GeoAddAsync(string key, GeoMember member, CancellationToken cancellation = default);
+        Task<int> GeoAddAsync(string key, GeoMember[] members, CancellationToken cancellation = default);
+        Task<double> GeoDistAsync(string key, string member1, string member2, DistanceUnit unit = default, CancellationToken cancellation = default);
+    }
+
     public interface ISubscriptionClient : IRedisDiagnosticClient
     {
         Task<ISubscription> SubscribeAsync<T>(string[] channels, Func<IMessage<T>, Task> handler, CancellationToken cancellation = default);
@@ -81,7 +89,8 @@ namespace RedisTribute
         IPersistentDictionaryProvider,
         IRedLock,
         IGraphClient,
-        IPublisherClient
+        IPublisherClient,
+        IGeoClient
     {
     }
 }

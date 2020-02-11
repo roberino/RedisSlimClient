@@ -7,8 +7,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Serilog.Formatting.Elasticsearch" Version="8.0.0" />
-      <PackageReference Include="Serilog.Sinks.ElasticSearch" Version="8.0.0" />
+      <PackageReference Include="Serilog.Formatting.Elasticsearch" Version="8.0.1" />
+      <PackageReference Include="Serilog.Sinks.ElasticSearch" Version="8.0.1" />
     </ItemGroup>
 
     <ItemGroup>

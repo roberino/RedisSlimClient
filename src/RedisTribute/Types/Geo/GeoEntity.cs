@@ -15,13 +15,21 @@
 
     public readonly struct GeoMember : IGeoSpatial
     {
-        public GeoMember(byte[] data, GeoCoordinates position)
+        public GeoMember(RedisKey data, GeoCoordinates position)
         {
             Position = position;
             Member = data;
         }
 
+        public GeoMember(string data, GeoCoordinates position)
+        {
+            Position = position;
+            Member = data;
+        }
+
+        public static implicit operator GeoMember((string name, (double lon, double lat) coords) spec) => new GeoMember(spec.name, spec.coords);
+
         public GeoCoordinates Position { get; }
-        public byte[] Member { get; }
+        public RedisKey Member { get; }
     }
 }

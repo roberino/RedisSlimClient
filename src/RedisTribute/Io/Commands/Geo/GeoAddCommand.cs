@@ -23,14 +23,14 @@ namespace RedisTribute.Io.Commands.Geo
             var args = new object[2 + (_geoEntity.Members.Length * 3)];
 
             args[0] = CommandText;
-            args[1] = Key;
+            args[1] = Key.Bytes;
 
             for (var i = 0; i < _geoEntity.Members.Length; i++)
             {
                 var x = i * 3 + 2;
                 args[x] = _geoEntity.Members[i].Position.Longitude.ToString();
                 args[x + 1] = _geoEntity.Members[i].Position.Latitude.ToString();
-                args[x + 2] = _geoEntity.Members[i].Member;
+                args[x + 2] = _geoEntity.Members[i].Member.Bytes;
             }
 
             return args;

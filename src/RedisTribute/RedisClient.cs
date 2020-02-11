@@ -1,8 +1,10 @@
 ﻿using RedisTribute.Configuration;
 using RedisTribute.Io;
 using RedisTribute.Io.Commands;
+using RedisTribute.Io.Commands.Geo;
 using RedisTribute.Io.Server;
 using RedisTribute.Types;
+using RedisTribute.Types.Geo;
 using RedisTribute.Types.Graphs;
 using RedisTribute.Types.Messaging;
 using System;
@@ -68,6 +70,15 @@ namespace RedisTribute
 
         public Task<long> GetLongAsync(string key, CancellationToken cancellation = default)
             => _controller.GetResponse(() => new GetCommand(key), cancellation, ResultConvertion.AsLong);
+
+        public Task<int> GeoAddAsync(string key, GeoMember[] members, CancellationToken cancellation = default)
+            => _controller.GetResponse(new GeoAddCommand(new GeoEntity(key, members)), cancellation);
+
+        public Task<int> GeoAddAsync(string key, GeoMember member, CancellationToken cancellation = default)
+            => _controller.GetResponse(new GeoAddCommand(new GeoEntity(key, member)), cancellation);
+
+        public Task<double> GeoDistAsync(string key, string member1, string member2, DistanceUnit unit = default, CancellationToken cancellation = default)
+            => _controller.GetResponse(new GeoDistCommand(key, member1, member2, unit), cancellation);
 
         public async Task<ICounter> GetCounter(string key, CancellationToken cancellation = default)
         {
