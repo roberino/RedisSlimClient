@@ -80,6 +80,20 @@ namespace RedisTribute
         public Task<double> GeoDistAsync(string key, string member1, string member2, DistanceUnit unit = default, CancellationToken cancellation = default)
             => _controller.GetResponse(new GeoDistCommand(key, member1, member2, unit), cancellation);
 
+        public async Task<IDictionary<string, string>> GeoHashAsync(string key, string[] members, CancellationToken cancellation = default)
+        {
+            var results = await _controller.GetResponse(new GeoHashCommand(key, members.Select(m => (RedisKey)m).ToArray()), cancellation);
+
+            return results.ToDictionary(r => r.Key.ToString(), r => r.Value);
+        }
+
+        public async Task<IDictionary<string, GeoCoordinates>> GeoPosAsync(string key, string[] members, CancellationToken cancellation = default)
+        {
+            var results = await _controller.GetResponse(new GeoPosCommand(key, members.Select(m => (RedisKey)m).ToArray()), cancellation);
+
+            return results.ToDictionary(r => r.Key.ToString(), r => r.Value);
+        }
+
         public async Task<ICounter> GetCounter(string key, CancellationToken cancellation = default)
         {
             var qkey = KeySpace.Default.GetCounterKey(key);
