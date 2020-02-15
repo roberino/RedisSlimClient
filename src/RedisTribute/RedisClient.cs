@@ -87,6 +87,13 @@ namespace RedisTribute
             return results.ToDictionary(r => r.Key.ToString(), r => r.Value);
         }
 
+        public async Task<IDictionary<string, GeoDescriptor>> GeoRadiusAsync(GeoRadiusQuery query, CancellationToken cancellation = default)
+        {
+            var results = await _controller.GetResponse(new GeoRadiusCommand(query), cancellation);
+
+            return results.ToDictionary(r => r.Key.ToString(), r => r.Value);
+        }
+
         public async Task<IDictionary<string, GeoCoordinates>> GeoPosAsync(string key, string[] members, CancellationToken cancellation = default)
         {
             var results = await _controller.GetResponse(new GeoPosCommand(key, members.Select(m => (RedisKey)m).ToArray()), cancellation);

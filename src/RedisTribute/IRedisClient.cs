@@ -69,6 +69,7 @@ namespace RedisTribute
         Task<double> GeoDistAsync(string key, string member1, string member2, DistanceUnit unit = default, CancellationToken cancellation = default);
         Task<IDictionary<string, string>> GeoHashAsync(string key, string[] members, CancellationToken cancellation = default);
         Task<IDictionary<string, GeoCoordinates>> GeoPosAsync(string key, string[] members, CancellationToken cancellation = default);
+        Task<IDictionary<string, GeoDescriptor>> GeoRadiusAsync(GeoRadiusQuery query, CancellationToken cancellation = default);
     }
 
     public interface ISubscriptionClient : IRedisDiagnosticClient
