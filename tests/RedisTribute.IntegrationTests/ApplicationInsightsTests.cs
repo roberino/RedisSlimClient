@@ -3,7 +3,7 @@ using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
 using RedisTribute.Configuration;
 using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
@@ -56,7 +56,7 @@ namespace RedisTribute.IntegrationTests
             Assert.NotNull(telemetryItems.Single(t => t.Data == $"GET/{key}"));
         }
 
-        class StubTelemetryChannel : List<ITelemetry>, ITelemetryChannel
+        class StubTelemetryChannel : ConcurrentBag<ITelemetry>, ITelemetryChannel
         {
             public bool? DeveloperMode { get; set; } = false;
             public string EndpointAddress { get; set; } = "localhost";

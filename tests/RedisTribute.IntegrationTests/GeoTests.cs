@@ -20,7 +20,7 @@ namespace RedisTribute.IntegrationTests
         [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
         public async Task GeoAdd_TwoMembers_CanRetrieveDistance(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
         {
-            var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine, 5);
+            var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine);
 
             config.HealthCheckInterval = TimeSpan.Zero;
 
@@ -43,7 +43,7 @@ namespace RedisTribute.IntegrationTests
         [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
         public async Task GeoHash_TwoMembers_CanRetrieveHash(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
         {
-            var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine, 5);
+            var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine);
 
             config.HealthCheckInterval = TimeSpan.Zero;
 
@@ -68,7 +68,7 @@ namespace RedisTribute.IntegrationTests
         [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
         public async Task GeoPos_TwoMembers_CanRetrieveCoords(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
         {
-            var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine, 5);
+            var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine);
 
             config.HealthCheckInterval = TimeSpan.Zero;
 
@@ -93,9 +93,10 @@ namespace RedisTribute.IntegrationTests
 
         [Theory]
         [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
+        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslClusterSet)]
         public async Task GeoRadius_TwoMembers_ReturnsRadiusInfo(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
         {
-            var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine, 5);
+            var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine);
 
             config.HealthCheckInterval = TimeSpan.Zero;
 
@@ -112,7 +113,7 @@ namespace RedisTribute.IntegrationTests
                     new GeoRadiusQuery(key, (120, 60), 1000, DistanceUnit.Kilometres, Types.SortOrder.Ascending, GeoRadiusOptions.WithCoord | GeoRadiusOptions.WithHash));
 
                 var radiusResults2 = await client.GeoRadiusAsync(
-                    new GeoRadiusQuery(key, (120, 60), 1000, DistanceUnit.Kilometres, Types.SortOrder.Ascending, GeoRadiusOptions.WithDist));
+                    new GeoRadiusQuery(key, (120, 60), 1000, DistanceUnit.Miles, Types.SortOrder.Ascending, GeoRadiusOptions.WithDist));
 
                 Assert.Equal(1, radiusResults1.Count);
                 Assert.NotNull(radiusResults1["x"].Hash);

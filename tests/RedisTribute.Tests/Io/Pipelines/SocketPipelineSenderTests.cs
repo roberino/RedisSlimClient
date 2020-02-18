@@ -12,8 +12,7 @@ namespace RedisTribute.UnitTests.Io.Pipelines
         [Fact]
         public async Task SendAsync_SomeAction_WritesDataToSocket()
         {
-            var socket = new StubSocket();
-
+            using (var socket = new StubSocket())
             using (var cancellationTokenSource = new CancellationTokenSource())
             using (var sender = new SocketPipelineSender(socket, cancellationTokenSource.Token, new ResetHandle()))
             {
@@ -28,17 +27,15 @@ namespace RedisTribute.UnitTests.Io.Pipelines
 
                 TestExtensions.RunOnBackgroundThread(sender.RunAsync);
 
-                socket.WaitForDataWrite();
+                var data = await socket.WaitForData(3);
 
                 cancellationTokenSource.Cancel();
+
+                Assert.Equal(3, data.Length);
+                Assert.Equal(1, data[0]);
+                Assert.Equal(2, data[1]);
+                Assert.Equal(3, data[2]);
             }
-
-            var data = socket.Received.Single().ToArray();
-
-            Assert.Equal(3, data.Length);
-            Assert.Equal(1, data[0]);
-            Assert.Equal(2, data[1]);
-            Assert.Equal(3, data[2]);
         }
     }
 }

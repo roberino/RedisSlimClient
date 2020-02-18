@@ -10,10 +10,10 @@ namespace RedisTribute.UnitTests.Io.Pipelines
     public class SocketPipelineReceiverTests
     {
         [Fact]
-        public async Task SendAsync_SomeData_FiresReceivedEvent()
+        public async Task SendAsync_SomeData_InvokesHandler()
         {
             var eventFired = false;
-            ReadOnlySequence<byte> capturedData = default;
+            byte[] capturedData = default;
 
             using (var socket = new StubSocket())
             {
@@ -26,23 +26,23 @@ namespace RedisTribute.UnitTests.Io.Pipelines
                 receiver.RegisterHandler(s => s.PositionOf((byte)'x'), x =>
                 {
                     eventFired = true;
-                    capturedData = x;
+                    capturedData = x.ToArray();
                     waitHandle.Set();
                 });
 
                 receiver.ScheduleOnThreadpool();
 
                 socket.WaitForDataRead();
-                waitHandle.WaitOne(3000);
+                waitHandle.WaitOne(30000);
 
                 cancellationTokenSource.Cancel();
             }
 
             Assert.True(eventFired);
             Assert.Equal(4, capturedData.Length);
-            Assert.Equal((byte)'a', capturedData.First.Span[0]);
-            Assert.Equal((byte)'b', capturedData.First.Span[1]);
-            Assert.Equal((byte)'c', capturedData.First.Span[2]);
+            Assert.Equal((byte)'a', capturedData[0]);
+            Assert.Equal((byte)'b', capturedData[1]);
+            Assert.Equal((byte)'c', capturedData[2]);
         }
     }
 }

@@ -9,7 +9,7 @@ namespace RedisTribute.Io.Commands.Geo
     {
         readonly RedisKey[] _members;
 
-        public GeoPosCommand(RedisKey key, params RedisKey[] members) : base("GEOPOS", key)
+        public GeoPosCommand(RedisKey key, params RedisKey[] members) : base("GEOPOS", false, key)
         {
             _members = members;
         }

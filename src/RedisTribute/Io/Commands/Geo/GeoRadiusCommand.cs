@@ -13,7 +13,7 @@ namespace RedisTribute.Io.Commands.Geo
         readonly GeoRadiusQuery _query;
         readonly string[] _optionValues;
 
-        public GeoRadiusCommand(GeoRadiusQuery query) : base("GEORADIUS", query.Key)
+        public GeoRadiusCommand(GeoRadiusQuery query) : base("GEORADIUS", false, query.Key)
         {
             _query = query;
             _optionValues = _allOptions.Where(_query.Options.HasFlag).Select(o => o.ToString().ToUpper()).ToArray();

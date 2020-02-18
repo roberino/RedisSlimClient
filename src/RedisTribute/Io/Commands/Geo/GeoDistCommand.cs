@@ -9,7 +9,7 @@ namespace RedisTribute.Io.Commands.Geo
         readonly RedisKey _member2;
         readonly DistanceUnit _unit;
 
-        public GeoDistCommand(RedisKey key, RedisKey member1, RedisKey member2, DistanceUnit unit = default) : base("GEODIST", key)
+        public GeoDistCommand(RedisKey key, RedisKey member1, RedisKey member2, DistanceUnit unit = default) : base("GEODIST", false, key)
         {
             _member1 = member1;
             _member2 = member2;

@@ -10,7 +10,7 @@ namespace RedisTribute.Io.Commands.Geo
 
         readonly RedisKey[] _members;
 
-        public GeoHashCommand(RedisKey key, params RedisKey[] members) : base("GEOHASH", key)
+        public GeoHashCommand(RedisKey key, params RedisKey[] members) : base("GEOHASH", false, key)
         {
             _members = members;
         }

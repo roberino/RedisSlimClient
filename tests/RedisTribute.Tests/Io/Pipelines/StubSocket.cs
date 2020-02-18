@@ -24,7 +24,7 @@ namespace RedisTribute.UnitTests.Io.Pipelines
             _sendWaitHandle = new ManualResetEvent(false);
             _receiveWaitHandle = new ManualResetEvent(false);
             _connectionWaitHandle = new ManualResetEvent(false);
-            Received = new ConcurrentQueue<ReadOnlySequence<byte>>();
+            Received = new ConcurrentQueue<byte[]>();
             State = new SocketState(() => true);
         }
 
@@ -76,7 +76,7 @@ namespace RedisTribute.UnitTests.Io.Pipelines
         {
             var bytes = ReadReceivedQueue(memory);
 
-            await Task.Delay(10);
+            await Task.Delay(1);
 
             _receiveWaitHandle.Set();
 
@@ -85,9 +85,9 @@ namespace RedisTribute.UnitTests.Io.Pipelines
 
         public async ValueTask<int> SendAsync(ReadOnlySequence<byte> buffer)
         {
-            Received.Enqueue(buffer);
+            Received.Enqueue(buffer.ToArray());
 
-            await Task.Delay(10);
+            await Task.Delay(1);
 
             _sendWaitHandle.Set();
 
@@ -97,6 +97,23 @@ namespace RedisTribute.UnitTests.Io.Pipelines
         public async Task SendStringAsync(string data)
         {
             await SendAsync(new ReadOnlySequence<byte>(data.Select(c => (byte)c).ToArray()));
+        }
+
+        public async Task<byte[]> WaitForData(int length)
+        {
+            var i = 0;
+
+            while (i++ < 10)
+            {
+                if (Received.Sum(x => x.Length) >= length)
+                {
+                    return Received.SelectMany(x => x).ToArray();
+                }
+
+                await Task.Delay(10);
+            }
+
+            throw new Exception("Data not received");
         }
 
         public void WaitForDataWrite()
@@ -116,7 +133,7 @@ namespace RedisTribute.UnitTests.Io.Pipelines
             _connectionWaitHandle.WaitOne(5000);
         }
 
-        public ConcurrentQueue<ReadOnlySequence<byte>> Received { get; }
+        public ConcurrentQueue<byte[]> Received { get; }
 
         public SocketState State { get; }
 
@@ -125,17 +142,13 @@ namespace RedisTribute.UnitTests.Io.Pipelines
         int ReadReceivedQueue(Memory<byte> memory)
         {
             var i = 0;
-
             while (!Received.IsEmpty)
             {
                 if (Received.TryDequeue(out var next))
                 {
-                    foreach (var item in next)
+                    foreach (var b in next)
                     {
-                        foreach (var b in item.Span)
-                        {
-                            memory.Span[i++] = b;
-                        }
+                        memory.Span[i++] = b;
                     }
                 }
             }
