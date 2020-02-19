@@ -119,6 +119,11 @@ namespace RedisTribute.Io.Pipelines
                 }
                 catch (Exception ex)
                 {
+                    if (_cancellationToken.IsCancellationRequested)
+                    {
+                        break;
+                    }
+
                     error = ex;
                     StateChanged?.Invoke(PipelineStatus.Faulted);
                     Error?.Invoke(error);
