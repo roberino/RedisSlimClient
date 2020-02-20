@@ -149,14 +149,10 @@ namespace RedisTribute.Io.Net
                 SendTimeout = (int)ConnectTimeout.TotalMilliseconds,
                 ReceiveBufferSize = 8192,
                 SendBufferSize = 8192,
-                NoDelay = true,
-                ExclusiveAddressUse = true
+                LingerState = new LingerOption(false, 0)
             };
 
-            socket.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.NoDelay, true);
-            socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
-            socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.DontLinger, true);
-            socket.LingerState = new LingerOption(false, 0);
+            Try(() => socket.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.NoDelay, true));
 
             Socket = socket;
         }
