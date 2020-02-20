@@ -25,6 +25,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{9AC62569-0
 		docs\ApplicationInsights.md = docs\ApplicationInsights.md
 		docs\Counters.md = docs\Counters.md
 		docs\DistributedLocks.md = docs\DistributedLocks.md
+		docs\GeoApi.md = docs\GeoApi.md
 		docs\Graphs.md = docs\Graphs.md
 		docs\HashSets.md = docs\HashSets.md
 		LICENSE = LICENSE

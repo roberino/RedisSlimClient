@@ -71,7 +71,7 @@ namespace RedisTribute
         public Task<long> GetLongAsync(string key, CancellationToken cancellation = default)
             => _controller.GetResponse(() => new GetCommand(key), cancellation, ResultConvertion.AsLong);
 
-        public Task<int> GeoAddAsync(string key, GeoMember[] members, CancellationToken cancellation = default)
+        public Task<int> GeoAddAsync(string key, GeoMembers members, CancellationToken cancellation = default)
             => _controller.GetResponse(new GeoAddCommand(new GeoEntity(key, members)), cancellation);
 
         public Task<int> GeoAddAsync(string key, GeoMember member, CancellationToken cancellation = default)

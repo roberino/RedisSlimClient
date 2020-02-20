@@ -16,5 +16,7 @@
         public double? Distance { get; }
 
         public string Hash { get; }
+
+        public override string ToString() => $"Position:{Position}, Distance:{Distance}, Hash:{Hash}";
     }
 }

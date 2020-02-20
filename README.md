@@ -14,7 +14,7 @@ The main aims of the client are:
 
 * To create a pluggable, fault tolerant Redis client for .NET (with a focus on supporting DotNet Core / Standard)
 * A simple, async interface with support for cancellation tokens
-* To support basic Redis operations
+* To implement basic Redis operations
 * To enable fast POCO to Redis mapping
 * To be performant with granular control over thread and socket usage
 * Expose detailed telemetry to enable diagnostic analysis and monitoring
@@ -35,6 +35,15 @@ using (var client = ((ClientConfiguration)"localhost:6379").CreateClient())
 }
 
 ```
+
+## Additional topics
+
+* [Distributed Locks](docs/DistributedLocks.md)
+* [HashSets](docs/HashSets.md)
+* [Counters](docs/Counters.md)
+* [Graphs](docs/Graphs.md)
+* [Simple Pub/sub support](docs/PubSub.md)
+* [Geo API](docs/GeoApi.md)
 
 # Configuration
 
@@ -92,6 +101,7 @@ ProactiveRetry will begin to retry the operation on another connection if the pr
 * Retry handling
 * Telemetry
 * Scan / Get / MGet / Set
+* Support for GEO commands
 * [Distributed Locks](docs/DistributedLocks.md)
 * [HashSets](docs/HashSets.md)
 * [Counters](docs/Counters.md)
@@ -103,6 +113,12 @@ ProactiveRetry will begin to retry the operation on another connection if the pr
 ## RedisTribute.Json
 
 This package adds a JSON serializer to the configuration for object to Redis mapping.
+
+```cs
+
+var config = new ClientConfiguration("localhost:6379").UseJsonSerialization();
+
+```
 
 ## RedisTribute.ApplicationInsights
 
@@ -122,4 +138,3 @@ This package adds Application Insights integration into the client so that calls
 * Support for clustering redirection (requires more testing)
 * Better memory management
 * Slimmer object serialization
-* Support for GEO commands

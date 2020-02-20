@@ -65,7 +65,7 @@ namespace RedisTribute
     public interface IGeoClient
     {
         Task<int> GeoAddAsync(string key, GeoMember member, CancellationToken cancellation = default);
-        Task<int> GeoAddAsync(string key, GeoMember[] members, CancellationToken cancellation = default);
+        Task<int> GeoAddAsync(string key, GeoMembers members, CancellationToken cancellation = default);
         Task<double> GeoDistAsync(string key, string member1, string member2, DistanceUnit unit = default, CancellationToken cancellation = default);
         Task<IDictionary<string, string>> GeoHashAsync(string key, string[] members, CancellationToken cancellation = default);
         Task<IDictionary<string, GeoCoordinates>> GeoPosAsync(string key, string[] members, CancellationToken cancellation = default);

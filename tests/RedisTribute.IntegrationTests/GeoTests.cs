@@ -106,23 +106,26 @@ namespace RedisTribute.IntegrationTests
 
                 var key = Guid.NewGuid().ToString();
 
-                await client.GeoAddAsync(key, ("x", (120.943, 55.11)));
-                await client.GeoAddAsync(key, ("y", (160.9, 77.666)));
+                await client.GeoAddAsync(key, new[] {
+                    ("London", (-0.118092, 51.509865)),
+                    ("New York", (-73.93524, 40.730610)) });
+
+                await client.GeoAddAsync(key, ("Mumbai ", (72.877426, 19.076090)));
 
                 var radiusResults1 = await client.GeoRadiusAsync(
-                    new GeoRadiusQuery(key, (120, 60), 1000, DistanceUnit.Kilometres, Types.SortOrder.Ascending, GeoRadiusOptions.WithCoord | GeoRadiusOptions.WithHash));
+                    new GeoRadiusQuery(key, (0, 51), 1000, DistanceUnit.Kilometres, Types.SortOrder.Ascending, GeoRadiusOptions.WithCoord | GeoRadiusOptions.WithHash));
 
                 var radiusResults2 = await client.GeoRadiusAsync(
-                    new GeoRadiusQuery(key, (120, 60), 1000, DistanceUnit.Miles, Types.SortOrder.Ascending, GeoRadiusOptions.WithDist));
+                    new GeoRadiusQuery(key, (0, 51), 1000, DistanceUnit.Miles, Types.SortOrder.Ascending, GeoRadiusOptions.WithDist));
 
                 Assert.Equal(1, radiusResults1.Count);
-                Assert.NotNull(radiusResults1["x"].Hash);
-                Assert.Equal(120.943, Math.Round(radiusResults1["x"].Position.Value.Longitude, 3));
-                Assert.Equal(55.11, Math.Round(radiusResults1["x"].Position.Value.Latitude, 3));
+                Assert.NotNull(radiusResults1["London"].Hash);
+                Assert.Equal(-0.118, Math.Round(radiusResults1["London"].Position.Value.Longitude, 3));
+                Assert.Equal(51.51, Math.Round(radiusResults1["London"].Position.Value.Latitude, 3));
 
-                Assert.Null(radiusResults2["x"].Hash);
-                Assert.False(radiusResults2["x"].Position.HasValue);
-                Assert.True(radiusResults2["x"].Distance > 0);
+                Assert.Null(radiusResults2["London"].Hash);
+                Assert.False(radiusResults2["London"].Position.HasValue);
+                Assert.True(radiusResults2["London"].Distance > 0);
             }
         }
     }

@@ -20,12 +20,12 @@ namespace RedisTribute.Io.Commands.Geo
 
         protected override CommandParameters GetArgs()
         {
-            var args = new object[2 + (_geoEntity.Members.Length * 3)];
+            var args = new object[2 + (_geoEntity.Members.Count * 3)];
 
             args[0] = CommandText;
             args[1] = Key.Bytes;
 
-            for (var i = 0; i < _geoEntity.Members.Length; i++)
+            for (var i = 0; i < _geoEntity.Members.Count; i++)
             {
                 var x = i * 3 + 2;
                 args[x] = _geoEntity.Members[i].Position.Longitude.ToString();

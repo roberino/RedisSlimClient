@@ -153,7 +153,10 @@ namespace RedisTribute.Io.Net
                 ExclusiveAddressUse = true
             };
 
+            socket.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.NoDelay, true);
             socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
+            socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.DontLinger, true);
+            socket.LingerState = new LingerOption(false, 0);
 
             Socket = socket;
         }

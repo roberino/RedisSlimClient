@@ -40,5 +40,7 @@ namespace RedisTribute.Types.Geo
 
         public override int GetHashCode()
             => Longitude.GetHashCode() ^ (7 * Latitude.GetHashCode());
+
+        public override string ToString() => $"({Longitude},{Latitude})";
     }
 }
