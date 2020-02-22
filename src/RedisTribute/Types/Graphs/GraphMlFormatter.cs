@@ -55,7 +55,7 @@ namespace RedisTribute.Types.Graphs
                 }
             }
 
-            public async Task<bool> VisitAsync(IVertex<T> vertex, CancellationToken cancellation)
+            public Task<bool> VisitAsync(IVertex<T> vertex, CancellationToken cancellation)
             {
                 const string vertexXName = "node";
 
@@ -63,7 +63,7 @@ namespace RedisTribute.Types.Graphs
                 {
                     if (_visitedVertexes.Contains(vertex.Id))
                     {
-                        return false;
+                        return Task.FromResult(false);
                     }
                     _visitedVertexes.Add(vertex.Id);
                 }
@@ -89,7 +89,7 @@ namespace RedisTribute.Types.Graphs
                     }
                 }
 
-                return true;
+                return Task.FromResult(true);
             }
 
             private void AddData(XElement parent, string key, string content)
