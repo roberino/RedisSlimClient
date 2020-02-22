@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace RedisTribute.Benchmarks
 {
-    [CoreJob]
+    [SimpleJob]
     [RankColumn, MarkdownExporter]
     public class RedisClientBenchmarks : IDisposable
     {
