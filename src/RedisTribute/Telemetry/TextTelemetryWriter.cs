@@ -30,7 +30,7 @@ namespace RedisTribute.Telemetry
 
                 if (telemetryEvent.Exception != null)
                 {
-                    _writeMethod(telemetryEvent.Exception.Message);
+                    _writeMethod(telemetryEvent.Exception.ToString());
                 }
 
                 foreach(var dim in telemetryEvent.Dimensions)

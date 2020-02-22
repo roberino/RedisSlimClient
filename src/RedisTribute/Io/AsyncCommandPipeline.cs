@@ -14,6 +14,7 @@ namespace RedisTribute.Io
 {
     class AsyncCommandPipeline : ICommandPipeline
     {
+        readonly object _lockObj = new object();
         readonly SyncedCounter _pendingCommands = new SyncedCounter();
 
         readonly IDuplexPipeline _pipeline;
@@ -35,15 +36,13 @@ namespace RedisTribute.Io
                 .Attach(_pipeline.Receiver)
                 .AttachTelemetry(telemetryWriter, Severity.Diagnostic);
 
-            var throttledScheduler = new TimeThrottledScheduler(ThreadPoolScheduler.Instance, TimeSpan.FromMilliseconds(500));
-
             _pipeline.Faulted += () =>
             {
                 _status = PipelineStatus.Broken;
 
                 telemetryWriter.Execute(ctx =>
                 {
-                    throttledScheduler.Schedule(Reconnect);
+                    ThreadPoolScheduler.Instance.Schedule(Reconnect);
                 }, nameof(Reconnect));
             };
 
@@ -130,12 +129,20 @@ namespace RedisTribute.Io
 
         async Task Reconnect()
         {
-            if (_status == PipelineStatus.Reinitializing || _cancellation.IsCancellationRequested)
+            if (_cancellation.IsCancellationRequested)
             {
                 return;
             }
 
-            _status = PipelineStatus.Reinitializing;
+            lock (_lockObj)
+            {
+                if (_status == PipelineStatus.Reinitializing)
+                {
+                    return;
+                }
+
+                _status = PipelineStatus.Reinitializing;
+            }
 
             await Attempt.WithExponentialBackoff(async () =>
             {

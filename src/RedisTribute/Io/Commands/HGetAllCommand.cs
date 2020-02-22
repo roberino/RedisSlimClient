@@ -6,7 +6,7 @@ namespace RedisTribute.Io.Commands
 {
     class HGetAllCommand : RedisCommand<IDictionary<RedisKey, byte[]>>
     {
-        public HGetAllCommand(RedisKey key) : base("HGETALL", key)
+        public HGetAllCommand(RedisKey key) : base("HGETALL", false, key)
         {
             if (key.IsNull)
             {
@@ -18,12 +18,7 @@ namespace RedisTribute.Io.Commands
         {
             if(!(redisObject is RedisArray values))
             {
-                if (redisObject.IsNull)
-                {
-                    // return new Dictionary<RedisKey, byte[]>();
-                }
-
-                throw new Exception("Invalid response from server");
+                throw new InvalidResponseException(redisObject);
             }
 
             var results = new Dictionary<RedisKey, byte[]>(values.Count);

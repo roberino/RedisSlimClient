@@ -1,6 +1,5 @@
 ﻿using RedisTribute.Types;
 using RedisTribute.Types.Messaging;
-using System;
 
 namespace RedisTribute.Io.Commands
 {

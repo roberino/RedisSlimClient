@@ -9,6 +9,8 @@ using RedisTribute.Stubs;
 using System.Collections.Generic;
 using RedisTribute.Types.Messaging;
 using System.Collections.Concurrent;
+using System.Linq;
+using System.Diagnostics;
 
 namespace RedisTribute.IntegrationTests
 {
@@ -169,6 +171,59 @@ namespace RedisTribute.IntegrationTests
                 await subscription.Unsubscribe();
 
                 Assert.Equal("Hey", msg);
+            }
+        }
+
+        [Theory]
+        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
+        public async Task PublishAsync_MultipleObjectMessages_SubscriberReceivesMessage(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
+        {
+            const int numberOfMessages = 50;
+
+            var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine);
+
+            config.HealthCheckInterval = TimeSpan.Zero;
+
+            using (var client = config.CreateClient())
+            using (var subClient = config.CreateSubscriberClient())
+            using (var waitHandle = new ManualResetEvent(false))
+            {
+                await client.PingAllAsync();
+                await subClient.PingAllAsync();
+
+                var msgs = new ConcurrentBag<string>();
+
+                var channel = Guid.NewGuid().ToString().Substring(0, 6);
+
+                var subscription = await subClient.SubscribeAsync<TestComplexDto>(channel, m =>
+                {
+                    msgs.Add(m.Body.DataItem1);
+
+                    if(msgs.Count == numberOfMessages)
+                    {
+                        waitHandle.Set();
+                    }
+
+                    return Task.CompletedTask;
+                });
+
+                var timer = Stopwatch.StartNew();
+
+                var pubs = Enumerable.Range(1, numberOfMessages)
+                    .Select(n => client.PublishAsync(channel, new TestComplexDto()
+                    {
+                        DataItem1 = Guid.NewGuid().ToString()
+                    }));
+
+                await Task.WhenAll(pubs);
+
+                waitHandle.WaitOne(1500);
+
+                timer.Stop();
+
+                await subscription.Unsubscribe();
+
+                _output.WriteLine($"Elapsed {timer.ElapsedMilliseconds}ms, Messages: {msgs.Count}, {timer.ElapsedMilliseconds / (float)msgs.Count : 0.00} pm");
             }
         }
 

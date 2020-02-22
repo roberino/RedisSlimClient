@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="LinqInfer" Version="5.1.0" />
+    <PackageReference Include="LinqInfer" Version="6.0.0-beta" />
   </ItemGroup>
 
 </Project>
