@@ -10,6 +10,7 @@ namespace RedisTribute.Io.Net
 {
     class SocketContainer : ITraceable
     {
+        private const int SocketBufferSize = 8192;
         readonly IServerEndpointFactory _endPointFactory;
 
         protected readonly CancellationTokenSource Cancellation;
@@ -147,8 +148,8 @@ namespace RedisTribute.Io.Net
             {
                 ReceiveTimeout = (int)ConnectTimeout.TotalMilliseconds,
                 SendTimeout = (int)ConnectTimeout.TotalMilliseconds,
-                ReceiveBufferSize = 8192,
-                SendBufferSize = 8192,
+                ReceiveBufferSize = SocketBufferSize,
+                SendBufferSize = SocketBufferSize,
                 LingerState = new LingerOption(false, 0)
             };
 

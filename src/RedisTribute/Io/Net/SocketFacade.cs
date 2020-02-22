@@ -1,14 +1,22 @@
 ﻿using System;
 using System.Buffers;
 using System.Net.Sockets;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
 namespace RedisTribute.Io.Net
 {
     class SocketFacade : SocketContainer, IManagedSocket
     {
+        readonly static SocketFlags _multiSendFlags;
+
         readonly AwaitableSocketAsyncEventArgs _readEventArgs;
         readonly AwaitableSocketAsyncEventArgs _writeEventArgs;
+
+        static SocketFacade()
+        {
+            _multiSendFlags = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? SocketFlags.Partial : SocketFlags.None;
+        }
 
         public SocketFacade(IServerEndpointFactory endPointFactory, TimeSpan timeout) : base(endPointFactory, timeout)
         {
@@ -44,7 +52,7 @@ namespace RedisTribute.Io.Net
 
             foreach (var item in buffer)
             {
-                sent += await SendToSocket(item, SocketFlags.Partial);
+                sent += await SendToSocket(item, _multiSendFlags);
             }
 
             return sent;
