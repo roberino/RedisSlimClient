@@ -1,4 +1,5 @@
 ﻿using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Exporters;
 using RedisTribute.Configuration;
 using RedisTribute.Stubs;
 using RedisTribute.Telemetry;
@@ -11,7 +12,7 @@ using System.Threading.Tasks;
 namespace RedisTribute.Benchmarks
 {
     [SimpleJob]
-    [RankColumn, MarkdownExporter]
+    [RankColumn, MarkdownExporter, RPlotExporter, CsvMeasurementsExporter, MemoryDiagnoser]
     public class RedisClientBenchmarks : IDisposable
     {
         const string ServerUri = "redis://localhost:6379/";

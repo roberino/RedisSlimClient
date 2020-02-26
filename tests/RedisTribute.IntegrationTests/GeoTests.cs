@@ -35,6 +35,8 @@ namespace RedisTribute.IntegrationTests
 
                 var dist = await client.GeoDistAsync(key, "x", "y", DistanceUnit.Metres);
 
+                await client.DeleteAsync(key);
+
                 Assert.True(dist > 0);
             }
         }
@@ -57,6 +59,8 @@ namespace RedisTribute.IntegrationTests
                 await client.GeoAddAsync(key, ("y", (160, 77)));
 
                 var hashes = await client.GeoHashAsync(key, new[] { "x", "y" });
+
+                await client.DeleteAsync(key);
 
                 Assert.Equal(2, hashes.Count);
                 Assert.True(hashes["x"].Length > 0);
@@ -83,6 +87,9 @@ namespace RedisTribute.IntegrationTests
 
                 var coords = await client.GeoPosAsync(key, new[] { "x", "y" });
 
+                var x = await client.DeleteAsync(key);
+
+                Assert.Equal(1, x);
                 Assert.Equal(2, coords.Count);
                 Assert.Equal(12.943, Math.Round(coords["x"].Longitude, 3));
                 Assert.Equal(55.11, Math.Round(coords["x"].Latitude, 2));

@@ -54,6 +54,59 @@ namespace RedisTribute.IntegrationTests
 
                     Assert.True(data.Verify(kv.Value), "Invalid entry");
                 }));
+
+                await Task.WhenAll(entries.Select(kv => client.DeleteAsync(kv.Key)));
+            }
+        }
+
+        [Theory]
+        [InlineData(PipelineMode.Sync, ConfigurationScenario.NonSslBasic)]
+        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
+        public async Task ExpireAsync_InSeconds_ReturnsTrue(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
+        {
+            var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine, 5);
+
+            config.HealthCheckInterval = TimeSpan.Zero;
+
+            using (var client = config.CreateClient())
+            {
+                await client.PingAsync();
+
+                var id = Guid.NewGuid().ToString();
+
+                await client.SetAsync(id, "hello");
+
+                var value = await client.ExpireAsync(id, TimeSpan.FromSeconds(1));
+
+                Assert.True(value);
+            }
+        }
+
+        [Theory]
+        [InlineData(PipelineMode.Sync, ConfigurationScenario.NonSslBasic)]
+        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
+        public async Task ExpireAsync_InMilliseconds_RemovedTheKeyAndReturnsTrue(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
+        {
+            var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine, 5);
+
+            config.HealthCheckInterval = TimeSpan.Zero;
+
+            using (var client = config.CreateClient())
+            {
+                await client.PingAsync();
+
+                var id = Guid.NewGuid().ToString();
+
+                await client.SetAsync(id, "hello");
+
+                var value = await client.ExpireAsync(id, TimeSpan.FromMilliseconds(5));
+
+                await Task.Delay(5);
+
+                var msg = await client.GetAsync<string>(id);
+
+                Assert.True(value);
+                Assert.False(msg.WasFound);
             }
         }
 

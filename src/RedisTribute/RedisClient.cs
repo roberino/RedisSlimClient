@@ -2,6 +2,7 @@
 using RedisTribute.Io;
 using RedisTribute.Io.Commands;
 using RedisTribute.Io.Commands.Geo;
+using RedisTribute.Io.Commands.Keys;
 using RedisTribute.Io.Server;
 using RedisTribute.Types;
 using RedisTribute.Types.Geo;
@@ -40,6 +41,8 @@ namespace RedisTribute
                 (c, e, m) => new PingResponse(c.AssignedEndpoint, e, ((PingCommand)c).Elapsed, m), ConnectionTarget.AllNodes);
 
         public Task<long> DeleteAsync(string key, CancellationToken cancellation = default) => _controller.GetNumericResponse(new DeleteCommand(key), cancellation);
+
+        public Task<bool> ExpireAsync(string key, TimeSpan expiry, CancellationToken cancellation = default) => _controller.GetResponse(new ExpireCommand(key, expiry), cancellation);
 
         public Task<bool> SetAsync(string key, byte[] data, SetOptions options = default, CancellationToken cancellation = default) => _controller.GetResponse(new SetCommand(key, data, options), cancellation);
 
