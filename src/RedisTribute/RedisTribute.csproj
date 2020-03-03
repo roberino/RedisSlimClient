@@ -29,7 +29,4 @@
     <PackageReference Include="System.IO.Pipelines" Version="4.7.0" />
     <PackageReference Include="System.Reflection.Emit" Version="4.7.0" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Io\Commands\Streams\" />
-  </ItemGroup>
 </Project>

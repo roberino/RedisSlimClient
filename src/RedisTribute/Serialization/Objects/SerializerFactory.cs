@@ -40,7 +40,7 @@ namespace RedisTribute.Serialization
                 [typeof(IDictionary<string, string>)] = new DictionarySerializer<string>(),
                 [typeof(Dictionary<string, string>)] = new DictionarySerializer<string>(),
                 [typeof(KeyValuePair<string, string>)] = new KeyValueSerializer<string>(),
-                [typeof(string)] = new StringSerializer(Encoding.UTF8),
+                [typeof(string)] = new StringSerializer(Encoding.UTF8), // TODO: Use encoding from settings?
                 [typeof(byte[])] = new ByteArraySerializer(),
                 [typeof(TimeSpan)] = TimeSpanSerializer.Instance
             };
@@ -55,6 +55,11 @@ namespace RedisTribute.Serialization
                     if (_knownSerializers.TryGetValue(type, out var sz))
                     {
                         return (IObjectSerializer<T>)sz;
+                    }
+
+                    if (type.IsCollectionOrArray())
+                    {
+                        return EnumerableSerializerExtensions.Create<T>();
                     }
 
                     if (!type.IsPublic)

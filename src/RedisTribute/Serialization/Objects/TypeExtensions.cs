@@ -27,6 +27,12 @@ namespace RedisTribute.Serialization
             return type.IsValueType && type.IsGenericType && type.GetGenericTypeDefinition().Name.Contains("ValueTuple");
         }
 
+        public static bool IsCollectionOrArray(this Type type)
+        {
+            return type.IsArray || (type.IsClass && type.GetInterfaces()
+                .Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(ICollection<>)));
+        }
+
         public static T? MakeNullable<T>(T value) where T : struct
         {
             return new T?(value);

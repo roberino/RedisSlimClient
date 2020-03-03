@@ -83,7 +83,7 @@ namespace RedisTribute.Serialization
 
         public void WriteItem<T>(string name, T data)
         {
-            if (data == default)
+            if (data?.GetType() == null)
             {
                 return;
             }

@@ -1,6 +1,7 @@
 ﻿using RedisTribute.Io;
 using RedisTribute.Serialization;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -48,6 +49,45 @@ namespace RedisTribute.UnitTests.Serialization
             {
                 Assert.Equal(123, x.key);
                 Assert.Equal("3", x.data.Attribute("id").Value);
+            });
+        }
+
+        [Fact]
+        public void WriteData_List_WritesItems()
+        {
+            var data = new List<TestDtoWithString>
+            {
+                new TestDtoWithString() {DataItem1 = "abc"},
+                new TestDtoWithString() {DataItem1 = "efg"}
+            };
+
+            WhenWritingObject(data);
+
+            ThenOutputIsValid<List<TestDtoWithString>>(x =>
+            {
+                Assert.Equal(2, x.Count);
+                Assert.Equal("abc", x[0].DataItem1);
+                Assert.Equal("efg", x[1].DataItem1);
+            });
+        }
+
+
+        [Fact]
+        public void WriteData_Array_WritesItems()
+        {
+            var data = new[]
+            {
+                new TestDtoWithString() {DataItem1 = "abc"},
+                new TestDtoWithString() {DataItem1 = "efg"}
+            };
+
+            WhenWritingObject(data);
+
+            ThenOutputIsValid<TestDtoWithString[]>(x =>
+            {
+                Assert.Equal(2, x.Length);
+                Assert.Equal("abc", x[0].DataItem1);
+                Assert.Equal("efg", x[1].DataItem1);
             });
         }
 
