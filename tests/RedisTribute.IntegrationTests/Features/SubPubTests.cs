@@ -1,18 +1,17 @@
-﻿using RedisTribute.Configuration;
-using RedisTribute;
-using System;
+﻿using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using RedisTribute.Configuration;
+using RedisTribute.Stubs;
+using RedisTribute.Types.Messaging;
 using Xunit;
 using Xunit.Abstractions;
-using RedisTribute.Stubs;
-using System.Collections.Generic;
-using RedisTribute.Types.Messaging;
-using System.Collections.Concurrent;
-using System.Linq;
-using System.Diagnostics;
 
-namespace RedisTribute.IntegrationTests
+namespace RedisTribute.IntegrationTests.Features
 {
     public class SubPubTests
     {

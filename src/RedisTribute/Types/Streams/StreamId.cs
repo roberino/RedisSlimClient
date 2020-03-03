@@ -9,7 +9,7 @@ namespace RedisTribute.Types.Streams
             var parts = value.Split('-');
 
             Timestamp = new UnixTime(long.Parse(parts[0]));
-            Id = int.Parse(parts[0]);
+            Id = int.Parse(parts[1]);
         }
 
         public UnixTime Timestamp { get; }

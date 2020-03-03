@@ -21,7 +21,7 @@ namespace RedisTribute.Io.Commands.Streams
             args[1] = Key.Bytes;
             args[2] = "*";
 
-            var i = 0;
+            var i = 3;
 
             foreach (var kv in _keyValues)
             {

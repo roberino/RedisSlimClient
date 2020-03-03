@@ -1,13 +1,13 @@
-﻿using RedisTribute.Configuration;
-using RedisTribute.Stubs;
-using System;
+﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using RedisTribute.Configuration;
+using RedisTribute.Stubs;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace RedisTribute.IntegrationTests
+namespace RedisTribute.IntegrationTests.Features
 {
     public class JsonSerializerTests
     {

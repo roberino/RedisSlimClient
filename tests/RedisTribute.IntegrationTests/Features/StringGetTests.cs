@@ -1,14 +1,14 @@
-﻿using RedisTribute.Configuration;
-using RedisTribute.Serialization;
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using RedisTribute.Configuration;
+using RedisTribute.Serialization;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace RedisTribute.IntegrationTests
+namespace RedisTribute.IntegrationTests.Features
 {
     public class StringGetTests
     {

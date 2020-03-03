@@ -1,15 +1,15 @@
-﻿using Microsoft.ApplicationInsights.Channel;
-using Microsoft.ApplicationInsights.DataContracts;
-using Microsoft.ApplicationInsights.Extensibility;
-using RedisTribute.Configuration;
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.ApplicationInsights.Channel;
+using Microsoft.ApplicationInsights.DataContracts;
+using Microsoft.ApplicationInsights.Extensibility;
+using RedisTribute.Configuration;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace RedisTribute.IntegrationTests
+namespace RedisTribute.IntegrationTests.Features
 {
     public class ApplicationInsightsTests
     {

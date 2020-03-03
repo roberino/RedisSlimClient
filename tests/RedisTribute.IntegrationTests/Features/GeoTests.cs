@@ -1,11 +1,11 @@
-﻿using RedisTribute.Configuration;
-using RedisTribute.Types.Geo;
-using System;
+﻿using System;
 using System.Threading.Tasks;
+using RedisTribute.Configuration;
+using RedisTribute.Types.Geo;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace RedisTribute.IntegrationTests
+namespace RedisTribute.IntegrationTests.Features
 {
     public class GeoTests
     {

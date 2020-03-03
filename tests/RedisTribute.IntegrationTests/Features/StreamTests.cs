@@ -41,6 +41,8 @@ namespace RedisTribute.IntegrationTests.Features
                 });
 
                 Assert.True(id.Timestamp.ToDateTime().Year > 2019);
+
+                await stream.DeleteAsync();
             }
         }
     }

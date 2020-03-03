@@ -37,5 +37,10 @@ namespace RedisTribute.Types.Streams
 
             return id;
         }
+
+        public async Task<bool> DeleteAsync(CancellationToken cancellation = default)
+        {
+            return (await  _client.DeleteAsync(_key.ToString(), cancellation)) > 0;
+        }
     }
 }

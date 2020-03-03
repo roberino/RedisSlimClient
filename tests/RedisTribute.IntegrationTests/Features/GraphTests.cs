@@ -1,12 +1,12 @@
-﻿using RedisTribute.Configuration;
-using RedisTribute.Types.Graphs;
-using System;
+﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using RedisTribute.Configuration;
+using RedisTribute.Types.Graphs;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace RedisTribute.IntegrationTests
+namespace RedisTribute.IntegrationTests.Features
 {
     public class GraphTests
     {

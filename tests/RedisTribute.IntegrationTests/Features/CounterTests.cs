@@ -1,10 +1,10 @@
-﻿using RedisTribute.Configuration;
-using System;
+﻿using System;
 using System.Threading.Tasks;
+using RedisTribute.Configuration;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace RedisTribute.IntegrationTests
+namespace RedisTribute.IntegrationTests.Features
 {
     public class CounterTests
     {
