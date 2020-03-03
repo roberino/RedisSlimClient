@@ -3,11 +3,13 @@ using RedisTribute.Io;
 using RedisTribute.Io.Commands;
 using RedisTribute.Io.Commands.Geo;
 using RedisTribute.Io.Commands.Keys;
+using RedisTribute.Io.Commands.Streams;
 using RedisTribute.Io.Server;
 using RedisTribute.Types;
 using RedisTribute.Types.Geo;
 using RedisTribute.Types.Graphs;
 using RedisTribute.Types.Messaging;
+using RedisTribute.Types.Streams;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,7 +19,7 @@ using System.Threading.Tasks;
 
 namespace RedisTribute
 {
-    class RedisClient : IRedisClient
+    class RedisClient : IRedisClient, IPrimativeStreamClient
     {
         readonly RedisController _controller;
         readonly RedisLock _redisLock;
@@ -253,6 +255,18 @@ namespace RedisTribute
             }
 
             return await _controller.GetResponse(() => new ObjectGetCommand<T>(key, _controller.Configuration), cancellation, (x, _) => x);
+        }
+
+        public Task<StreamId> XAddAsync(RedisKey key, IDictionary<RedisKey, RedisKey> keyValues, CancellationToken cancellation)
+        {
+            var cmd = new XAddCommand(key, keyValues);
+
+            return _controller.GetResponse(cmd, cancellation);
+        }
+
+        public Task<IRedisStream<T>> GetStream<T>(RedisKey key, CancellationToken cancellation = default)
+        {
+            return Task.FromResult<IRedisStream<T>>(new RedisStream<T>(this, _controller.Configuration, key));
         }
     }
 }

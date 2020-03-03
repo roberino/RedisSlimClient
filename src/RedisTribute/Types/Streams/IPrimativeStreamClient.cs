@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace RedisTribute.Types.Streams
 {
-    interface IStreamClient
+    interface IPrimativeStreamClient
     {
         Task<StreamId> XAddAsync(RedisKey key, IDictionary<RedisKey, RedisKey> keyValues, CancellationToken cancellation);
     }

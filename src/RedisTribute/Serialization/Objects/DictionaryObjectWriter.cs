@@ -1,9 +1,8 @@
-﻿using System;
+﻿using RedisTribute.Configuration;
+using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Text;
-using RedisTribute.Configuration;
-using RedisTribute.Types.Primatives;
+using RedisTribute.Types;
 
 namespace RedisTribute.Serialization.Objects
 {
@@ -12,44 +11,59 @@ namespace RedisTribute.Serialization.Objects
         readonly ISerializerSettings _serializerSettings;
         readonly IBinaryFormatter _binaryFormatter;
 
+        IDictionary<RedisKey, RedisKey> _output;
+
         public DictionaryObjectWriter(ISerializerSettings serializerSettings, IBinaryFormatter binaryFormatter = null)
         {
             _serializerSettings = serializerSettings;
             _binaryFormatter = binaryFormatter ?? BinaryFormatter.Default;
-
-            Output = new Dictionary<byte[], byte[]>(16);
         }
 
-        public IDictionary<byte[], byte[]> Output { get; }
+        public IDictionary<RedisKey, RedisKey> Output
+        {
+            get
+            {
+                if (_output == null)
+                {
+                    _output = new Dictionary<RedisKey, RedisKey>(16);
+                }
+
+                return _output;
+            }
+        }
 
         public void BeginWrite(int itemCount)
         {
-            throw new NotImplementedException();
-        }
-
-        void Write(string name, byte[] data)
-        {
-            Output[Encoding.UTF8.GetBytes(name)] = data;
+            _output = new Dictionary<RedisKey, RedisKey>(itemCount);
         }
 
         public void Raw(byte[] data, int? length = null)
         {
             if (length.HasValue)
             {
-                throw new NotSupportedException();
+                var buf = new byte[length.Value];
+
+                Array.Copy(data, 0, buf, 0, length.Value);
+
+                data = buf;
             }
 
             Write("$data", data);
         }
 
-        public void WriteNullable<T>(string name, T? data, string onValue) where T : struct
+        public void WriteNullable<T>(string name, T? data, string method) where T : struct
         {
-            throw new NotImplementedException();
+            if (data.HasValue)
+            {
+                // TODO: Make this simpler & faster
+
+                this.BindToMethod(method, p => p.Length == 2 && p[0].ParameterType == typeof(T), name, data.Value);
+            }
         }
 
         public void WriteEnum<T>(string name, T data)
         {
-            throw new NotImplementedException();
+            Write(name, Encoding.ASCII.GetBytes($"{data}"));
         }
 
         public void WriteItem<T>(string name, IEnumerable<T> data)
@@ -61,6 +75,13 @@ namespace RedisTribute.Serialization.Objects
 
         public void WriteItem<T>(string name, T data)
         {
+            var isNull = (data as object) == null;
+
+            if (isNull)
+            {
+                return;
+            }
+
             var bytes = _serializerSettings.SerializeAsBytes(data);
 
             Write(name, bytes);
@@ -101,5 +122,8 @@ namespace RedisTribute.Serialization.Objects
 
         public void WriteItem(string name, float data)
             => Write(name, _binaryFormatter.ToBytes(data));
+        
+        void Write(string name, byte[] data)
+            => Output[Encoding.UTF8.GetBytes(name)] = data;
     }
 }

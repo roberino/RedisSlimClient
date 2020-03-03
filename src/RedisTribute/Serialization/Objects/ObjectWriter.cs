@@ -58,11 +58,9 @@ namespace RedisTribute.Serialization
         {
             if (data.HasValue)
             {
-                GetType()
-                    .GetMethods()
-                    .Where(m => m.Name == method && m.GetParameters().Length == 2 && m.GetParameters()[1].ParameterType == typeof(T))
-                    .Single()
-                    .Invoke(this, new object[] { name, data.Value });
+                // TODO: Make this simpler & faster
+
+                this.BindToMethod(method, p => p.Length == 2 && p[0].ParameterType == typeof(T), name, data.Value);
             }
         }
 

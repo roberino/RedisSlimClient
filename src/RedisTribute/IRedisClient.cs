@@ -98,7 +98,8 @@ namespace RedisTribute
         IRedLock,
         IGraphClient,
         IPublisherClient,
-        IGeoClient
+        IGeoClient,
+        IRedisStreamClient
     {
     }
 }

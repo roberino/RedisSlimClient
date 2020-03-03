@@ -7,6 +7,15 @@ namespace RedisTribute.Serialization
 {
     static class TypeExtensions
     {
+        public static void BindToMethod(this object instance, string method, Func<ParameterInfo[], bool> predicate,
+            params object[] args)
+        {
+            instance.GetType()
+                .GetMethods()
+                .Single(m => m.Name == method && predicate(m.GetParameters()))
+                .Invoke(instance, args);
+        }
+
         public static PropertyInfo[] SerializableProperties(this Type type)
         {
             return type.GetProperties(BindingFlags.Instance | BindingFlags.Public)
