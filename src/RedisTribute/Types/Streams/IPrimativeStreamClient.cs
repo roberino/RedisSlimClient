@@ -8,7 +8,7 @@ namespace RedisTribute.Types.Streams
     {
         Task<StreamEntryId> XAddAsync(RedisKey key, IDictionary<RedisKey, RedisKey> keyValues, CancellationToken cancellation = default);
 
-        Task<(StreamEntryId id, IDictionary<RedisKey, RedisKey> data)[]> XRange(RedisKey key, StreamEntryId start,
+        Task<(StreamEntryId id, IDictionary<RedisKey, RedisKey> data)[]> XRangeAsync(RedisKey key, StreamEntryId start,
             StreamEntryId end, int? count = null, CancellationToken cancellation = default);
     }
 }

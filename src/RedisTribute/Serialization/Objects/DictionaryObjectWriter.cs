@@ -68,6 +68,11 @@ namespace RedisTribute.Serialization.Objects
 
         public void WriteItem<T>(string name, IEnumerable<T> data)
         {
+            if (data == null)
+            {
+                return;
+            }
+
             var bytes = _serializerSettings.SerializeAsBytes(data);
 
             Write(name, bytes);
@@ -75,9 +80,7 @@ namespace RedisTribute.Serialization.Objects
 
         public void WriteItem<T>(string name, T data)
         {
-            var isNull = (data as object) == null;
-
-            if (isNull)
+            if (data == null)
             {
                 return;
             }

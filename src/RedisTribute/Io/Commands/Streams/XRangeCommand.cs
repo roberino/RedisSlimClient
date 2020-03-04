@@ -41,7 +41,7 @@ namespace RedisTribute.Io.Commands.Streams
                 _start.ToString(),
                 _end.ToString(),
                 "COUNT",
-                _count.Value
+                _count.Value.ToString()
             };
         }
 

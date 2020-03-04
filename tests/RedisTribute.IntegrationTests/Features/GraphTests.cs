@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using RedisTribute.Configuration;
+using RedisTribute.IntegrationTests.Data;
 using RedisTribute.Types.Graphs;
 using Xunit;
 using Xunit.Abstractions;

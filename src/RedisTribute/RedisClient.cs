@@ -269,7 +269,7 @@ namespace RedisTribute
             return _controller.GetResponse(cmd, cancellation);
         }
 
-        public Task<(StreamEntryId id, IDictionary<RedisKey, RedisKey> data)[]> XRange(RedisKey key, StreamEntryId start, StreamEntryId end, int? count = null,
+        public Task<(StreamEntryId id, IDictionary<RedisKey, RedisKey> data)[]> XRangeAsync(RedisKey key, StreamEntryId start, StreamEntryId end, int? count = null,
             CancellationToken cancellation = default)
         {
             var cmd = new XRangeCommand(key, start, end, count);

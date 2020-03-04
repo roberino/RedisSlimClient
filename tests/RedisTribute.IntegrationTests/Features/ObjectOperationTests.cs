@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using RedisTribute.Configuration;
+using RedisTribute.IntegrationTests.Data;
 using RedisTribute.Serialization;
 using RedisTribute.Stubs;
 using Xunit;

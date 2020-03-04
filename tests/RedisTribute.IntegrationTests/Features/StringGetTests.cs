@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using RedisTribute.Configuration;
+using RedisTribute.IntegrationTests.Data;
 using RedisTribute.Serialization;
 using Xunit;
 using Xunit.Abstractions;

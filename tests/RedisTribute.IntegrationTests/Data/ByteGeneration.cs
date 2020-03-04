@@ -1,7 +1,7 @@
-﻿using RedisTribute.Serialization;
-using System;
+﻿using System;
+using RedisTribute.Serialization;
 
-namespace RedisTribute.IntegrationTests
+namespace RedisTribute.IntegrationTests.Data
 {
     public static class ByteGeneration
     {
