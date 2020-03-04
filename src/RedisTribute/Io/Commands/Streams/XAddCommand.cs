@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace RedisTribute.Io.Commands.Streams
 {
-    class XAddCommand : RedisCommand<StreamId>
+    class XAddCommand : RedisCommand<StreamEntryId>
     {
         readonly IDictionary<RedisKey, RedisKey> _keyValues;
 
@@ -32,9 +32,9 @@ namespace RedisTribute.Io.Commands.Streams
             return args;
         }
 
-        protected override StreamId TranslateResult(IRedisObject redisObject)
+        protected override StreamEntryId TranslateResult(IRedisObject redisObject)
         {
-            return new StreamId(redisObject.ToString());
+            return new StreamEntryId(redisObject.ToString());
         }
     }
 }

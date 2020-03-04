@@ -13,6 +13,11 @@ namespace RedisTribute.Types
 
         public long MillisecondTimestamp { get; }
 
+        public UnixTime Next()
+        {
+            return new UnixTime(MillisecondTimestamp + 1);
+        }
+
         public int CompareTo(object obj)
         {
             if (obj is UnixTime)

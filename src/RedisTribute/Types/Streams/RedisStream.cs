@@ -25,7 +25,7 @@ namespace RedisTribute.Types.Streams
             _serializer = SerializerFactory.Instance.Create<T>();
         }
 
-        public async Task<StreamId> WriteAsync(T value, CancellationToken cancellation = default)
+        public async Task<StreamEntryId> WriteAsync(T value, CancellationToken cancellation = default)
         {
             var objectWriter = new DictionaryObjectWriter(_serializerSettings);
 

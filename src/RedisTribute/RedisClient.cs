@@ -221,6 +221,11 @@ namespace RedisTribute
             return new Graph<T>(this, _controller.Configuration, new GraphOptions(graphNamespace));
         }
 
+        public Task<IRedisStream<T>> GetStream<T>(RedisKey key, CancellationToken cancellation = default)
+        {
+            return Task.FromResult<IRedisStream<T>>(new RedisStream<T>(this, _controller.Configuration, key));
+        }
+
         public void Dispose()
         {
             _controller.Dispose();
@@ -257,16 +262,19 @@ namespace RedisTribute
             return await _controller.GetResponse(() => new ObjectGetCommand<T>(key, _controller.Configuration), cancellation, (x, _) => x);
         }
 
-        public Task<StreamId> XAddAsync(RedisKey key, IDictionary<RedisKey, RedisKey> keyValues, CancellationToken cancellation)
+        public Task<StreamEntryId> XAddAsync(RedisKey key, IDictionary<RedisKey, RedisKey> keyValues, CancellationToken cancellation = default)
         {
             var cmd = new XAddCommand(key, keyValues);
 
             return _controller.GetResponse(cmd, cancellation);
         }
 
-        public Task<IRedisStream<T>> GetStream<T>(RedisKey key, CancellationToken cancellation = default)
+        public Task<(StreamEntryId id, IDictionary<RedisKey, RedisKey> data)[]> XRange(RedisKey key, StreamEntryId start, StreamEntryId end, int? count = null,
+            CancellationToken cancellation = default)
         {
-            return Task.FromResult<IRedisStream<T>>(new RedisStream<T>(this, _controller.Configuration, key));
+            var cmd = new XRangeCommand(key, start, end, count);
+
+            return _controller.GetResponse(cmd, cancellation);
         }
     }
 }
