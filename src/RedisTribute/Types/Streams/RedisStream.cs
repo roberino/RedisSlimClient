@@ -40,7 +40,13 @@ namespace RedisTribute.Types.Streams
             return id;
         }
 
-        public async Task ReadAllAsync(Func<KeyValuePair<StreamEntryId, T>, Task> processor, bool exitWhenNoData = true, int batchSize = 100, CancellationToken cancellation = default)
+        public Task ReadAllAsync(Func<KeyValuePair<StreamEntryId, T>, Task> processor, bool exitWhenNoData = true,
+            int batchSize = 100, CancellationToken cancellation = default)
+        {
+            return ReadAsync(processor, StreamEntryId.Start, StreamEntryId.End, exitWhenNoData, batchSize, cancellation);
+        }
+
+        public async Task ReadAsync(Func<KeyValuePair<StreamEntryId, T>, Task> processor, StreamEntryId start, StreamEntryId? end = null, bool exitWhenNoData = true, int batchSize = 100, CancellationToken cancellation = default)
         {
             StreamEntryId currentStart = StreamEntryId.Start;
 

@@ -6,7 +6,7 @@ using RedisTribute.Types;
 
 namespace RedisTribute.Serialization.Objects
 {
-    class DictionaryObjectWriter : IObjectWriter
+    struct DictionaryObjectWriter : IObjectWriter
     {
         readonly ISerializerSettings _serializerSettings;
         readonly IBinaryFormatter _binaryFormatter;
@@ -17,6 +17,7 @@ namespace RedisTribute.Serialization.Objects
         {
             _serializerSettings = serializerSettings;
             _binaryFormatter = binaryFormatter ?? BinaryFormatter.Default;
+            _output = null;
         }
 
         public IDictionary<RedisKey, RedisKey> Output
