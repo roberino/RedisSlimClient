@@ -16,6 +16,8 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using RedisTribute.Io.Commands.Hashes;
+using RedisTribute.Io.Commands.PubSub;
 
 namespace RedisTribute
 {

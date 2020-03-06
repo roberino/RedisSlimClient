@@ -1,7 +1,7 @@
 ﻿using RedisTribute.Types;
 using RedisTribute.Types.Messaging;
 
-namespace RedisTribute.Io.Commands
+namespace RedisTribute.Io.Commands.PubSub
 {
     class PublishCommand : RedisCommand<int>
     {

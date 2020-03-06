@@ -1,8 +1,8 @@
-﻿using RedisTribute.Types;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using RedisTribute.Types;
 
-namespace RedisTribute.Io.Commands
+namespace RedisTribute.Io.Commands.Hashes
 {
     class HGetAllCommand : RedisCommand<IDictionary<RedisKey, byte[]>>
     {

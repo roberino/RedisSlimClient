@@ -1,11 +1,11 @@
-﻿using RedisTribute.Types;
-using RedisTribute.Types.Messaging;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using RedisTribute.Types;
+using RedisTribute.Types.Messaging;
 
-namespace RedisTribute.Io.Commands
+namespace RedisTribute.Io.Commands.PubSub
 {
     class SubscribeCommand : RedisCommand<bool>, ISubscriberCommand
     {

@@ -4,11 +4,23 @@ namespace RedisTribute.Types
 {
     public readonly struct UnixTime : IEquatable<UnixTime>, IComparable
     {
-        static readonly DateTime _expoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        static readonly DateTime Epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
         public UnixTime(long millisecondTimestamp)
         {
             MillisecondTimestamp = millisecondTimestamp;
+        }
+
+        public static UnixTime UtcNow => FromUtcDateTime(DateTime.UtcNow);
+
+        public static UnixTime FromUtcDateTime(DateTime dateTime)
+        {
+            if (dateTime.Kind != DateTimeKind.Utc)
+            {
+                throw new ArgumentException($"non UTC {nameof(dateTime)}: {dateTime.Kind}");
+            }
+
+            return new UnixTime((long) (dateTime - Epoch).TotalMilliseconds);
         }
 
         public long MillisecondTimestamp { get; }
@@ -42,6 +54,6 @@ namespace RedisTribute.Types
 
         public override int GetHashCode() => (int)(MillisecondTimestamp % int.MaxValue);
 
-        public DateTime ToDateTime() => _expoch.AddMilliseconds(MillisecondTimestamp);
+        public DateTime ToDateTime() => Epoch.AddMilliseconds(MillisecondTimestamp);
     }
 }

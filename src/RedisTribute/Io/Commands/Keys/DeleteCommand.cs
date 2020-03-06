@@ -1,6 +1,6 @@
 ﻿using RedisTribute.Types;
 
-namespace RedisTribute.Io.Commands
+namespace RedisTribute.Io.Commands.Keys
 {
     class DeleteCommand : RedisPrimativeCommand
     {

@@ -1,7 +1,7 @@
-﻿using RedisTribute.Types;
-using System.Linq;
+﻿using System.Linq;
+using RedisTribute.Types;
 
-namespace RedisTribute.Io.Commands
+namespace RedisTribute.Io.Commands.Keys
 {
     class ScanCommand : RedisCommand<ScanResults>
     {

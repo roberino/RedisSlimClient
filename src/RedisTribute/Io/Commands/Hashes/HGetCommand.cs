@@ -1,6 +1,6 @@
 ﻿using RedisTribute.Types;
 
-namespace RedisTribute.Io.Commands
+namespace RedisTribute.Io.Commands.Hashes
 {
     class HGetCommand : RedisPrimativeCommand
     {

@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using RedisTribute.Types;
 
-namespace RedisTribute.Io.Commands
+namespace RedisTribute.Io.Commands.PubSub
 {
     class UnsubscribeCommand : RedisCommand<bool>
     {

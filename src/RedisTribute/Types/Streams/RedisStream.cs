@@ -48,12 +48,13 @@ namespace RedisTribute.Types.Streams
 
         public async Task ReadAsync(Func<KeyValuePair<StreamEntryId, T>, Task> processor, StreamEntryId start, StreamEntryId? end = null, bool exitWhenNoData = true, int batchSize = 100, CancellationToken cancellation = default)
         {
-            StreamEntryId currentStart = StreamEntryId.Start;
+            var theEnd = end.GetValueOrDefault(StreamEntryId.End);
+            var currentStart = start;
 
             while (!cancellation.IsCancellationRequested)
             {
                 var results =
-                    await _client.XRangeAsync(_key, currentStart, StreamEntryId.End, batchSize, cancellation);
+                    await _client.XRangeAsync(_key, currentStart, theEnd, batchSize, cancellation);
 
                 if (results.Length == 0)
                 {
@@ -77,6 +78,11 @@ namespace RedisTribute.Types.Streams
                 }
 
                 currentStart = results[results.Length - 1].id.Next();
+
+                if (currentStart.CompareTo(theEnd) > 0)
+                {
+                    break;
+                }
             }
         }
 

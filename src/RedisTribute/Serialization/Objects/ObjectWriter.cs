@@ -60,7 +60,7 @@ namespace RedisTribute.Serialization
             {
                 // TODO: Make this simpler & faster
 
-                this.BindToMethod(method, p => p.Length == 2 && p[0].ParameterType == typeof(T), name, data.Value);
+                this.BindToMethod(method, p => p.Length == 2 && p[1].ParameterType == typeof(T), name, data.Value);
             }
         }
 

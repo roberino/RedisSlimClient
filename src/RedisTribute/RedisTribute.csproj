@@ -10,7 +10,7 @@
     <PackageLicenseFile>LICENCE.txt</PackageLicenseFile>
     <PackageProjectUrl>https://github.com/roberino/RedisSlimClient/</PackageProjectUrl>
     <RepositoryUrl>https://github.com/roberino/RedisSlimClient/</RepositoryUrl>
-    <PackageTags>Redis Client Cache Azure</PackageTags>
+    <PackageTags>Redis Client Cache Azure Microservices Cloud Streams</PackageTags>
     <PackageIcon>icon.png</PackageIcon>
     <PackageIconUrl>https://raw.githubusercontent.com/roberino/RedisSlimClient/master/docs/logo.png</PackageIconUrl>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>

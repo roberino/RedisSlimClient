@@ -11,7 +11,12 @@ namespace RedisTribute
     {
         Task<StreamEntryId> WriteAsync(T value, CancellationToken cancellation = default);
 
-        Task ReadAllAsync(Func<KeyValuePair<StreamEntryId, T>, Task> processor, bool exitWhenNoData = true, int batchSize = 100, CancellationToken cancellation = default);
+        Task ReadAllAsync(Func<KeyValuePair<StreamEntryId, T>, Task> processor,
+            bool exitWhenNoData = true, int batchSize = 100, CancellationToken cancellation = default);
+
+        Task ReadAsync(Func<KeyValuePair<StreamEntryId, T>, Task> processor, StreamEntryId start,
+            StreamEntryId? end = null, bool exitWhenNoData = true, int batchSize = 100,
+            CancellationToken cancellation = default);
 
         Task<bool> DeleteAsync(CancellationToken cancellation = default);
     }
