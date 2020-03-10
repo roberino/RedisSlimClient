@@ -79,7 +79,7 @@ namespace RedisTribute.Types.Streams
 
                 currentStart = results[results.Length - 1].id.Next();
 
-                if (currentStart.CompareTo(theEnd) > 0)
+                if (currentStart > end)
                 {
                     break;
                 }

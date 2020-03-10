@@ -4,6 +4,7 @@ using RedisTribute.Types.Streams;
 using System.Threading;
 using System.Threading.Tasks;
 using RedisTribute.Types;
+using RedisTribute.Types.Pipelines;
 
 namespace RedisTribute
 {
@@ -24,5 +25,7 @@ namespace RedisTribute
     public interface IRedisStreamClient
     {
         Task<IRedisStream<T>> GetStream<T>(RedisKey key, CancellationToken cancellation = default);
+
+        StreamPipeline<TIn> CreatePipeline<TIn>(PipelineOptions options);
     }
 }

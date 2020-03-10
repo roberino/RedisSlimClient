@@ -5,6 +5,7 @@ using System.Linq;
 using RedisTribute.Configuration;
 using System.Threading.Tasks;
 using RedisTribute.Stubs;
+using RedisTribute.Types.Pipelines;
 using RedisTribute.Types.Streams;
 using Xunit;
 using Xunit.Abstractions;
@@ -18,6 +19,32 @@ namespace RedisTribute.IntegrationTests.Features
         public StreamTests(ITestOutputHelper output)
         {
             _output = output;
+        }
+
+        [Theory]
+        [InlineData(PipelineMode.Sync, ConfigurationScenario.NonSslBasic)]
+        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
+        public async Task CreatePipeline(PipelineMode pipelineMode,
+            ConfigurationScenario configurationScenario)
+        {
+            var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine, 5);
+
+            config.HealthCheckInterval = TimeSpan.Zero;
+
+            using (var client = config.CreateClient())
+            {
+                await client.PingAllAsync();
+
+                var ns = Guid.NewGuid().ToString();
+
+                var pipeline = client.CreatePipeline<TestComplexDto>(PipelineOptions.FromStartOfStream(ns));
+
+                await pipeline
+                    .Filter(x => x.Id.Id != -1)
+                    .Transform(x => x.Data)
+                    .Sink(x => Task.CompletedTask)
+                    .ExecuteAsync();
+            }
         }
 
         [Theory]

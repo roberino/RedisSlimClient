@@ -12,5 +12,7 @@
 
         public string GetCounterKey(string key)
             => $"counter://{key}";
+        public string GetStreamKey(string key)
+            => $"stream://{key}";
     }
 }

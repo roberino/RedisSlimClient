@@ -18,6 +18,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using RedisTribute.Io.Commands.Hashes;
 using RedisTribute.Io.Commands.PubSub;
+using RedisTribute.Types.Pipelines;
 
 namespace RedisTribute
 {
@@ -226,6 +227,14 @@ namespace RedisTribute
         public Task<IRedisStream<T>> GetStream<T>(RedisKey key, CancellationToken cancellation = default)
         {
             return Task.FromResult<IRedisStream<T>>(new RedisStream<T>(this, _controller.Configuration, key));
+        }
+
+        public StreamPipeline<TIn> CreatePipeline<TIn>(PipelineOptions options)
+        {
+            var key = $"{options.Namespace}/{typeof(TIn).Name}";
+            var stream = new RedisStream<TIn>(this, _controller.Configuration, key);
+
+            return new Pipeline<TIn>(stream, options);
         }
 
         public void Dispose()
