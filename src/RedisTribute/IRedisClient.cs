@@ -11,6 +11,11 @@ using System.Threading.Tasks;
 
 namespace RedisTribute
 {
+    public interface IDeletable
+    {
+        Task DeleteAsync(CancellationToken cancellation = default);
+    }
+
     public interface IRedisKeyManager : IDisposable
     {
         Task<long> ScanKeysAsync(ScanOptions scanOptions, CancellationToken cancellation = default);

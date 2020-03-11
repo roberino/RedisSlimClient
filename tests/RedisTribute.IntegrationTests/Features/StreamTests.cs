@@ -38,7 +38,7 @@ namespace RedisTribute.IntegrationTests.Features
                 var ns = Guid.NewGuid().ToString();
 
                 var pipeline = client
-                    .CreatePipeline<TestComplexDto>(PipelineOptions.FromStartOfStream(ns))
+                    .CreatePipeline<TestComplexDto>(PipelineOptions.FromStartOfStream(ns, true))
                     .Filter(x => x.Id.Id != -1)
                     .Transform(x => x.DataItem1)
                     .ForwardToStream();

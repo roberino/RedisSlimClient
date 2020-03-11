@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace RedisTribute.Types.Pipelines
 {
-    public interface IPipeline
+    public interface IPipeline : IDeletable
     {
         Task ExecuteAsync(CancellationToken cancellation = default);
     }

@@ -8,7 +8,7 @@ using RedisTribute.Types.Pipelines;
 
 namespace RedisTribute
 {
-    public interface IRedisStream<T>
+    public interface IRedisStream<T> : IDeletable
     {
         Task<StreamEntryId> WriteAsync(T value, CancellationToken cancellation = default);
 
@@ -18,8 +18,6 @@ namespace RedisTribute
         Task ReadAsync(Func<KeyValuePair<StreamEntryId, T>, Task> processor, StreamEntryId start,
             StreamEntryId? end = null, bool exitWhenNoData = true, int batchSize = 100,
             CancellationToken cancellation = default);
-
-        Task<bool> DeleteAsync(CancellationToken cancellation = default);
     }
 
     public interface IRedisStreamClient

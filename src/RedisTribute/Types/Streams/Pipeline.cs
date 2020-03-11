@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using RedisTribute.Types.Pipelines;
@@ -14,7 +15,6 @@ namespace RedisTribute.Types.Streams
 
     public abstract class StreamPipeline<TIn> : PipelineComponent<IRedisStreamPipeline, StreamingItem<TIn>>
     {
-
     }
 
     class Pipeline<TIn> : StreamPipeline<TIn>, IRedisStreamPipeline, IStreamSinkFactory
@@ -22,12 +22,14 @@ namespace RedisTribute.Types.Streams
         readonly IRedisStreamClient _client;
         readonly IRedisStream<(TIn body, string hash)> _inputStream;
         readonly PipelineOptions _options;
+        readonly IList<IDeletable> _tearDownItems;
 
         Pipeline(IRedisStreamClient client, IRedisStream<(TIn body, string hash)> inputStream, PipelineOptions options)
         {
             _client = client;
             _inputStream = inputStream;
             _options = options;
+            _tearDownItems = new List<IDeletable>();
 
             Root = this;
         }
@@ -45,6 +47,14 @@ namespace RedisTribute.Types.Streams
             var x = (body: item, hash: hash ?? "");
 
             await _inputStream.WriteAsync(x, cancellation);
+        }
+
+        public async Task DeleteAsync(CancellationToken cancellation = default)
+        {
+            foreach (var x in _tearDownItems)
+            {
+                await x.DeleteAsync(cancellation);
+            }
         }
 
         public Sink<StreamingItem<TOut>> CreatePipelineSink<TOut>()
