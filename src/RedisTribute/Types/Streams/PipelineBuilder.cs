@@ -69,12 +69,12 @@ namespace RedisTribute.Types.Streams
                 IRedisStream<TOutput> fwdStream = null;
 
                 var inputKey = KeySpace.Default.GetStreamKey($"{_options.Namespace}/{typeof(TInput).Name}");
-                var inputStream = await _streamClient.GetStream<TInput>(inputKey);
+                var inputStream = _streamClient.GetStream<TInput>(inputKey);
 
                 if (forward)
                 {
                     var outputKey = KeySpace.Default.GetStreamKey($"{_options.Namespace}/{typeof(TOutput).Name}");
-                    fwdStream = await _streamClient.GetStream<TOutput>(outputKey);
+                    fwdStream = _streamClient.GetStream<TOutput>(outputKey);
                 }
 
                 await inputStream.ReadAsync(async kv =>

@@ -55,5 +55,8 @@ namespace RedisTribute.Types
         public override int GetHashCode() => (int)(MillisecondTimestamp % int.MaxValue);
 
         public DateTime ToDateTime() => Epoch.AddMilliseconds(MillisecondTimestamp);
+
+        public byte[] ToBytes()
+            => BitConverter.GetBytes(MillisecondTimestamp);
     }
 }

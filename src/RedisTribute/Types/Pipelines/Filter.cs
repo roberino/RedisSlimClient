@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace RedisTribute.Types.Pipelines
@@ -14,11 +15,11 @@ namespace RedisTribute.Types.Pipelines
             _predicate = predicate;
         }
 
-        public async Task ReceiveAsync(TData input)
+        public async Task ReceiveAsync(TData input, CancellationToken cancellation)
         {
             if (Successors.Count > 0 && _predicate(input))
             {
-                await Task.WhenAll(Successors.Select(x => x.ReceiveAsync(input)));
+                await Task.WhenAll(Successors.Select(x => x.ReceiveAsync(input, cancellation)));
             }
         }
     }

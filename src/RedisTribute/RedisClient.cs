@@ -224,18 +224,11 @@ namespace RedisTribute
             return new Graph<T>(this, _controller.Configuration, new GraphOptions(graphNamespace));
         }
 
-        public Task<IRedisStream<T>> GetStream<T>(RedisKey key, CancellationToken cancellation = default)
-        {
-            return Task.FromResult<IRedisStream<T>>(new RedisStream<T>(this, _controller.Configuration, key));
-        }
+        public IRedisStream<T> GetStream<T>(RedisKey key, CancellationToken cancellation = default)
+            => new RedisStream<T>(this, _controller.Configuration, key);
 
         public StreamPipeline<TIn> CreatePipeline<TIn>(PipelineOptions options)
-        {
-            var key = $"{options.Namespace}/{typeof(TIn).Name}";
-            var stream = new RedisStream<TIn>(this, _controller.Configuration, key);
-
-            return new Pipeline<TIn>(stream, options);
-        }
+            => Pipeline<TIn>.Create(this, options);
 
         public void Dispose()
         {

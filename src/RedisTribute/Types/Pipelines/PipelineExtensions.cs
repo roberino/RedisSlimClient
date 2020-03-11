@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace RedisTribute.Types.Pipelines
@@ -21,7 +22,7 @@ namespace RedisTribute.Types.Pipelines
             return transform;
         }
 
-        public static IPipeline Sink<TRoot, TIn>(this PipelineComponent<TRoot, TIn> component, Func<TIn, Task> sink)
+        public static IPipeline Sink<TRoot, TIn>(this PipelineComponent<TRoot, TIn> component, Func<TIn, CancellationToken, Task> sink)
             where TRoot : IPipeline
         {
             var sinkComponent = new Sink<TIn>(sink);

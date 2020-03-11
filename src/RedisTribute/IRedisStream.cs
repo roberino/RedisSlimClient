@@ -24,7 +24,7 @@ namespace RedisTribute
 
     public interface IRedisStreamClient
     {
-        Task<IRedisStream<T>> GetStream<T>(RedisKey key, CancellationToken cancellation = default);
+        IRedisStream<T> GetStream<T>(RedisKey key, CancellationToken cancellation = default);
 
         StreamPipeline<TIn> CreatePipeline<TIn>(PipelineOptions options);
     }

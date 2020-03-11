@@ -1,12 +1,12 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using RedisTribute.Configuration;
-using System.Threading.Tasks;
+﻿using RedisTribute.Configuration;
 using RedisTribute.Stubs;
 using RedisTribute.Types.Pipelines;
 using RedisTribute.Types.Streams;
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -22,7 +22,7 @@ namespace RedisTribute.IntegrationTests.Features
         }
 
         [Theory]
-        [InlineData(PipelineMode.Sync, ConfigurationScenario.NonSslBasic)]
+        // [InlineData(PipelineMode.Sync, ConfigurationScenario.NonSslBasic)]
         [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
         public async Task CreatePipeline(PipelineMode pipelineMode,
             ConfigurationScenario configurationScenario)
@@ -37,13 +37,13 @@ namespace RedisTribute.IntegrationTests.Features
 
                 var ns = Guid.NewGuid().ToString();
 
-                var pipeline = client.CreatePipeline<TestComplexDto>(PipelineOptions.FromStartOfStream(ns));
-
-                await pipeline
+                var pipeline = client
+                    .CreatePipeline<TestComplexDto>(PipelineOptions.FromStartOfStream(ns))
                     .Filter(x => x.Id.Id != -1)
-                    .Transform(x => x.Data)
-                    .Sink(x => Task.CompletedTask)
-                    .ExecuteAsync();
+                    .Transform(x => x.DataItem1)
+                    .ForwardToStream();
+
+                await pipeline.ExecuteAsync();
             }
         }
 
@@ -63,7 +63,7 @@ namespace RedisTribute.IntegrationTests.Features
 
                 var key = Guid.NewGuid().ToString();
 
-                var stream = await client.GetStream<TestComplexDto>(key);
+                var stream = client.GetStream<TestComplexDto>(key);
 
                 var id = await stream.WriteAsync(new TestComplexDto()
                 {
@@ -93,7 +93,7 @@ namespace RedisTribute.IntegrationTests.Features
 
                 var key = Guid.NewGuid().ToString();
 
-                var stream = await client.GetStream<TestComplexDto>(key);
+                var stream = client.GetStream<TestComplexDto>(key);
 
                 var id1 = await stream.WriteAsync(new TestComplexDto()
                 {
@@ -138,7 +138,7 @@ namespace RedisTribute.IntegrationTests.Features
 
                 var key = Guid.NewGuid().ToString();
 
-                var stream = await client.GetStream<TestComplexDto>(key);
+                var stream = client.GetStream<TestComplexDto>(key);
                 var bagOfEvents = new ConcurrentBag<StreamEntryId>();
                 var now = DateTime.UtcNow;
 

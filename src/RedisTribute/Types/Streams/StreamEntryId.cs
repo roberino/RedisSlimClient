@@ -42,6 +42,18 @@ namespace RedisTribute.Types.Streams
         public bool IsStart => _id == -1;
         public bool IsEnd => _id == -2;
 
+        public byte[] ToBytes()
+        {
+            var b1 = BitConverter.GetBytes(_id);
+            var b2 = Timestamp.ToBytes();
+            var b = new byte[b1.Length + b2.Length];
+
+            Array.Copy(b1, 0, b, 0, b1.Length);
+            Array.Copy(b2, 0, b, b1.Length, b2.Length);
+
+            return b;
+        }
+
         public StreamEntryId Next()
         {
             if (IsStart)

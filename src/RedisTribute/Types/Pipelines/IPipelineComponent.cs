@@ -18,6 +18,6 @@ namespace RedisTribute.Types.Pipelines
 
     interface IPipelineReceiver<in TIn>
     {
-        Task ReceiveAsync(TIn input);
+        Task ReceiveAsync(TIn input, CancellationToken cancellation);
     }
 }

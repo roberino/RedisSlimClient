@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace RedisTribute.Types.Pipelines
@@ -13,13 +14,18 @@ namespace RedisTribute.Types.Pipelines
             _handler = handler;
         }
 
-        public async Task ReceiveAsync(TData input)
+        public async Task ReceiveAsync(TData input, CancellationToken cancellation = default)
         {
             foreach (var successor in Successors)
             {
+                if (cancellation.IsCancellationRequested)
+                {
+                    break;
+                }
+
                 try
                 {
-                    await successor.ReceiveAsync(input);
+                    await successor.ReceiveAsync(input, cancellation);
                 }
                 catch (Exception ex)
                 {
