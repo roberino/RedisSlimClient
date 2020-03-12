@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,17 +16,17 @@ namespace RedisTribute.Types.Streams
 
     public abstract class StreamPipeline<TIn> : PipelineComponent<IRedisStreamPipeline, StreamingItem<TIn>>
     {
-        public abstract Task PushAsync(TIn item, string hash = null, CancellationToken cancellation = default);
+        public abstract Task PushAsync(TIn item, string correlationId = null, CancellationToken cancellation = default);
     }
 
     class Pipeline<TIn> : StreamPipeline<TIn>, IRedisStreamPipeline, IStreamSinkFactory
     {
         readonly IRedisStreamClient _client;
-        readonly IRedisStream<(TIn body, string hash)> _inputStream;
+        readonly IRedisStream<(TIn body, string hash, string correlationId)> _inputStream;
         readonly PipelineOptions _options;
         readonly IList<IDeletable> _tearDownItems;
 
-        Pipeline(IRedisStreamClient client, IRedisStream<(TIn body, string hash)> inputStream, PipelineOptions options)
+        Pipeline(IRedisStreamClient client, IRedisStream<(TIn body, string hash, string correlationId)> inputStream, PipelineOptions options)
         {
             _client = client;
             _inputStream = inputStream;
@@ -38,14 +39,15 @@ namespace RedisTribute.Types.Streams
         public static Pipeline<TIn> Create(IRedisStreamClient client, PipelineOptions options)
         {
             var key = options.ResolvePipelineName<TIn>();
-            var stream = client.GetStream<(TIn body, string hash)>(key);
+            var stream = client.GetStream<(TIn body, string hash, string correlationId)>(key);
 
             return new Pipeline<TIn>(client, stream, options);
         }
 
-        public override async Task PushAsync(TIn item, string hash = null, CancellationToken cancellation = default)
+        public override async Task PushAsync(TIn item, string correlationId = null, CancellationToken cancellation = default)
         {
-            var x = (body: item, hash: hash ?? "");
+            var x = (body: item, hash: string.Empty,
+                correlationId: string.IsNullOrEmpty(correlationId) ? Guid.NewGuid().ToString("N") : correlationId);
 
             await _inputStream.WriteAsync(x, cancellation);
         }
@@ -64,7 +66,7 @@ namespace RedisTribute.Types.Streams
                 ? _options.ResolvePipelineName<TOut>()
                 : _options.ResolvePipelineName<TOut>(forwardingNamespace);
 
-            var stream = _client.GetStream<(TOut body, string hash)>(key);
+            var stream = _client.GetStream<(TOut body, string hash, string correlationId)>(key);
 
             _tearDownItems.Add(stream);
 
@@ -80,7 +82,7 @@ namespace RedisTribute.Types.Streams
 
             await _inputStream.ReadAsync(async kv =>
             {
-                var item = new StreamingItem<TIn>(kv.Key, kv.Value.body, kv.Value.hash);
+                var item = new StreamingItem<TIn>(kv.Key, kv.Value.body, kv.Value.hash).Next();
 
                 await Task.WhenAll(Successors
                     .Select(s => s.ReceiveAsync(item, cancellation)));

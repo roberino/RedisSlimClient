@@ -75,8 +75,8 @@ namespace RedisTribute.IntegrationTests.Features
                     .ExecuteAsync();
 
                 Assert.Equal(2, received.Count);
-                Assert.Equal("a", received.ElementAt(0));
-                Assert.Equal("b", received.ElementAt(1));
+                Assert.Contains("a", received);
+                Assert.Contains("b", received);
 
                 await pipeExec.DeleteAsync();
             }

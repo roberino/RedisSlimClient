@@ -5,34 +5,38 @@ namespace RedisTribute.Types.Streams
 {
     public readonly struct StreamingItem<T>
     {
-        public StreamingItem(StreamEntryId id, T data)
+        public StreamingItem(StreamEntryId id, T data, string correlationId)
         {
             Id = id;
             Data = data;
+            CorrelationId = correlationId;
             Hash = id.ToBytes().CreateHash();
         }
         
-        internal StreamingItem(StreamEntryId id, T data, string hash)
+        internal StreamingItem(StreamEntryId id, T data, string hash, string correlationId)
         {
             Id = id;
             Data = data;
+            CorrelationId = correlationId;
             Hash = hash;
         }
 
         public StreamEntryId Id { get; }
         public string Hash { get; }
+        public string CorrelationId { get; }
+
         public T Data { get; }
 
-        public StreamingItem<T> Next(StreamEntryId id, T data)
+        public StreamingItem<T> Next()
         {
             var hash = Convert.FromBase64String(Hash);
-            var next = id.ToBytes();
+            var next = Id.ToBytes();
             var concat = new byte[hash.Length + next.Length];
 
             Array.Copy(hash, 0, concat, 0, hash.Length);
             Array.Copy(next, 0, concat, hash.Length, next.Length);
 
-            return new StreamingItem<T>(id, data, concat.CreateHash());
+            return new StreamingItem<T>(Id, Data, concat.CreateHash(), CorrelationId);
         }
     }
 }
