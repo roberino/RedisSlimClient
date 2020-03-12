@@ -36,14 +36,49 @@ namespace RedisTribute.IntegrationTests.Features
                 await client.PingAllAsync();
 
                 var ns = Guid.NewGuid().ToString();
+                var outNs = $"{ns}/out";
 
                 var pipeline = client
-                    .CreatePipeline<TestComplexDto>(PipelineOptions.FromStartOfStream(ns, true))
-                    .Filter(x => x.Id.Id != -1)
-                    .Transform(x => x.DataItem1)
-                    .ForwardToStream();
+                    .CreatePipeline<TestComplexDto>(PipelineOptions.FromStartOfStream(ns, true));
 
-                await pipeline.ExecuteAsync();
+                await pipeline.PushAsync(new TestComplexDto()
+                {
+                    DataItem1 = "a"
+                });
+
+                await pipeline.PushAsync(new TestComplexDto()
+                {
+                    DataItem1 = "b"
+                });
+
+                await pipeline.PushAsync(new TestComplexDto()
+                {
+                    DataItem1 = "xxx"
+                });
+
+                var pipeExec = pipeline
+                    .Filter(x => x.Data.DataItem1?.Length == 1)
+                    .Transform(x => x.DataItem1)
+                    .ForwardToStream(outNs);
+
+                await pipeExec.ExecuteAsync();
+
+                var pipeline2 = client.CreatePipeline<string>(PipelineOptions.FromStartOfStream(outNs, true));
+
+                var received = new ConcurrentBag<string>();
+
+                await pipeline2.Sink((x, c) =>
+                    {
+                        received.Add(x.Data);
+                        return Task.CompletedTask;
+                    })
+                    .ExecuteAsync();
+
+                Assert.Equal(2, received.Count);
+                Assert.Equal("a", received.ElementAt(0));
+                Assert.Equal("b", received.ElementAt(1));
+
+                await pipeExec.DeleteAsync();
             }
         }
 

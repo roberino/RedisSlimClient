@@ -32,5 +32,7 @@ namespace RedisTribute.Types.Pipelines
         public bool ExitWhenNoData { get; }
 
         public string ResolvePipelineName<T>() => KeySpace.Default.GetStreamKey($"{Namespace}/{typeof(T).Name}");
+
+        internal string ResolvePipelineName<T>(string newNamespace) => KeySpace.Default.GetStreamKey($"{newNamespace}/{typeof(T).Name}");
     }
 }

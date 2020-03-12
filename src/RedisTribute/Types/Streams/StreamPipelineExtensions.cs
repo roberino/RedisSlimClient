@@ -14,7 +14,7 @@ namespace RedisTribute
             return transform;
         }
 
-        public static IPipeline ForwardToStream<TRoot, TIn>(this PipelineComponent<TRoot, StreamingItem<TIn>> component)
+        public static IRedisStreamPipeline ForwardToStream<TRoot, TIn>(this PipelineComponent<TRoot, StreamingItem<TIn>> component, string forwardingNamespace = null)
             where TRoot : IRedisStreamPipeline
         {
             var pipeline = component.Root as IStreamSinkFactory;
@@ -24,7 +24,7 @@ namespace RedisTribute
                 throw new ArgumentException();
             }
 
-            var sink = pipeline.CreatePipelineSink<TIn>();
+            var sink = pipeline.CreatePipelineSink<TIn>(forwardingNamespace);
 
             component.Attach(sink);
 

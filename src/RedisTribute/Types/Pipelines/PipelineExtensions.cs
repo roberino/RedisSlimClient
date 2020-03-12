@@ -29,5 +29,18 @@ namespace RedisTribute.Types.Pipelines
             component.Attach(sinkComponent);
             return component.Root;
         }
+
+        public static IPipeline Sink<TRoot, TIn>(this PipelineComponent<TRoot, TIn> component, Action<TIn, CancellationToken> sink)
+            where TRoot : IPipeline
+        {
+            var sinkComponent = new Sink<TIn>((x, c) =>
+            {
+                sink(x, c);
+                return Task.CompletedTask;
+            });
+
+            component.Attach(sinkComponent);
+            return component.Root;
+        }
     }
 }

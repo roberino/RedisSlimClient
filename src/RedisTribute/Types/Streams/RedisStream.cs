@@ -17,7 +17,7 @@ namespace RedisTribute.Types.Streams
 
 
         public RedisStream(IPrimativeStreamClient client,
-            ISerializerSettings serializerSettings, 
+            ISerializerSettings serializerSettings,
             RedisKey key)
         {
             _client = client;
@@ -64,7 +64,7 @@ namespace RedisTribute.Types.Streams
                     }
 
                     await Task.Delay(5, cancellation);
-                    
+
                     continue;
                 }
 
@@ -86,9 +86,9 @@ namespace RedisTribute.Types.Streams
             }
         }
 
-        public async Task<bool> DeleteAsync(CancellationToken cancellation = default)
+        public async Task DeleteAsync(CancellationToken cancellation = default)
         {
-            return (await  _client.DeleteAsync(_key.ToString(), cancellation)) > 0;
+            await _client.DeleteAsync(_key.ToString(), cancellation);
         }
     }
 }
