@@ -6,10 +6,24 @@ namespace RedisTribute.Types.Pipelines
 {
     public static class PipelineExtensions
     {
+        public static Task Start(this IPipeline pipeline, CancellationToken cancellation)
+        {
+            return Task.Run(() => { pipeline.ExecuteAsync(cancellation); },
+                cancellation);
+        }
+
         public static PipelineComponent<TRoot, TData> Filter<TRoot, TData>(this PipelineComponent<TRoot, TData> component, Func<TData, bool> predicate)
             where TRoot : IPipeline
         {
             var receiver = new Filter<TRoot, TData>(predicate);
+            component.Attach(receiver);
+            return receiver;
+        }
+
+        public static PipelineComponent<TRoot, TData> HandleError<TRoot, TData>(this PipelineComponent<TRoot, TData> component, Func<TData, Exception, Task> errorHandler)
+            where TRoot : IPipeline
+        {
+            var receiver = new ErrorHandler<TRoot, TData>(errorHandler);
             component.Attach(receiver);
             return receiver;
         }

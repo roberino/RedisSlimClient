@@ -1,10 +1,14 @@
 ﻿namespace RedisTribute.Configuration
 {
-    interface IClientCredentials
+    interface IClientIdentifier
     {
         int Id { get; }
-        int Database { get; }
         string ClientName { get; }
+    }
+
+    interface IClientCredentials : IClientIdentifier
+    {
+        int Database { get; }
         IPasswordManager PasswordManager { get; }
     }
 }

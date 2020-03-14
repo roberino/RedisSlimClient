@@ -228,7 +228,7 @@ namespace RedisTribute
             => new RedisStream<T>(this, _controller.Configuration, key);
 
         public StreamPipeline<TIn> CreatePipeline<TIn>(PipelineOptions options)
-            => Pipeline<TIn>.Create(this, options);
+            => Pipeline<TIn>.Create(this, _controller.Configuration, options);
 
         public void Dispose()
         {

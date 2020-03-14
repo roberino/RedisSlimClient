@@ -19,8 +19,8 @@ namespace RedisTribute.IntegrationTests.Features
         }
 
         [Theory]
-        [InlineData(PipelineMode.Sync, ConfigurationScenario.NonSslBasic)]
-        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
+        [InlineData(PipelineMode.Sync, ConfigurationScenario.NonSslBasic2)]
+        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic2)]
         public async Task GetGraph_WhenConnected_CanQuery(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
         {
             var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine);
@@ -55,7 +55,7 @@ namespace RedisTribute.IntegrationTests.Features
         }
 
         [Theory]
-        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
+        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic2)]
         public async Task CreateConnectedWordGraph_TraverseAndExport(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
         {
             var config = Environments.GetConfiguration(configurationScenario, pipelineMode);

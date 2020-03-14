@@ -31,7 +31,7 @@ namespace RedisTribute.IntegrationTests
 
         public static ClientConfiguration GetConfiguration(ConfigurationScenario scenario, PipelineMode pipelineMode, Action<string> output = null, int? databaseIndex = null)
         {
-            ThreadPool.SetMaxThreads(1000, 1000);
+            ThreadPool.SetMaxThreads(1500, 1500);
 
             var additionalConfig = string.Empty;
 
@@ -91,6 +91,7 @@ namespace RedisTribute.IntegrationTests
     public enum ConfigurationScenario
     {
         NonSslBasic = 9096,
+        NonSslBasic2 = 9198,
         NonSslWithPassword = 9296,
         SslBasic = 6380,
         NonSslReplicaSetMaster = 9196,

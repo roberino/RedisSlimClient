@@ -17,8 +17,8 @@ namespace RedisTribute.IntegrationTests.Features
         }
 
         [Theory]
-        [InlineData(PipelineMode.Sync, ConfigurationScenario.NonSslBasic)]
-        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
+        [InlineData(PipelineMode.Sync, ConfigurationScenario.NonSslBasic2)]
+        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic2)]
         public async Task SetHashFieldAsync_SomeFieldAndValue_ReturnsOk(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
         {
             var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine);
@@ -40,8 +40,8 @@ namespace RedisTribute.IntegrationTests.Features
         }
 
         [Theory]
-        [InlineData(PipelineMode.Sync, ConfigurationScenario.NonSslBasic)]
-        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
+        [InlineData(PipelineMode.Sync, ConfigurationScenario.NonSslBasic2)]
+        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic2)]
         [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslClusterSet)]
         public async Task GetHashSetAsync_OfStringValues_CanAddValuesAndSave(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
         {
@@ -80,8 +80,8 @@ namespace RedisTribute.IntegrationTests.Features
         }
 
         [Theory]
-        [InlineData(PipelineMode.Sync, ConfigurationScenario.NonSslBasic)]
-        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic)]
+        [InlineData(PipelineMode.Sync, ConfigurationScenario.NonSslBasic2)]
+        [InlineData(PipelineMode.AsyncPipeline, ConfigurationScenario.NonSslBasic2)]
         public async Task GetHashSetAsync_OfCustomType_CanAddValuesAndSave(PipelineMode pipelineMode, ConfigurationScenario configurationScenario)
         {
             var config = Environments.GetConfiguration(configurationScenario, pipelineMode, _output.WriteLine);
