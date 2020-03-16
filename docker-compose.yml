@@ -9,12 +9,12 @@ services:
   networks:
    - net1
 
-services:
- redis1:
+ redis2:
   image: redis:alpine
+  command: redis-server --port 6366
   container_name: redisci-2
   ports:
-   - "9198:6379"
+   - "9198:6366"
   networks:
    - net1
    
