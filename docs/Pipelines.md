@@ -45,3 +45,5 @@ while (!cancel.IsCancellationRequested)
 }
 
 ```
+
+![Pipeline](pipeline_small.png "Pipeline")
