@@ -82,5 +82,8 @@ namespace RedisTribute.Types
 
             return 0;
         }
+
+        public static RedisKey ToKey(this IRedisObject value)
+            => value.ToString();
     }
 }

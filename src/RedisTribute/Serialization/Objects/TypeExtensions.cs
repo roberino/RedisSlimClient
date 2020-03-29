@@ -7,6 +7,15 @@ namespace RedisTribute.Serialization
 {
     static class TypeExtensions
     {
+        public static void BindToMethod(this object instance, string method, Func<ParameterInfo[], bool> predicate,
+            params object[] args)
+        {
+            instance.GetType()
+                .GetMethods()
+                .Single(m => m.Name == method && predicate(m.GetParameters()))
+                .Invoke(instance, args);
+        }
+
         public static PropertyInfo[] SerializableProperties(this Type type)
         {
             return type.GetProperties(BindingFlags.Instance | BindingFlags.Public)
@@ -25,6 +34,12 @@ namespace RedisTribute.Serialization
         public static bool IsValueTuple(this Type type)
         {
             return type.IsValueType && type.IsGenericType && type.GetGenericTypeDefinition().Name.Contains("ValueTuple");
+        }
+
+        public static bool IsCollectionOrArray(this Type type)
+        {
+            return type.IsArray || (type.IsClass && type.GetInterfaces()
+                .Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(ICollection<>)));
         }
 
         public static T? MakeNullable<T>(T value) where T : struct

@@ -2,21 +2,27 @@
 using RedisTribute.Io;
 using RedisTribute.Io.Commands;
 using RedisTribute.Io.Commands.Geo;
+using RedisTribute.Io.Commands.Keys;
+using RedisTribute.Io.Commands.Streams;
 using RedisTribute.Io.Server;
 using RedisTribute.Types;
 using RedisTribute.Types.Geo;
 using RedisTribute.Types.Graphs;
 using RedisTribute.Types.Messaging;
+using RedisTribute.Types.Streams;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using RedisTribute.Io.Commands.Hashes;
+using RedisTribute.Io.Commands.PubSub;
+using RedisTribute.Types.Pipelines;
 
 namespace RedisTribute
 {
-    class RedisClient : IRedisClient
+    class RedisClient : IRedisClient, IPrimativeStreamClient
     {
         readonly RedisController _controller;
         readonly RedisLock _redisLock;
@@ -40,6 +46,8 @@ namespace RedisTribute
                 (c, e, m) => new PingResponse(c.AssignedEndpoint, e, ((PingCommand)c).Elapsed, m), ConnectionTarget.AllNodes);
 
         public Task<long> DeleteAsync(string key, CancellationToken cancellation = default) => _controller.GetNumericResponse(new DeleteCommand(key), cancellation);
+
+        public Task<bool> ExpireAsync(string key, TimeSpan expiry, CancellationToken cancellation = default) => _controller.GetResponse(new ExpireCommand(key, expiry), cancellation);
 
         public Task<bool> SetAsync(string key, byte[] data, SetOptions options = default, CancellationToken cancellation = default) => _controller.GetResponse(new SetCommand(key, data, options), cancellation);
 
@@ -216,6 +224,12 @@ namespace RedisTribute
             return new Graph<T>(this, _controller.Configuration, new GraphOptions(graphNamespace));
         }
 
+        public IRedisStream<T> GetStream<T>(RedisKey key, CancellationToken cancellation = default)
+            => new RedisStream<T>(this, _controller.Configuration, key);
+
+        public StreamPipeline<TIn> CreatePipeline<TIn>(PipelineOptions options)
+            => Pipeline<TIn>.Create(this, _controller.Configuration, options);
+
         public void Dispose()
         {
             _controller.Dispose();
@@ -250,6 +264,21 @@ namespace RedisTribute
             }
 
             return await _controller.GetResponse(() => new ObjectGetCommand<T>(key, _controller.Configuration), cancellation, (x, _) => x);
+        }
+
+        public Task<StreamEntryId> XAddAsync(RedisKey key, IDictionary<RedisKey, RedisKey> keyValues, CancellationToken cancellation = default)
+        {
+            var cmd = new XAddCommand(key, keyValues);
+
+            return _controller.GetResponse(cmd, cancellation);
+        }
+
+        public Task<(StreamEntryId id, IDictionary<RedisKey, RedisKey> data)[]> XRangeAsync(RedisKey key, StreamEntryId start, StreamEntryId end, int? count = null,
+            CancellationToken cancellation = default)
+        {
+            var cmd = new XRangeCommand(key, start, end, count);
+
+            return _controller.GetResponse(cmd, cancellation);
         }
     }
 }

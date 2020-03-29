@@ -11,6 +11,18 @@ using System.Threading.Tasks;
 
 namespace RedisTribute
 {
+    public interface IDeletable
+    {
+        Task DeleteAsync(CancellationToken cancellation = default);
+    }
+
+    public interface IRedisKeyManager : IDisposable
+    {
+        Task<long> ScanKeysAsync(ScanOptions scanOptions, CancellationToken cancellation = default);
+        Task<long> DeleteAsync(string key, CancellationToken cancellation = default);
+        Task<bool> ExpireAsync(string key, TimeSpan expiry, CancellationToken cancellation = default);
+    }
+
     public interface IRedisReader : IDisposable
     {
         Task<byte[]> GetAsync(string key, CancellationToken cancellation = default);
@@ -26,10 +38,8 @@ namespace RedisTribute
         Task<PingResponse[]> PingAllAsync(CancellationToken cancellation = default);
     }
 
-    public interface IRedisReaderWriter : IRedisReader
+    public interface IRedisReaderWriter : IRedisReader, IRedisKeyManager
     {
-        Task<long> ScanKeysAsync(ScanOptions scanOptions, CancellationToken cancellation = default);
-        Task<long> DeleteAsync(string key, CancellationToken cancellation = default);
         Task<bool> SetAsync(string key, byte[] data, SetOptions options = default, CancellationToken cancellation = default);
         Task<bool> SetAsync(string key, string data, SetOptions options = default, CancellationToken cancellation = default);
         Task<bool> SetAsync(string key, long data, SetOptions options = default, CancellationToken cancellation = default);
@@ -38,7 +48,7 @@ namespace RedisTribute
         Task<ICounter> GetCounter(string key, CancellationToken cancellation = default);
     }
 
-    public interface IRedisObjectReaderWriter
+    public interface IRedisObjectReaderWriter : IRedisKeyManager
     {
         Task<Result<T>> GetAsync<T>(string key, CancellationToken cancellation = default);
         Task<Result<T>> GetAsync<T>(string key, T defaultValue, CancellationToken cancellation = default);
@@ -62,7 +72,7 @@ namespace RedisTribute
         IGraph<T> GetGraph<T>(string graphNamespace);
     }
 
-    public interface IGeoClient
+    public interface IGeoClient : IRedisKeyManager
     {
         Task<int> GeoAddAsync(string key, GeoMember member, CancellationToken cancellation = default);
         Task<int> GeoAddAsync(string key, GeoMembers members, CancellationToken cancellation = default);
@@ -93,7 +103,8 @@ namespace RedisTribute
         IRedLock,
         IGraphClient,
         IPublisherClient,
-        IGeoClient
+        IGeoClient,
+        IRedisStreamClient
     {
     }
 }

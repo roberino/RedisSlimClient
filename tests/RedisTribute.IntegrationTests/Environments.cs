@@ -2,6 +2,9 @@
 using RedisTribute.Telemetry;
 using System;
 using System.Threading;
+using Xunit;
+
+[assembly: CollectionBehavior(DisableTestParallelization = true)]
 
 namespace RedisTribute.IntegrationTests
 {
@@ -31,7 +34,7 @@ namespace RedisTribute.IntegrationTests
 
         public static ClientConfiguration GetConfiguration(ConfigurationScenario scenario, PipelineMode pipelineMode, Action<string> output = null, int? databaseIndex = null)
         {
-            ThreadPool.SetMaxThreads(1000, 1000);
+            ThreadPool.SetMaxThreads(500, 500);
 
             var additionalConfig = string.Empty;
 
@@ -49,7 +52,7 @@ namespace RedisTribute.IntegrationTests
             {
                 PipelineMode = pipelineMode,
                 DefaultOperationTimeout = TimeSpan.FromMilliseconds(10000),
-                ConnectTimeout = TimeSpan.FromMilliseconds(15000),
+                ConnectTimeout = TimeSpan.FromMilliseconds(25000),
                 FallbackStrategy = FallbackStrategy.ProactiveRetry,
                 HealthCheckInterval = TimeSpan.Zero
             };
@@ -91,6 +94,7 @@ namespace RedisTribute.IntegrationTests
     public enum ConfigurationScenario
     {
         NonSslBasic = 9096,
+        NonSslBasic2 = 9198,
         NonSslWithPassword = 9296,
         SslBasic = 6380,
         NonSslReplicaSetMaster = 9196,

@@ -324,7 +324,7 @@ namespace RedisTribute.Types
                                     {
                                         proposedValue = reconcileFunction((item.Key, default, originalValue));
 
-                                        if (proposedValue != default)
+                                        if (proposedValue?.GetType() != null)
                                         {
                                             reconciled = true;
                                         }
