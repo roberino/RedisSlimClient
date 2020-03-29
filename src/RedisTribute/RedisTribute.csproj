@@ -12,7 +12,7 @@
     <RepositoryUrl>https://github.com/roberino/RedisSlimClient/</RepositoryUrl>
     <PackageTags>Redis Client Cache Azure Microservices Cloud Streams</PackageTags>
     <PackageIcon>icon.png</PackageIcon>
-    <PackageIconUrl>https://raw.githubusercontent.com/roberino/RedisSlimClient/master/docs/logo.png</PackageIconUrl>
+    <PackageIconUrl>https://raw.githubusercontent.com/roberino/RedisSlimClient/beta/docs/logo.png</PackageIconUrl>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(TargetFramework)' == 'netcoreapp2.1' or '$(TargetFramework)' == 'netcoreapp2.2'">

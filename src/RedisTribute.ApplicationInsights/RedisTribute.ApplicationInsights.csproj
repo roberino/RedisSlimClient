@@ -11,7 +11,7 @@
     <PackageProjectUrl>https://github.com/roberino/RedisSlimClient/</PackageProjectUrl>
     <RepositoryUrl>https://github.com/roberino/RedisSlimClient/</RepositoryUrl>
     <PackageTags>Redis Client Cache Telemetry ApplicationInsights  Azure</PackageTags>
-    <PackageIconUrl>https://raw.githubusercontent.com/roberino/RedisSlimClient/master/docs/logo.png</PackageIconUrl>
+    <PackageIconUrl>https://raw.githubusercontent.com/roberino/RedisSlimClient/beta/docs/logo.png</PackageIconUrl>
   </PropertyGroup>
   <ItemGroup>
     <None Include="LICENSE.txt" Pack="true" PackagePath="$(PackageLicenseFile)" />
