@@ -30,7 +30,7 @@ namespace RedisTribute
             return (IRedisStreamPipeline)component.Sink((x, c) => sink(x.Data));
         }
 
-        public static IRedisStreamPipeline ForwardToStream<TRoot, TIn>(this PipelineComponent<TRoot, StreamingItem<TIn>> component, string forwardingNamespace = null)
+        public static IRedisStreamPipeline Forward<TRoot, TIn>(this PipelineComponent<TRoot, StreamingItem<TIn>> component, string forwardingNamespace = null)
             where TRoot : IRedisStreamPipeline
         {
             var pipeline = component.Root as IStreamSinkFactory;

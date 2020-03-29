@@ -6,7 +6,7 @@ namespace RedisTribute.Types.Pipelines
 {
     public static class PipelineExtensions
     {
-        public static Task Start(this IPipeline pipeline, CancellationToken cancellation)
+        public static Task Start(this IPipeline pipeline, CancellationToken cancellation = default)
         {
             return Task.Run(() => { pipeline.ExecuteAsync(cancellation); },
                 cancellation);

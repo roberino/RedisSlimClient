@@ -60,7 +60,7 @@ namespace RedisTribute.IntegrationTests.Features
                     .Filter(x => x.Data.DataItem1?.Length == 1)
                     .Transform(x => x.DataItem1)
                     .HandleError((x, e) => Task.CompletedTask)
-                    .ForwardToStream(outNs);
+                    .Forward(outNs);
 
                 await pipeExec.ExecuteAsync();
 

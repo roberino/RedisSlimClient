@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.28307.102
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29806.167
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RedisTribute.UnitTests", "tests\RedisTribute.Tests\RedisTribute.UnitTests.csproj", "{E08F7D87-9E5F-4921-BADA-3CAF8AFE45CF}"
 EndProject
@@ -29,6 +29,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{9AC62569-0
 		docs\Graphs.md = docs\Graphs.md
 		docs\HashSets.md = docs\HashSets.md
 		LICENSE = LICENSE
+		docs\Pipelines.md = docs\Pipelines.md
 		docs\PubSub.md = docs\PubSub.md
 		README.md = README.md
 	EndProjectSection

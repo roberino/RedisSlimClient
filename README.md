@@ -44,6 +44,7 @@ using (var client = ((ClientConfiguration)"localhost:6379").CreateClient())
 * [Graphs](docs/Graphs.md)
 * [Simple Pub/sub support](docs/PubSub.md)
 * [Geo API](docs/GeoApi.md)
+* [Pipelines API and Streams](docs/Pipelines.md)
 
 # Configuration
 
