@@ -14,7 +14,7 @@ namespace RedisTribute
             _lock = new AsyncLock(timeout.GetValueOrDefault(TimeSpan.FromSeconds(5)));
         }
 
-        public async Task<IAsyncLock> AquireLockAsync(string key, LockOptions options = default, CancellationToken cancellation = default)
+        public async Task<IAsyncLock> AcquireLockAsync(string key, LockOptions options = default, CancellationToken cancellation = default)
         {
             var localLock = await _lock.LockAsync(cancellation);
 

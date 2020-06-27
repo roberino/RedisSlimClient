@@ -29,11 +29,11 @@ namespace RedisTribute.IntegrationTests.Features
 
                 var lockKey = Guid.NewGuid().ToString();
 
-                using (var asyncLock = await client.AquireLockAsync(lockKey, new LockOptions(TimeSpan.FromSeconds(5), true)))
+                using (var asyncLock = await client.AcquireLockAsync(lockKey, new LockOptions(TimeSpan.FromSeconds(5), true)))
                 {
                     Assert.False(asyncLock.LockExpired);
 
-                    using (var subLock = await client.AquireLockAsync(lockKey, LockOptions.AllowRecursiveLocks))
+                    using (var subLock = await client.AcquireLockAsync(lockKey, LockOptions.AllowRecursiveLocks))
                     {
                         Assert.Equal(subLock.Key, asyncLock.Key);
                     }
@@ -55,11 +55,11 @@ namespace RedisTribute.IntegrationTests.Features
 
                 var lockKey = Guid.NewGuid().ToString();
 
-                using (var asyncLock = client.AquireLockAsync(lockKey, new LockOptions(TimeSpan.FromSeconds(5), true)).GetAwaiter().GetResult())
+                using (var asyncLock = client.AcquireLockAsync(lockKey, new LockOptions(TimeSpan.FromSeconds(5), true)).GetAwaiter().GetResult())
                 {
                     Assert.False(asyncLock.LockExpired);
 
-                    using (var subLock = await client.AquireLockAsync(lockKey, LockOptions.AllowRecursiveLocks))
+                    using (var subLock = await client.AcquireLockAsync(lockKey, LockOptions.AllowRecursiveLocks))
                     {
                         Assert.Equal(subLock.Key, asyncLock.Key);
                     }
@@ -92,7 +92,7 @@ namespace RedisTribute.IntegrationTests.Features
 
                     try
                     {
-                        var asyncLock = client.AquireLockAsync(lockKey, new LockOptions(TimeSpan.FromSeconds(15), false)).GetAwaiter().GetResult();
+                        var asyncLock = client.AcquireLockAsync(lockKey, new LockOptions(TimeSpan.FromSeconds(15), false)).GetAwaiter().GetResult();
 
                         _output.WriteLine($"Aquired lock for {n} for {asyncLock.RemainingTime}");
 

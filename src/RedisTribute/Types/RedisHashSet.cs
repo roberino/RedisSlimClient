@@ -172,7 +172,7 @@ namespace RedisTribute.Types
 
         public async Task RefreshAsync(CancellationToken cancellation = default)
         {
-            using (await _lockStrategy.AquireLockAsync($"$$_HashLock:{Id}", cancellation: cancellation))
+            using (await _lockStrategy.AcquireLockAsync($"$$_HashLock:{Id}", cancellation: cancellation))
             {
                 var originalValues = await _client.GetAllHashFieldsAsync(Key.ToString(), cancellation);
 

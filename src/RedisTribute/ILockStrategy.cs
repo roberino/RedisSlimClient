@@ -40,12 +40,12 @@ namespace RedisTribute
 
     public readonly struct NullLock : IAsyncLockStrategy<IAsyncLock>, IAsyncLockStrategy<IDistributedLock>
     {
-        public Task<IDistributedLock> AquireLockAsync(string key, LockOptions options = default, CancellationToken cancellation = default)
+        public Task<IDistributedLock> AcquireLockAsync(string key, LockOptions options = default, CancellationToken cancellation = default)
         {
             return Task.FromResult((IDistributedLock)new LockImpl() { Key = key });
         }
 
-        Task<IAsyncLock> IAsyncLockStrategy<IAsyncLock>.AquireLockAsync(string key, LockOptions options, CancellationToken cancellation)
+        Task<IAsyncLock> IAsyncLockStrategy<IAsyncLock>.AcquireLockAsync(string key, LockOptions options, CancellationToken cancellation)
         {
             return Task.FromResult((IAsyncLock)new LockImpl() { Key = key });
         }
@@ -70,7 +70,7 @@ namespace RedisTribute
 
     public interface IAsyncLockStrategy<T> where T : IAsyncLock
     {
-        Task<T> AquireLockAsync(string key, LockOptions options = default, CancellationToken cancellation = default);
+        Task<T> AcquireLockAsync(string key, LockOptions options = default, CancellationToken cancellation = default);
     }
 
     /// <summary>

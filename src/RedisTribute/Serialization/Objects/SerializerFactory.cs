@@ -33,6 +33,7 @@ namespace RedisTribute.Serialization
             readonly IDictionary<Type, object> _knownSerializers = new Dictionary<Type, object>
             {
                 [typeof(XDocument)] = new XDocumentSerializer(),
+                [typeof(XNode)] = new XDocumentSerializer(),
                 [typeof(XElement)] = new XDocumentSerializer(),
                 [typeof(XmlDocument)] = new XmlDocumentSerializer(),
                 [typeof(XmlElement)] = new XmlDocumentSerializer(),
@@ -42,7 +43,8 @@ namespace RedisTribute.Serialization
                 [typeof(KeyValuePair<string, string>)] = new KeyValueSerializer<string>(),
                 [typeof(string)] = new StringSerializer(Encoding.UTF8), // TODO: Use encoding from settings?
                 [typeof(byte[])] = new ByteArraySerializer(),
-                [typeof(TimeSpan)] = TimeSpanSerializer.Instance
+                [typeof(TimeSpan)] = TimeSpanSerializer.Instance,
+                [typeof(Uri)] = new StringableSerializer<Uri>(Encoding.UTF8, s => new Uri(s, UriKind.RelativeOrAbsolute), u => u.ToString())
             };
 
             public IObjectSerializer<T> Create<T>()

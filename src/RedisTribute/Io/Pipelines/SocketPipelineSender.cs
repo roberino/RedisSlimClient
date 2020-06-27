@@ -94,16 +94,16 @@ namespace RedisTribute.Io.Pipelines
 
                     var result = await _pipe.Reader.ReadAsync(_cancellationToken).ConfigureAwait(false);
 
-                    if (IsRunning)
-                    {
-                        StateChanged?.Invoke(PipelineStatus.SendingToSocket);
+                    if (!IsRunning)
+                        return;
 
-                        var bytes = await _socket.SendAsync(result.Buffer).ConfigureAwait(false);
+                    StateChanged?.Invoke(PipelineStatus.SendingToSocket);
 
-                        StateChanged?.Invoke(PipelineStatus.AdvancingWriter);
+                    var bytes = await _socket.SendAsync(result.Buffer).ConfigureAwait(false);
 
-                        _pipe.Reader.AdvanceTo(result.Buffer.GetPosition(bytes));
-                    }
+                    StateChanged?.Invoke(PipelineStatus.AdvancingWriter);
+
+                    _pipe.Reader.AdvanceTo(result.Buffer.GetPosition(bytes));
                 }
                 catch (TaskCanceledException)
                 {

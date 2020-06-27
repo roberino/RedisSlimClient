@@ -43,7 +43,7 @@ namespace RedisTribute
         public Task<PingResponse[]> PingAllAsync(CancellationToken cancellation = default)
             => _controller.GetResponses(() => new PingCommand(),
                 (c, r, m) => new PingResponse(c.AssignedEndpoint, r, ((PingCommand)c).Elapsed, m),
-                (c, e, m) => new PingResponse(c.AssignedEndpoint, e, ((PingCommand)c).Elapsed, m), ConnectionTarget.AllNodes);
+                (c, e, m) => new PingResponse(c.AssignedEndpoint, e, ((PingCommand)c).Elapsed, m), ConnectionTarget.AllNodes, cancellation);
 
         public Task<long> DeleteAsync(string key, CancellationToken cancellation = default) => _controller.GetNumericResponse(new DeleteCommand(key), cancellation);
 
@@ -113,7 +113,7 @@ namespace RedisTribute
         {
             var qkey = KeySpace.Default.GetCounterKey(key);
 
-            await SetAsync(qkey, 0L, new SetOptions(Expiry.Infinite, SetCondition.SetKeyIfNotExists));
+            await SetAsync(qkey, 0L, new SetOptions(Expiry.Infinite, SetCondition.SetKeyIfNotExists), cancellation);
 
             return new Counter(qkey, this);
         }
@@ -209,9 +209,9 @@ namespace RedisTribute
             return resultsCount;
         }
 
-        public Task<IDistributedLock> AquireLockAsync(string key, LockOptions options = default, CancellationToken cancellation = default)
+        public Task<IDistributedLock> AcquireLockAsync(string key, LockOptions options = default, CancellationToken cancellation = default)
         {
-            return _redisLock.AquireLockAsync(KeySpace.Default.GetLockKey(key), options, cancellation);
+            return _redisLock.AcquireLockAsync(KeySpace.Default.GetLockKey(key), options, cancellation);
         }
 
         public IGraph<T> GetGraph<T>(string graphNamespace)

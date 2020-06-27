@@ -26,7 +26,7 @@ namespace RedisTribute
             _defaultLockTime = TimeSpan.FromSeconds(5);
         }
 
-        public async Task<IDistributedLock> AquireLockAsync(string key, LockOptions options = default, CancellationToken cancellation = default)
+        public async Task<IDistributedLock> AcquireLockAsync(string key, LockOptions options = default, CancellationToken cancellation = default)
         {
             var now = DateTime.UtcNow;
             var sw = Stopwatch.StartNew();
@@ -93,8 +93,8 @@ namespace RedisTribute
             throw LockNotObtained("Cancelled");
         }
 
-        async Task<IAsyncLock> IAsyncLockStrategy<IAsyncLock>.AquireLockAsync(string key, LockOptions options, CancellationToken cancellation)
-            => await AquireLockAsync(key, options, cancellation);
+        async Task<IAsyncLock> IAsyncLockStrategy<IAsyncLock>.AcquireLockAsync(string key, LockOptions options, CancellationToken cancellation)
+            => await AcquireLockAsync(key, options, cancellation);
 
         async Task ReleaseLockAsync(string key, byte[] data, string localKey, CancellationToken cancellation)
         {

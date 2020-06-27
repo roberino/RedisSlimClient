@@ -60,6 +60,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RedisTribute.Serilog", "src
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RedisTribute.GraphTestHarness", "src\RedisTribute.GraphTestHarness\RedisTribute.GraphTestHarness.csproj", "{B95F7AD6-5010-43A2-8415-0677657D0DFE}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RedisTribute.WebStream", "src\RedisTribute.WebStream\RedisTribute.WebStream.csproj", "{1037A4A6-7C93-410D-AC3A-FBD1EE87628B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -106,6 +108,10 @@ Global
 		{B95F7AD6-5010-43A2-8415-0677657D0DFE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B95F7AD6-5010-43A2-8415-0677657D0DFE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B95F7AD6-5010-43A2-8415-0677657D0DFE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1037A4A6-7C93-410D-AC3A-FBD1EE87628B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1037A4A6-7C93-410D-AC3A-FBD1EE87628B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1037A4A6-7C93-410D-AC3A-FBD1EE87628B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1037A4A6-7C93-410D-AC3A-FBD1EE87628B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -122,6 +128,7 @@ Global
 		{C45FDA84-C8D8-45CF-ADD5-93044C2FDCF5} = {A0C42956-9A84-4769-8207-6BB16FD248D3}
 		{9E74550F-233E-4750-9E4F-777392E1E556} = {A0C42956-9A84-4769-8207-6BB16FD248D3}
 		{B95F7AD6-5010-43A2-8415-0677657D0DFE} = {7D3242BB-A1A6-4A11-BBFD-F5DDD1F140C8}
+		{1037A4A6-7C93-410D-AC3A-FBD1EE87628B} = {A0C42956-9A84-4769-8207-6BB16FD248D3}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {13B5FD4B-6ADC-4F52-B91A-6F364DB1E8DC}

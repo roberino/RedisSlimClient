@@ -16,6 +16,7 @@ namespace RedisTribute.Types.Messaging
 
         public Subscription(string[] channels, Func<CancellationToken, Task> unsubscribe)
         {
+            Channels = channels;
             _unsubscribe = unsubscribe;
         }
 

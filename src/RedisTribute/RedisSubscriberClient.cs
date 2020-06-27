@@ -1,6 +1,6 @@
 ﻿using RedisTribute.Configuration;
 using RedisTribute.Io;
-using RedisTribute.Io.Commands;
+using RedisTribute.Io.Commands.PubSub;
 using RedisTribute.Io.Server;
 using RedisTribute.Types;
 using RedisTribute.Types.Messaging;
@@ -10,7 +10,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using RedisTribute.Io.Commands.PubSub;
 
 namespace RedisTribute
 {
@@ -257,7 +256,7 @@ namespace RedisTribute
 
         Task<IDistributedLock> AquireLockAsync(string key, LockOptions options = default)
         {
-            return _redisLock.Value.AquireLockAsync(KeySpace.Default.GetMessageLockKey(key), options);
+            return _redisLock.Value.AcquireLockAsync(KeySpace.Default.GetMessageLockKey(key), options);
         }
     }
 }

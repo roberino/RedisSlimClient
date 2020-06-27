@@ -18,8 +18,8 @@ The pipeline API supports numerous operations:
 
 ```cs
 
-var namespace = "Stream1";
-var pipe = client.CreatePipeline<char>(PipelineOptions.FromStartOfStream(namespace));
+var pipeNamespace = "Stream1";
+var pipe = client.CreatePipeline<char>(PipelineOptions.FromStartOfStream(pipeNamespace));
 
 var receiverPipe = pipe
     .Filter(x => x.Data != '\n')
@@ -34,8 +34,8 @@ await receiverTask.Start();
 
 ```cs
 
-var namespace = "Stream1";
-var pipe = client.CreatePipeline<char>(PipelineOptions.FromNow(namespace));
+var pipeNamespace = "Stream1";
+var pipe = client.CreatePipeline<char>(PipelineOptions.FromNow(pipeNamespace));
 
 while (!cancel.IsCancellationRequested)
 {

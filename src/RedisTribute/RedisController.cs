@@ -138,7 +138,7 @@ namespace RedisTribute
 
             var results = await Task.WhenAll(resultTasks);
 
-            var successfullResults = results.Where(r => r.x == null).Select(r => (r.k, r.r));
+            var successfulResults = results.Where(r => r.x == null).Select(r => (r.k, r.r));
             var missingKeys = results.Where(r => r.x != null).SelectMany(r => r.k).ToList();
 
             if (missingKeys.Any())
@@ -147,20 +147,19 @@ namespace RedisTribute
 
                 var missingResults = await GetMultikeyResultAsync(missingKeys, cmdFactory, cancellation);
 
-                return successfullResults.Concat(missingResults);
+                return successfulResults.Concat(missingResults);
             }
 
-            return successfullResults;
+            return successfulResults;
         }
 
         async Task<T> GetResponseWithRetry<T>(Func<IRedisResult<T>> cmdFactory, CancellationToken cancellation)
         {
             var attempt = 1;
-            IRedisResult<T> currentResult = null;
 
             while (!cancellation.IsCancellationRequested)
             {
-                currentResult = cmdFactory();
+                var currentResult = cmdFactory();
 
                 currentResult.AttemptSequence = attempt++;
 
@@ -191,7 +190,7 @@ namespace RedisTribute
 
                     if (Configuration.RetryBackoffTime > TimeSpan.Zero)
                     {
-                        await Task.Delay(Configuration.RetryBackoffTime);
+                        await Task.Delay(Configuration.RetryBackoffTime, cancellation);
                     }
                 }
             }

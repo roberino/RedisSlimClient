@@ -1,23 +1,21 @@
 ﻿using System;
-using System.Buffers;
 using System.IO;
 using System.Text;
-using System.Threading;
 
 namespace RedisTribute.Types.Primatives
 {
     class PooledStream : Stream
     {
         readonly MemoryStream _internalStream;
-        readonly Action _onDispose;
+        readonly Action<byte[]> _onDispose;
         readonly byte[] _buffer;
         readonly int _maxSize;
 
         int _actualLength;
 
-        bool _disposed = false;
+        bool _disposed;
 
-        public PooledStream(Action onDispose, bool readOnly, byte[] buffer, int size)
+        public PooledStream(Action<byte[]> onDispose, bool readOnly, byte[] buffer, int size)
         {
             _onDispose = onDispose;
             _buffer = buffer;
@@ -68,7 +66,7 @@ namespace RedisTribute.Types.Primatives
                 catch { }
                 try
                 {
-                    _onDispose();
+                    _onDispose(_buffer);
                 }
                 catch { }
             }
@@ -116,86 +114,6 @@ namespace RedisTribute.Types.Primatives
         ~PooledStream()
         {
             Dispose();
-        }
-    }
-
-    sealed class StreamPool
-    {
-        readonly ArrayPool<byte> _pool;
-        readonly PooledStream _nullStream;
-
-        long _bytesRented;
-
-        StreamPool()
-        {
-            _pool = ArrayPool<byte>.Create();
-            _nullStream = new PooledStream(() => { }, true, new byte[0], 0);
-        }
-
-        public static StreamPool Instance { get; } = new StreamPool();
-
-        public PooledStream Null => _nullStream;
-
-        public long PooledMemory => _bytesRented;
-
-        public PooledStream CreateWritable(int size)
-        {
-            var arr = Rent(size);
-
-            return new PooledStream(() => Release(arr), false, arr, size);
-        }
-
-        public PooledStream CreateReadonly(byte[] data)
-        {
-            return new PooledStream(() => { }, true, data, data.Length);
-        }
-
-        public PooledStream CreateReadOnlyCopy(ReadOnlySequence<byte> data)
-        {
-            var arr = Rent((int)data.Length);
-
-            if (data.IsSingleSegment)
-            {
-                var mem = new Memory<byte>(arr);
-                data.First.CopyTo(mem);
-            }
-            else
-            {
-                var pos = 0;
-
-                foreach (var span in data)
-                {
-                    var mem = new Memory<byte>(arr, pos, span.Length);
-
-                    span.CopyTo(mem);
-
-                    pos += span.Length;
-                }
-            }
-
-            return new PooledStream(() => Release(arr), true, arr, (int)data.Length);
-        }
-
-        public void Dispose()
-        {
-        }
-
-        byte[] Rent(int minSize)
-        {
-            var arr = _pool.Rent(minSize);
-
-            Interlocked.Add(ref _bytesRented, arr.Length);
-
-            return arr;
-        }
-
-        void Release(byte[] arr)
-        {
-            var len = arr.Length;
-
-            _pool.Return(arr);
-
-            Interlocked.Add(ref _bytesRented, -len);
         }
     }
 }
