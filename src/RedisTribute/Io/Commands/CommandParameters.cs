@@ -4,15 +4,15 @@ namespace RedisTribute.Io.Commands
 {
     readonly struct CommandParameters : IDisposable
     {
-        readonly Action _disposer;
+        readonly IDisposable _disposer;
 
-        public CommandParameters(Action disposer, params object[] values)
+        public CommandParameters(IDisposable disposer, params object[] values)
         {
             Values = values;
             _disposer = disposer;
         }
 
-        public CommandParameters(object[] values, Action disposer)
+        public CommandParameters(object[] values, IDisposable disposer)
         {
             Values = values;
             _disposer = disposer;
@@ -24,7 +24,7 @@ namespace RedisTribute.Io.Commands
 
         public void Dispose()
         {
-            _disposer?.Invoke();
+            _disposer?.Dispose();
         }
     }
 }

@@ -90,15 +90,12 @@ namespace RedisTribute.Io
 
             command.AssignedEndpoint = _socket.EndpointIdentifier;
 
-            command.OnExecute = async (args) =>
+            command.OnExecute = (args) => _pipeline.Sender.SendAsync(m =>
             {
-                await _pipeline.Sender.SendAsync(m =>
-                {
-                    var formatter = new RedisByteFormatter(m);
+                var formatter = new RedisByteFormatter(m);
 
-                    return formatter.Write(args);
-                }, cancellation);
-            };
+                return formatter.Write(args);
+            }, cancellation);
 
             _pendingCommands.Increment();
 

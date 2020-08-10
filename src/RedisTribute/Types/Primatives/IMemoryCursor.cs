@@ -7,8 +7,8 @@ namespace RedisTribute.Types.Primatives
     {
         int CurrentPosition { get; }
 
-        ValueTask<bool> Write(byte data);
-        ValueTask<bool> Write(byte[] data);
-        ValueTask<bool> Write(ArraySegment<byte> data);
+        ValueTask Write(byte data);
+        ValueTask Write(byte[] data);
+        ValueTask Write(ArraySegment<byte> data);
     }
 }

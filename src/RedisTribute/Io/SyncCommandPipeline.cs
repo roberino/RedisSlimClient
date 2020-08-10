@@ -91,7 +91,7 @@ namespace RedisTribute.Io
             command.OnExecute = args =>
             {
                 _writeStream.Write(args);
-                return Task.CompletedTask;
+                return new ValueTask();
             };
 
             while (_status == PipelineStatus.Broken || (_status == PipelineStatus.Reinitializing && !isAdmin))

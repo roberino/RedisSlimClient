@@ -31,7 +31,7 @@ namespace RedisTribute.UnitTests.Io.Commands
             command.OnExecute = a =>
             {
                 args = a;
-                return Task.CompletedTask;
+                return new ValueTask();
             };
 
             await command.Execute();

@@ -24,7 +24,7 @@ namespace RedisTribute.Io.Commands
         {
             var objStream = _configuration.Serialize(_objectData);
 
-            return new CommandParameters(SetCommand.GetArgs(CommandText, Key, objStream.GetBuffer(), _options), () => objStream.Dispose());
+            return new CommandParameters(SetCommand.GetArgs(CommandText, Key, objStream.GetBuffer(), _options), objStream);
         }
 
         protected override bool TranslateResult(IRedisObject redisObject) => redisObject.IsOk();

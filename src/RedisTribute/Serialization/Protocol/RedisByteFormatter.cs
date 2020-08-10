@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace RedisTribute.Serialization.Protocol
 {
-    class RedisByteFormatter
+    readonly struct RedisByteFormatter
     {
         static readonly byte[] _endBytes = new byte[] { (byte)'\r', (byte)'\n' };
 
@@ -40,103 +40,99 @@ namespace RedisTribute.Serialization.Protocol
             }
         }
 
-        public async ValueTask Write(object[] data)
+        public ValueTask Write(object[] data)
         {
-            await WriteStartArray(data.Length);
+            var task = WriteStartArray(data.Length);
 
             for (var i = 0; i < data.Length; i++)
             {
-                await Write(data[i]);
+                task = Write(data[i]);
             }
+
+            return task;
         }
 
-        public async ValueTask Write(string[] data)
+        public ValueTask Write(string[] data)
         {
-            await WriteStartArray(data.Length);
+            var task = WriteStartArray(data.Length);
 
             for (var i = 0; i < data.Length; i++)
             {
-                await Write(data[i]);
+                task = Write(data[i]);
             }
+
+            return task;
         }
 
-        public async ValueTask Write(byte[][] data)
+        public ValueTask Write(byte[][] data)
         {
-            await WriteStartArray(data.Length);
+            var task = WriteStartArray(data.Length);
 
             for (var i = 0; i < data.Length; i++)
             {
-                await Write(data[i]);
+                task = Write(data[i]);
             }
+
+            return task;
         }
 
-        public async ValueTask WriteStartArray(int arrayLength)
+        public ValueTask WriteStartArray(int arrayLength)
         {
-            await Write(ResponseType.ArrayType);
-            await WriteRaw(arrayLength.ToString());
-            await WriteEnd();
+            Write(ResponseType.ArrayType);
+            WriteRaw(arrayLength.ToString());
+            return WriteEnd();
         }
 
-        public async ValueTask Write(byte[] data)
+        public ValueTask Write(byte[] data)
         {
-            await Write(ResponseType.BulkStringType);
-            await WriteRaw(data.Length.ToString());
-            await WriteEnd();
+            Write(ResponseType.BulkStringType);
+            WriteRaw(data.Length.ToString());
+            WriteEnd();
 
-            await _memory.Write(data);
+            _memory.Write(data);
 
-            await WriteEnd();
+            return WriteEnd();
         }
 
-        public async ValueTask Write(ArraySegment<byte> data)
+        public ValueTask Write(ArraySegment<byte> data)
         {
-            await Write(ResponseType.BulkStringType);
-            await WriteRaw(data.Count.ToString());
-            await WriteEnd();
+            Write(ResponseType.BulkStringType);
+            WriteRaw(data.Count.ToString());
+            WriteEnd();
 
-            await _memory.Write(data);
+            _memory.Write(data);
 
-            await WriteEnd();
+            return WriteEnd();
         }
 
-        public async ValueTask Write(long value)
+        public ValueTask Write(long value)
         {
-            await Write(ResponseType.IntType);
-            await WriteRaw(value.ToString());
-            await WriteEnd();
+            Write(ResponseType.IntType);
+            WriteRaw(value.ToString());
+            return WriteEnd();
         }
 
-        public async ValueTask Write(string data, bool bulk = false)
+        public ValueTask Write(string data, bool bulk = false)
         {
             if (bulk)
             {
-                await Write(ResponseType.BulkStringType);
-                await WriteRaw(data.Length.ToString());
-                await WriteEnd();
-                await WriteRaw(data);
-                await WriteEnd();
+                Write(ResponseType.BulkStringType);
+                WriteRaw(data.Length.ToString());
+                WriteEnd();
+                WriteRaw(data);
             }
             else
             {
-                await Write(ResponseType.StringType);
-                await WriteRaw(data);
-                await WriteEnd();
+                Write(ResponseType.StringType);
+                WriteRaw(data);
             }
+            return WriteEnd();
         }
 
-        ValueTask<bool> WriteRaw(string data)
-        {
-            return _memory.Write(Encoding.ASCII.GetBytes(data));
-        }
+        ValueTask WriteRaw(string data) => _memory.Write(Encoding.ASCII.GetBytes(data));
 
-        ValueTask<bool> WriteEnd()
-        {
-            return _memory.Write(_endBytes);
-        }
+        ValueTask WriteEnd() => _memory.Write(_endBytes);
 
-        ValueTask<bool> Write(ResponseType responseType)
-        {
-            return _memory.Write(new byte[] { (byte)responseType });
-        }
+        ValueTask Write(ResponseType responseType) => _memory.Write(new byte[] { (byte)responseType });
     }
 }

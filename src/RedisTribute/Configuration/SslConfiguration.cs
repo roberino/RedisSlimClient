@@ -58,14 +58,20 @@ namespace RedisTribute.Configuration
 
         static bool ValidateIssuer(X509Certificate2 certificateToValidate, X509Certificate2 authority)
         {
-            var chain = new X509Chain();
-            chain.ChainPolicy.RevocationMode = X509RevocationMode.NoCheck;
-            chain.ChainPolicy.RevocationFlag = X509RevocationFlag.ExcludeRoot;
-            chain.ChainPolicy.VerificationFlags = X509VerificationFlags.AllowUnknownCertificateAuthority;
-            chain.ChainPolicy.VerificationTime = DateTime.UtcNow;
-            chain.ChainPolicy.UrlRetrievalTimeout = TimeSpan.FromSeconds(5);
+            var chain = new X509Chain
+            {
+                ChainPolicy =
+                {
+                    RevocationMode = X509RevocationMode.NoCheck,
+                    RevocationFlag = X509RevocationFlag.ExcludeRoot,
+                    VerificationFlags = X509VerificationFlags.AllowUnknownCertificateAuthority,
+                    VerificationTime = DateTime.UtcNow,
+                    UrlRetrievalTimeout = TimeSpan.FromSeconds(5)
+                }
+            };
 
             chain.ChainPolicy.ExtraStore.Add(authority);
+
             return chain.Build(certificateToValidate);
         }
     }

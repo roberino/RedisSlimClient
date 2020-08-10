@@ -67,7 +67,7 @@ namespace RedisTribute.WebStream
                     while (received == 0)
                     {
                         received =
-                            await _publisherClient.PublishAsync(_options.ChannelName, doc, cancellation: cancellation);
+                            await _publisherClient.PublishAsync(_options.ChannelName, doc.GetContent(_options.ContentSelector), cancellation: cancellation);
 
                         if (received > 0)
                         {
@@ -77,7 +77,7 @@ namespace RedisTribute.WebStream
 
                         Waiting?.Invoke();
 
-                        await Task.Delay(5000, cancellation);
+                        await Task.Delay(_options.NoSubscriberBackoff, cancellation);
                     }
 
                     return doc.Getlinks();
@@ -103,7 +103,7 @@ namespace RedisTribute.WebStream
 
                     using var textReader = new StreamReader(stream);
 
-                    return new HtmlDocument { Content = textReader.OpenAsHtmlDocument(), DocumentUri = uri };
+                    return new HtmlDocument (uri, textReader.OpenAsHtmlDocument());
                 }
             }
             catch (Exception ex)

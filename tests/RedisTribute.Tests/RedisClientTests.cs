@@ -31,7 +31,7 @@ namespace RedisTribute.UnitTests
                 {
                     var cmd = call.Arg<ObjectSetCommand<MyData>>();
 
-                    cmd.OnExecute = x => Task.CompletedTask;
+                    cmd.OnExecute = x => new ValueTask();
 
                     await cmd.Execute();
 

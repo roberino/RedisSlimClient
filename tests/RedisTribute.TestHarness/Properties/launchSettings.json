@@ -2,7 +2,7 @@
   "profiles": {
     "RedisTribute.TestHarness": {
       "commandName": "Project",
-      "commandLineArgs": "localhost:9096"
+      "commandLineArgs": "localhost:6379"
     }
   }
 }

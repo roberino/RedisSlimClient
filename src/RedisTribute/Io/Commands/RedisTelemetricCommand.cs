@@ -26,7 +26,7 @@ namespace RedisTribute.Io.Commands
             }
         }
 
-        public Func<object[], Task> OnExecute { get; set; }
+        public Func<object[], ValueTask> OnExecute { get; set; }
 
         public Action<CommandState> OnStateChanged
         {

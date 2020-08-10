@@ -5,11 +5,33 @@ using System.Xml.Linq;
 
 namespace RedisTribute.WebStream
 {
-    public sealed class HtmlDocument
+    public sealed class HtmlDocumentContent
     {
         public Uri DocumentUri { get; set; }
 
-        public XDocument Content { get; set; }
+        public XNode Content { get; set; }
+
+    }
+
+    public sealed class HtmlDocument
+    {
+        public HtmlDocument(Uri documentUri, XDocument content)
+        {
+            DocumentUri = documentUri;
+            Content = content;
+        }
+
+        public Uri DocumentUri { get; }
+
+        public XDocument Content { get; }
+
+        public HtmlDocumentContent GetContent(Func<XDocument, XNode>? selector = null)
+        {
+            if (selector == null)
+                return new HtmlDocumentContent() {Content = Content, DocumentUri = DocumentUri};
+
+            return new HtmlDocumentContent() { Content = selector(Content), DocumentUri = DocumentUri };
+        }
 
         public IEnumerable<Uri> Getlinks()
         {

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Xml.Linq;
 
 namespace RedisTribute.WebStream
 {
@@ -10,6 +11,10 @@ namespace RedisTribute.WebStream
     public class CrawlOptions : CrawlChannel
     {
         public Uri? RootUri { get; set; }
+
+        public Func<XDocument, XNode>? ContentSelector { get; set; }
+
+        public TimeSpan NoSubscriberBackoff { get; set; } = TimeSpan.FromSeconds(5);
 
         public ILinkStrategy? LinkStrategy { get; set; }
     }

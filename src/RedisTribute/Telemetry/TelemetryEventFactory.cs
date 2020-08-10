@@ -12,7 +12,7 @@ namespace RedisTribute.Telemetry
         readonly ReaderWriterLockSlim _lock;
         readonly TelemetryEvent _default;
         readonly List<Rentable<TelemetryEvent>> _pool;
-        private readonly int _maxSize;
+        readonly int _maxSize;
 
         public TelemetryEventFactory(int initialSize = 64, int maxSize = 1024)
         {

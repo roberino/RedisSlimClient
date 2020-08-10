@@ -9,6 +9,8 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using RedisTribute.Types.Messaging;
+using RedisTribute.Util;
 
 namespace RedisTribute
 {
@@ -38,6 +40,13 @@ namespace RedisTribute
             var client = RedisSubscriberClient.Create(configuration);
 
             return client;
+        }
+
+        public static async Task AwaitSubscription(this ISubscription subscription, CancellationToken cancellation = default)
+        {
+            await cancellation;
+
+            await subscription.Unsubscribe(CancellationToken.None);
         }
 
         public static async Task<IRedisClient> ConnectAsync(this IRedisClient client, CancellationToken cancellation = default)

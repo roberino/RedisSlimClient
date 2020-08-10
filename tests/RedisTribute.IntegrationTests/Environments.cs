@@ -1,6 +1,7 @@
 ﻿using RedisTribute.Configuration;
 using RedisTribute.Telemetry;
 using System;
+using System.Diagnostics;
 using System.Threading;
 using Xunit;
 
@@ -85,6 +86,13 @@ namespace RedisTribute.IntegrationTests
             {
                 config.SslConfiguration.UseSsl = true;
                 config.SslConfiguration.CertificatePath = "ca.pem";
+                config.SslConfiguration.RemoteCertificateValidationCallback =
+                    (_, cert, __, err) =>
+                    {
+                        Debug.WriteLine($"{cert.Subject} {err}");
+
+                        return true;
+                    };
             }
 
             return config;

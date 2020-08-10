@@ -5,8 +5,16 @@ using System.Xml.Linq;
 
 namespace RedisTribute.Serialization.CustomSerializers
 {
-    class XDocumentSerializer : IObjectSerializer<XDocument>, IObjectSerializer<XElement>
+    class XDocumentSerializer : 
+        IObjectSerializer<XDocument>, 
+        IObjectSerializer<XElement>, 
+        IObjectSerializer<XNode>
     {
+        readonly XmlReaderSettings _settings = new XmlReaderSettings()
+        {
+            ConformanceLevel = ConformanceLevel.Fragment
+        };
+
         public XDocument ReadData(IObjectReader reader, XDocument defaultValue)
         {
             using (var data = reader.Raw())
@@ -22,6 +30,17 @@ namespace RedisTribute.Serialization.CustomSerializers
             using (var textReader = new StreamReader(data, Encoding.UTF8))
             {
                 return XElement.Load(textReader);
+            }
+        }
+
+        public XNode ReadData(IObjectReader reader, XNode defaultValue)
+        {
+            using (var data = reader.Raw())
+            using (var textReader = new StreamReader(data, Encoding.UTF8))
+            using (var xmlReader = XmlReader.Create(textReader, _settings))
+            {
+                xmlReader.MoveToContent();
+                return XNode.ReadFrom(xmlReader);
             }
         }
 

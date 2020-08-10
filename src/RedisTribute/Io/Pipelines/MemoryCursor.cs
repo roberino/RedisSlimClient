@@ -21,37 +21,52 @@ namespace RedisTribute.Io.Pipelines
 
         public int CurrentPosition => _position;
 
-        public async ValueTask<bool> Write(byte[] data)
+        public async ValueTask Write(byte[] data)
         {
-            var mem = await GetMemory(data.Length);
+            var memTask = GetMemory(data.Length);
+
+            if (!memTask.IsCompleted)
+            {
+                await memTask;
+            }
+
+            var mem = memTask.Result;
 
             for (var i = 0; i < data.Length; i++)
             {
                 mem.Span[_position++] = data[i];
             }
-
-            return true;
         }
 
-        public async ValueTask<bool> Write(ArraySegment<byte> data)
+        public async ValueTask Write(ArraySegment<byte> data)
         {
-            var mem = await GetMemory(data.Count);
+            var memTask = GetMemory(data.Count);
+
+            if (!memTask.IsCompleted)
+            {
+                await memTask;
+            }
+
+            var mem = memTask.Result;
 
             for (var i = data.Offset; i < data.Count; i++)
             {
                 mem.Span[_position++] = data.Array[i];
             }
-
-            return true;
         }
 
-        public async ValueTask<bool> Write(byte data)
+        public async ValueTask Write(byte data)
         {
-            var mem = await GetMemory(1);
+            var memTask = GetMemory(1);
+
+            if (!memTask.IsCompleted)
+            {
+                await memTask;
+            }
+
+            var mem = memTask.Result;
 
             mem.Span[_position++] = data;
-
-            return true;
         }
 
         public async ValueTask<bool> FlushAsync()

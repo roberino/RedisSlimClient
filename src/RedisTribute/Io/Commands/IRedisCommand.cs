@@ -39,7 +39,7 @@ namespace RedisTribute.Io.Commands
     {
         int AttemptSequence { get; set; }
         Action<CommandState> OnStateChanged { set; }
-        Func<object[], Task> OnExecute { set; }
+        Func<object[], ValueTask> OnExecute { set; }
         bool CanBeCompleted { get; }
         Task Execute();
         bool SetResult(IRedisObject obj);

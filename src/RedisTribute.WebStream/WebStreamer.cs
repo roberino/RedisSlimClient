@@ -9,8 +9,8 @@ namespace RedisTribute.WebStream
     public interface IWebStreamer
     {
         event Action<(Uri uri, Exception error)>? Error;
-        event Action<HtmlDocument>? Found;
-        Task Stream<T>(Func<HtmlDocument, IEnumerable<T>> transformation, CancellationToken cancellation);
+        event Action<HtmlDocumentContent>? Received;
+        Task Stream<T>(Func<HtmlDocumentContent, IEnumerable<T>> transformation, CancellationToken cancellation);
     }
 
     class WebStreamer : IWebStreamer
@@ -28,15 +28,15 @@ namespace RedisTribute.WebStream
 
         public event Action<(Uri uri, Exception error)>? Error;
 
-        public event Action<HtmlDocument>? Found;
+        public event Action<HtmlDocumentContent>? Received;
 
-        public async Task Stream<T>(Func<HtmlDocument, IEnumerable<T>> transformation, CancellationToken cancellation)
+        public async Task Stream<T>(Func<HtmlDocumentContent, IEnumerable<T>> transformation, CancellationToken cancellation)
         {
             var pipe = _streamClient.CreatePipeline<T>(PipelineOptions.FromStartOfStream(_channel.ChannelName));
 
-            await _subscriptionClient.ProcessWebDocuments(_channel, async x =>
+            var sub = await _subscriptionClient.ProcessWebDocuments(_channel, async x =>
             {
-                Found?.Invoke(x);
+                Received?.Invoke(x);
 
                 try
                 {
@@ -52,6 +52,8 @@ namespace RedisTribute.WebStream
                     Error?.Invoke((x.DocumentUri, ex));
                 }
             }, cancellation);
+
+            await sub.AwaitSubscription(cancellation);
         }
     }
 }
