@@ -5,6 +5,9 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using RedisTribute.Stubs;
+using System.Xml.Linq;
+using System.Linq;
+using System.Text;
 
 namespace RedisTribute.TestHarness
 {
@@ -56,12 +59,15 @@ namespace RedisTribute.TestHarness
             var crawler = client.CreateWebCrawler(new CrawlOptions()
             {
                 ChannelName = "stream1",
-                RootUri = new Uri("https://en.wikipedia.org/wiki/Main_Page")
-            });
+                RootUri = new Uri("https://en.wikipedia.org/wiki/Main_Page"),
+                ContentSelector = x => x.Root
+            }.RestrictHosts("en.wikipedia.org"));
+
+            Console.WriteLine($"Retrieve (ms) \t|\t Parse (ms) \t|\t Send (ms) \t|\t Uri:Name");
 
             crawler.Found += d =>
             {
-                Console.WriteLine($"{d.DocumentUri}:{d.Content?.Root?.Name}");
+                Console.WriteLine($"{d.Stats.RetrieveTime.TotalMilliseconds}ms \t|\t {d.Stats.ParseTime.TotalMilliseconds}ms \t|\t {d.Stats.SendTime.TotalMilliseconds}ms \t|\t {d.DocumentUri}:{d.Content?.Root?.Name}");
             };
 
             crawler.Waiting += () => { Console.WriteLine("Waiting"); };
@@ -73,7 +79,41 @@ namespace RedisTribute.TestHarness
         {
             var stream = client.StreamWebDocuments(streamClient, new CrawlChannel {ChannelName = "stream1"});
 
-            await stream.StreamText(t => Console.Write($"{t} "));
+            await stream.StreamText(
+                textSelector: x =>
+                {
+                    var content = ((XElement) x.Content)
+                        .DescendantNodes().Where(n => n is XElement)
+                        .Cast<XElement>()
+                        .FirstOrDefault(e =>
+                            e.Name.LocalName == "div" && e.Attribute("id")?.Value == "mw-content-text");
+
+                    if (content == null)
+                        return null;
+
+                    var paragraphs = content.DescendantNodes()
+                        .Where(n => n is XElement)
+                        .Cast<XElement>()
+                        .Where(e =>
+                            e.Name.LocalName == "p");
+
+                    var builder = new StringBuilder();
+
+                    foreach (var p in paragraphs)
+                    {
+                        var t = p.Value.Trim();
+
+                        if (string.IsNullOrEmpty(t)) continue;
+
+                        if (char.IsUpper(t[0]) && t[^1] == '.')
+                        {
+                            builder.AppendLine(t);
+                        }
+                    }
+
+                    return builder.ToString();
+                },
+                onSending: t => Console.Write($"{t} "));
 
 
             //var processor = await client.ProcessWebDocuments(new CrawlChannel { ChannelName = "stream1" }, d =>

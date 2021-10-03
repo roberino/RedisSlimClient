@@ -1,6 +1,7 @@
 ﻿using LinqInfer.Text;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -42,6 +43,7 @@ namespace RedisTribute.WebStream
         async Task FollowLinks(Uri root, CancellationToken cancellation)
         {
             var work = new Queue<Uri>();
+            var sw = new Stopwatch();
 
             work.Enqueue(root);
 
@@ -66,8 +68,14 @@ namespace RedisTribute.WebStream
 
                     while (received == 0)
                     {
+                        sw.Restart();
+
                         received =
                             await _publisherClient.PublishAsync(_options.ChannelName, doc.GetContent(_options.ContentSelector), cancellation: cancellation);
+
+                        sw.Stop();
+
+                        doc.Stats = new RetrievalStats(doc.Stats.RetrieveTime, doc.Stats.ParseTime, sw.Elapsed);
 
                         if (received > 0)
                         {
@@ -93,9 +101,15 @@ namespace RedisTribute.WebStream
 
         async Task<HtmlDocument?> OpenDoc(Uri uri, CancellationToken cancellation)
         {
+            var sw = Stopwatch.StartNew();
+
             try
             {
                 using var response = await _httpClient.GetAsync(uri, cancellation);
+
+                sw.Stop();
+
+                var retrieveTime = sw.Elapsed;
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -103,7 +117,15 @@ namespace RedisTribute.WebStream
 
                     using var textReader = new StreamReader(stream);
 
-                    return new HtmlDocument (uri, textReader.OpenAsHtmlDocument());
+                    sw.Restart();
+                    
+                    var content = textReader.OpenAsHtmlDocument();
+
+                    sw.Stop();
+
+                    var stats = new RetrievalStats(retrieveTime, sw.Elapsed, TimeSpan.Zero);
+
+                    return new HtmlDocument (uri, content, stats);
                 }
             }
             catch (Exception ex)

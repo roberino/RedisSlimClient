@@ -5,6 +5,15 @@ using System.Threading.Tasks;
 
 namespace RedisTribute.WebStream
 {
+    public static class CrawlOptionsExtensions
+    {
+        public static CrawlOptions RestrictHosts(this CrawlOptions crawlOptions, params string[] allowedHosts)
+        {
+            crawlOptions.LinkStrategy = new HistoryManager(allowedHosts);
+            return crawlOptions;
+        }
+    }
+
     class HistoryManager : ILinkStrategy
     {
         readonly HashSet<string> _allowedDomains;

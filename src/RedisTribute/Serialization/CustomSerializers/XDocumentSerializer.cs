@@ -39,8 +39,20 @@ namespace RedisTribute.Serialization.CustomSerializers
             using (var textReader = new StreamReader(data, Encoding.UTF8))
             using (var xmlReader = XmlReader.Create(textReader, _settings))
             {
-                xmlReader.MoveToContent();
-                return XNode.ReadFrom(xmlReader);
+                while (xmlReader.Read())
+                {
+                    if (xmlReader.NodeType == XmlNodeType.Document || xmlReader.NodeType == XmlNodeType.XmlDeclaration)
+                    {
+                        return XDocument.Load(xmlReader);
+                    }
+
+                    if (xmlReader.NodeType == XmlNodeType.Element)
+                    {
+                        return XNode.ReadFrom(xmlReader);
+                    }
+                }
+
+                return defaultValue;
             }
         }
 
@@ -58,6 +70,7 @@ namespace RedisTribute.Serialization.CustomSerializers
             }))
             {
                 instance.WriteTo(xmlWriter);
+
                 xmlWriter.Flush();
                 ms.Flush();
                 writer.Raw(ms.ToArray());

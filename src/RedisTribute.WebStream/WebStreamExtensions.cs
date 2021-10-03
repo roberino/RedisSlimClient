@@ -33,43 +33,45 @@ namespace RedisTribute
             return new WebStreamer(streamClient, subscriberClient, channel);
         }
 
-        public static Task StreamText(this IWebStreamer webStreamer, Action<string>? onSending = null, CancellationToken cancellation = default)
+        public static Task StreamText(this IWebStreamer webStreamer, Func<HtmlDocumentContent, string?>? textSelector = null, Action<string>? onSending = null, CancellationToken cancellation = default)
         {
             var empty = new string[0];
 
+            textSelector ??= SelectText;
+
             return webStreamer.Stream(x =>
             {
-                string content;
+                var content = textSelector(x);
 
-                switch (x.Content)
-                {
-                    case XText text:
-                        content = text.Value;
-                        break;
-                    case XDocument text:
-                        content = text.Root.Value;
-                        break;
-                    case XElement text:
-                        content = text.Value;
-                        break;
-                    case XComment text:
-                        content = text.Value;
-                        break;
-                    default:
-                        return empty;
+                if (content == null)
+                    return empty;
 
-                }
-
-                // var body = x.Content as XElement; //?.Root?.Elements().FirstOrDefault(e => string.Equals(e.Name.LocalName, "body", StringComparison.OrdinalIgnoreCase));
-
-
-                return content.Tokenise().Select(t =>
+                return content
+                    .Tokenise()
+                    .Where(t => t.Type != TokenType.Space).Select(t =>
                 {
                     onSending?.Invoke(t.Text);
 
                     return t.Text;
                 });
             }, cancellation);
+        }
+
+        static string? SelectText(HtmlDocumentContent x)
+        {
+            switch (x.Content)
+            {
+                case XText text:
+                    return text.Value;
+                case XDocument text:
+                    return text.Root.Value;
+                case XElement text:
+                    return text.Value;
+                case XComment text:
+                    return text.Value;
+                default:
+                    return null;
+            }
         }
     }
 }

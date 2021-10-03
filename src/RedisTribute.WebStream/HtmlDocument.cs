@@ -15,15 +15,16 @@ namespace RedisTribute.WebStream
 
     public sealed class HtmlDocument
     {
-        public HtmlDocument(Uri documentUri, XDocument content)
+        public HtmlDocument(Uri documentUri, XDocument content, RetrievalStats stats)
         {
             DocumentUri = documentUri;
             Content = content;
+            Stats = stats;
         }
 
         public Uri DocumentUri { get; }
-
         public XDocument Content { get; }
+        public RetrievalStats Stats { get; set; }
 
         public HtmlDocumentContent GetContent(Func<XDocument, XNode>? selector = null)
         {
