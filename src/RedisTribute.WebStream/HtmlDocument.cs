@@ -7,10 +7,9 @@ namespace RedisTribute.WebStream
 {
     public sealed class HtmlDocumentContent
     {
-        public Uri DocumentUri { get; set; }
+        public Uri? DocumentUri { get; set; }
 
-        public XNode Content { get; set; }
-
+        public XNode? Content { get; set; }
     }
 
     public sealed class HtmlDocument
@@ -57,7 +56,7 @@ namespace RedisTribute.WebStream
         {
             return
                 e.Descendants().Where(x => x.Name.LocalName == "a").Select(a => a.Attribute("href"))
-                    .Where(a => a != null).Select(a => a.Value);
+                    .Where(a => a != null).Select(a => a!.Value);
         }
     }
 }
