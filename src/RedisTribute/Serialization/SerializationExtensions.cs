@@ -15,7 +15,7 @@ namespace RedisTribute.Serialization
     {
         public static string CreateHash(this byte[] data)
         {
-            using (var sha1 = new SHA1CryptoServiceProvider())
+            using (var sha1 = SHA1.Create())
             {
                 return Convert.ToBase64String(sha1.ComputeHash(data));
             }

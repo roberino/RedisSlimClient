@@ -1,21 +1,21 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-    <PropertyGroup>
-        <OutputType>Exe</OutputType>
-        <TargetFramework>netcoreapp3.1</TargetFramework>
-        <LangVersion>8.0</LangVersion>
-    </PropertyGroup>
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFrameworks>net6.0</TargetFrameworks>
+		<LangVersion>10.0</LangVersion>
+	</PropertyGroup>
 
-    <ItemGroup>
-      <PackageReference Include="Serilog.Formatting.Elasticsearch" Version="8.0.1" />
-      <PackageReference Include="Serilog.Sinks.ElasticSearch" Version="8.0.1" />
-    </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Serilog.Formatting.Elasticsearch" Version="8.0.1" />
+		<PackageReference Include="Serilog.Sinks.ElasticSearch" Version="8.0.1" />
+	</ItemGroup>
 
-    <ItemGroup>
-      <ProjectReference Include="..\..\src\RedisTribute.ApplicationInsights\RedisTribute.ApplicationInsights.csproj" />
-      <ProjectReference Include="..\..\src\RedisTribute.Serilog\RedisTribute.Serilog.csproj" />
-      <ProjectReference Include="..\..\src\RedisTribute.WebStream\RedisTribute.WebStream.csproj" />
-      <ProjectReference Include="..\RedisTribute.Stubs\RedisTribute.Stubs.csproj" />
-    </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\..\src\RedisTribute.ApplicationInsights\RedisTribute.ApplicationInsights.csproj" />
+		<ProjectReference Include="..\..\src\RedisTribute.Serilog\RedisTribute.Serilog.csproj" />
+		<ProjectReference Include="..\..\src\RedisTribute.WebStream\RedisTribute.WebStream.csproj" />
+		<ProjectReference Include="..\RedisTribute.Stubs\RedisTribute.Stubs.csproj" />
+	</ItemGroup>
 
 </Project>

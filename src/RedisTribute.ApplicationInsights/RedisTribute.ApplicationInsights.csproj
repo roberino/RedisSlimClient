@@ -1,25 +1,25 @@
-<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;netcoreapp2.1;netcoreapp2.2</TargetFrameworks>
-    <LangVersion>7.2</LangVersion>
-    <Version>0.3.3-beta</Version>
-    <Authors>Rob Eyres</Authors>
-    <Company />
-    <Description>Application insight extensions for RedisTribute</Description>
-    <Copyright>R Eyres</Copyright>
-    <PackageLicenseFile>LICENCE.txt</PackageLicenseFile>
-    <PackageProjectUrl>https://github.com/roberino/RedisSlimClient/</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/roberino/RedisSlimClient/</RepositoryUrl>
-    <PackageTags>Redis Client Cache Telemetry ApplicationInsights  Azure</PackageTags>
-    <PackageIconUrl>https://raw.githubusercontent.com/roberino/RedisSlimClient/beta/docs/logo.png</PackageIconUrl>
-  </PropertyGroup>
-  <ItemGroup>
-    <None Include="LICENSE.txt" Pack="true" PackagePath="$(PackageLicenseFile)" />
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="Microsoft.ApplicationInsights" Version="2.12.1" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\RedisTribute\RedisTribute.csproj" />
-  </ItemGroup>
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFrameworks>netstandard2.1;netcoreapp3.1;net6.0</TargetFrameworks>
+		<LangVersion>10.0</LangVersion>
+		<Version>0.3.3-beta</Version>
+		<Authors>Rob Eyres</Authors>
+		<Company />
+		<Description>Application insight extensions for RedisTribute</Description>
+		<Copyright>R Eyres</Copyright>
+		<PackageLicenseFile>LICENCE.txt</PackageLicenseFile>
+		<PackageProjectUrl>https://github.com/roberino/RedisSlimClient/</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/roberino/RedisSlimClient/</RepositoryUrl>
+		<PackageTags>Redis Client Cache Telemetry ApplicationInsights  Azure</PackageTags>
+		<PackageIconUrl>https://raw.githubusercontent.com/roberino/RedisSlimClient/beta/docs/logo.png</PackageIconUrl>
+	</PropertyGroup>
+	<ItemGroup>
+		<None Include="LICENSE.txt" Pack="true" PackagePath="$(PackageLicenseFile)" />
+	</ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.ApplicationInsights" Version="2.12.1" />
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\RedisTribute\RedisTribute.csproj" />
+	</ItemGroup>
 </Project>

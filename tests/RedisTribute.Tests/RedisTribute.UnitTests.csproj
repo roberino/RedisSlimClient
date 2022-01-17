@@ -1,29 +1,29 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
-    <IsPackable>false</IsPackable>
-    <LangVersion>8.0</LangVersion>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFrameworks>net6.0</TargetFrameworks>
+		<LangVersion>10.0</LangVersion>
+		<IsPackable>false</IsPackable>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <EmbeddedResource Include="Io\Server\Clustering\ClusterNodesResponse.csv" />
-    <EmbeddedResource Include="Io\Server\InfoResponse.txt" />
-    <EmbeddedResource Include="Serialization\Protocol\example1.dat" />
-  </ItemGroup>
+	<ItemGroup>
+		<EmbeddedResource Include="Io\Server\Clustering\ClusterNodesResponse.csv" />
+		<EmbeddedResource Include="Io\Server\InfoResponse.txt" />
+		<EmbeddedResource Include="Serialization\Protocol\example1.dat" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.5.0" />
-    <PackageReference Include="NSubstitute" Version="4.2.1" />
-    <PackageReference Include="xunit" Version="2.4.1" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.1">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
-    </PackageReference>
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.5.0" />
+		<PackageReference Include="NSubstitute" Version="4.2.1" />
+		<PackageReference Include="xunit" Version="2.4.1" />
+		<PackageReference Include="xunit.runner.visualstudio" Version="2.4.1">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+		</PackageReference>
+	</ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\src\RedisTribute\RedisTribute.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\..\src\RedisTribute\RedisTribute.csproj" />
+	</ItemGroup>
 
 </Project>

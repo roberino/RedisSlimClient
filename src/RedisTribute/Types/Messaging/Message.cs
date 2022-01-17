@@ -68,18 +68,11 @@ namespace RedisTribute.Types.Messaging
 
         public static IMessage<T> FromBytes(ISerializerSettings serializerSettings, string channel, byte[] data)
         {
-            try
-            {
-                var sm = serializerSettings.Deserialize<SerializableMessage<T>>(data);
+            var sm = serializerSettings.Deserialize<SerializableMessage<T>>(data);
 
-                var msg = new Message<T>(sm.Id, channel, sm.Header, sm.Properties, sm.Body, serializerSettings);
+            var msg = new Message<T>(sm.Id, channel, sm.Header, sm.Properties, sm.Body, serializerSettings);
 
-                return msg;
-            }
-            catch(Exception ex)
-            {
-                throw ex;
-            }
+            return msg;
         }
 
         public byte[] GetBytes()

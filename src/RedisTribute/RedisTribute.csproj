@@ -1,32 +1,32 @@
-<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;netcoreapp2.1;netcoreapp2.2</TargetFrameworks>
-    <LangVersion>7.2</LangVersion>
-    <Version>0.3.3-beta</Version>
-    <Authors>Rob Eyres</Authors>
-    <Company />
-    <Description>A slim and configurable DotNet Standard client for Redis</Description>
-    <Copyright>R Eyres</Copyright>
-    <PackageLicenseFile>LICENCE.txt</PackageLicenseFile>
-    <PackageProjectUrl>https://github.com/roberino/RedisSlimClient/</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/roberino/RedisSlimClient/</RepositoryUrl>
-    <PackageTags>Redis Client Cache Azure Microservices Cloud Streams</PackageTags>
-    <PackageIcon>icon.png</PackageIcon>
-    <PackageIconUrl>https://raw.githubusercontent.com/roberino/RedisSlimClient/beta/docs/logo.png</PackageIconUrl>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(TargetFramework)' == 'netcoreapp2.1' or '$(TargetFramework)' == 'netcoreapp2.2'">
-    <DefineConstants>NET_CORE</DefineConstants>
-  </PropertyGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Io\Commands\Scripts\ReleaseLock.lua" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="LICENSE.txt" Pack="true" PackagePath="$(PackageLicenseFile)" />
-    <None Include="icon.png" Visible="false" Pack="true" PackagePath="" />
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="System.IO.Pipelines" Version="4.7.0" />
-    <PackageReference Include="System.Reflection.Emit" Version="4.7.0" />
-  </ItemGroup>
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFrameworks>netstandard2.1;netcoreapp3.1;net6.0</TargetFrameworks>
+		<LangVersion>10.0</LangVersion>
+		<Version>0.3.3-beta</Version>
+		<Authors>Rob Eyres</Authors>
+		<Company />
+		<Description>A slim and configurable DotNet Standard client for Redis</Description>
+		<Copyright>R Eyres</Copyright>
+		<PackageLicenseFile>LICENCE.txt</PackageLicenseFile>
+		<PackageProjectUrl>https://github.com/roberino/RedisSlimClient/</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/roberino/RedisSlimClient/</RepositoryUrl>
+		<PackageTags>Redis Client Cache Azure Microservices Cloud Streams</PackageTags>
+		<PackageIcon>icon.png</PackageIcon>
+		<PackageIconUrl>https://raw.githubusercontent.com/roberino/RedisSlimClient/beta/docs/logo.png</PackageIconUrl>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
+		<DefineConstants>NET_CORE</DefineConstants>
+	</PropertyGroup>
+	<ItemGroup>
+		<EmbeddedResource Include="Io\Commands\Scripts\ReleaseLock.lua" />
+	</ItemGroup>
+	<ItemGroup>
+		<None Include="LICENSE.txt" Pack="true" PackagePath="$(PackageLicenseFile)" />
+		<None Include="icon.png" Visible="false" Pack="true" PackagePath="" />
+	</ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="System.IO.Pipelines" Version="4.7.0" />
+		<PackageReference Include="System.Reflection.Emit" Version="4.7.0" />
+	</ItemGroup>
 </Project>
