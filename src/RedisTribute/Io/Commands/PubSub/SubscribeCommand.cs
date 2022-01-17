@@ -30,7 +30,7 @@ namespace RedisTribute.Io.Commands.PubSub
             _handler = handler;
         }
 
-        public event Action<Exception> ConnectionBroken;
+        public event Action<Exception>? ConnectionBroken;
 
         public override void Abandon(Exception ex)
         {

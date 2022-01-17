@@ -4,9 +4,9 @@ namespace RedisTribute.Io.Commands
 {
     readonly struct CommandParameters : IDisposable
     {
-        readonly IDisposable _disposer;
+        readonly IDisposable? _disposer;
 
-        public CommandParameters(IDisposable disposer, params object[] values)
+        public CommandParameters(IDisposable? disposer, params object[] values)
         {
             Values = values;
             _disposer = disposer;

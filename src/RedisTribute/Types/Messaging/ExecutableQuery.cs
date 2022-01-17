@@ -30,7 +30,7 @@ namespace RedisTribute.Types.Messaging
         {
             var body = _query.Method; 
             
-            return body.GetMethodBody().GetILAsByteArray();
+            return body.GetMethodBody()!.GetILAsByteArray()!;
         }
 
         static Type CreateAssembly(Action<MethodBuilder> build)
@@ -47,7 +47,7 @@ namespace RedisTribute.Types.Messaging
 
             build(methodBuilder);
 
-            return type.CreateTypeInfo().AsType();
+            return type.CreateTypeInfo()!.AsType();
         }
     }
 }

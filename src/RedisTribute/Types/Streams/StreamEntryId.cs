@@ -79,7 +79,7 @@ namespace RedisTribute.Types.Streams
             return Id == other.Id && Timestamp.Equals(other.Timestamp);
         }
 
-        public int CompareTo(object obj)
+        public int CompareTo(object? obj)
         {
             if (obj is StreamEntryId other)
             {

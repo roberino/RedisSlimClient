@@ -24,7 +24,7 @@ namespace RedisTribute.Io
 
         public virtual async Task AbortAll(Exception ex, IWorkScheduler scheduler)
         {
-            IRedisCommand[] cmds = null;
+            IRedisCommand[]? cmds = null;
 
             await AccessQueue(q =>
             {
@@ -35,7 +35,7 @@ namespace RedisTribute.Io
                 return true;
             });
 
-            foreach (var cmd in cmds)
+            foreach (var cmd in cmds!)
             {
                 scheduler.Schedule(() =>
                 {

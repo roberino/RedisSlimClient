@@ -25,7 +25,7 @@ namespace RedisTribute.Io
 
         volatile PipelineStatus _status;
 
-        public AsyncCommandPipeline(IDuplexPipeline pipeline, ISocket socket, IWorkScheduler workScheduler, ITelemetryWriter telemetryWriter, ICommandQueue commandQueue = null)
+        public AsyncCommandPipeline(IDuplexPipeline pipeline, ISocket socket, IWorkScheduler workScheduler, ITelemetryWriter telemetryWriter, ICommandQueue? commandQueue = null)
         {
             _pipeline = pipeline;
             _socket = socket;

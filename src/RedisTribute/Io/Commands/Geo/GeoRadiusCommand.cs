@@ -47,7 +47,7 @@ namespace RedisTribute.Io.Commands.Geo
             if (limLen == 1)
             {
                 args[s++] = "COUNT";
-                args[s++] = _query.Limit.ToString();
+                args[s++] = _query.Limit.GetValueOrDefault().ToString();
             }
 
             return args;
@@ -72,7 +72,7 @@ namespace RedisTribute.Io.Commands.Geo
         {
             double? dist = null;
             GeoCoordinates? coords = null;
-            string hash = null;
+            string? hash = null;
 
             var i = 1;
 

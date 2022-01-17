@@ -2,7 +2,7 @@
 {
     public readonly struct GeoDescriptor
     {
-        public GeoDescriptor(GeoCoordinates? coords, double? distance, string hash)
+        public GeoDescriptor(GeoCoordinates? coords, double? distance, string? hash)
         {
             Position = coords;
             Distance = distance;
@@ -15,7 +15,7 @@
 
         public double? Distance { get; }
 
-        public string Hash { get; }
+        public string? Hash { get; }
 
         public override string ToString() => $"Position:{Position}, Distance:{Distance}, Hash:{Hash}";
     }

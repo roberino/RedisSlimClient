@@ -16,7 +16,7 @@ namespace RedisTribute.Configuration
 
         readonly TelemetryAggregateWriter _telemetryAggregateWriter;
 
-        public ClientConfiguration(string connectionOptions, NetworkConfiguration networkConfiguration = null)
+        public ClientConfiguration(string connectionOptions, NetworkConfiguration? networkConfiguration = null)
         {
             Id = Interlocked.Increment(ref _idCounter);
             SslConfiguration = new SslConfiguration();
@@ -60,7 +60,7 @@ namespace RedisTribute.Configuration
 
         public SslConfiguration SslConfiguration { get; }
 
-        public Uri[] ServerEndpoints { get; private set; }
+        public Uri[] ServerEndpoints { get; private set; } = Array.Empty<Uri>();
 
         public FallbackStrategy FallbackStrategy { get; set; } = FallbackStrategy.Retry;
         public TimeSpan RetryBackoffTime { get; set; } = TimeSpan.FromMilliseconds(150);

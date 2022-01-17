@@ -7,7 +7,7 @@ namespace RedisTribute.Configuration
     {
         readonly IDictionary<string, string> _passwords;
 
-        string _globalPassword;
+        string? _globalPassword;
 
         public PasswordManager()
         {
@@ -24,7 +24,7 @@ namespace RedisTribute.Configuration
             _globalPassword = password;
         }
 
-        public string GetPassword(IRedisEndpoint redisEndpoint)
+        public string? GetPassword(IRedisEndpoint redisEndpoint)
         {
             if (_passwords.TryGetValue($"{redisEndpoint.Host}:{redisEndpoint.Port}", out var pwd))
             {

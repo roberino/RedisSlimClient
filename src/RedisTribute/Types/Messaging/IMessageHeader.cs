@@ -26,7 +26,7 @@ namespace RedisTribute.Types.Messaging
             };
         }
 
-        public string MachineName { get; set; }
+        public string MachineName { get; set; } = string.Empty;
         public TimeSpan LockTime { get; set; }
         public MessageFlags Flags { get; set; }
         public DateTime Timestamp { get; set; }

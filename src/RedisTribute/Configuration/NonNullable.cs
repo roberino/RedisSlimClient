@@ -4,7 +4,7 @@ namespace RedisTribute.Configuration
 {
     sealed class NonNullable<T> where T  : class
     {
-        T _value;
+        T? _value;
 
         public NonNullable(T defaultValue)
         {
@@ -13,7 +13,7 @@ namespace RedisTribute.Configuration
 
         public T Value
         {
-            get => _value;
+            get => _value!;
             set
             {
                 _value = value ?? throw new ArgumentNullException(typeof(T).Name);

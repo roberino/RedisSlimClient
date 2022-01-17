@@ -54,7 +54,7 @@ namespace RedisTribute.Io.Commands.Keys
             var cursor = arr[0].ToLong();
             var keys = (RedisArray)arr[1];
 
-            return new ScanResults(cursor, keys.Select(k => k.ToString()).ToArray());
+            return new ScanResults(cursor, keys.Select(k => k.ToString() ?? string.Empty).ToArray());
         }
     }
 }

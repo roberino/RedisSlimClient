@@ -2,7 +2,7 @@
 {
     public sealed class NetworkConfiguration
     {
-        public NetworkConfiguration(IHostAddressResolver dnsResolver = null) : this(dnsResolver ?? new HostAddressResolver(), new PortMap())
+        public NetworkConfiguration(IHostAddressResolver? dnsResolver = null) : this(dnsResolver ?? new HostAddressResolver(), new PortMap())
         {
         }
 

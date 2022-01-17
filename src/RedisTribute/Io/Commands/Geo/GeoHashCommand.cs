@@ -34,7 +34,7 @@ namespace RedisTribute.Io.Commands.Geo
         {
             if (redisObject is RedisArray hashes)
             {
-                return _members.Zip(hashes, (k, v) => (k, v)).ToDictionary(kv => kv.k, kv => kv.v.ToString());
+                return _members.Zip(hashes, (k, v) => (k, v)).ToDictionary(kv => kv.k, kv => kv.v.ToString() ?? string.Empty);
             }
 
             throw new InvalidResponseException(redisObject);

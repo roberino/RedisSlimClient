@@ -5,7 +5,7 @@ namespace RedisTribute.Util
 {
     static class DebugOutput
     {
-        public static Action<string> Output { get; set; }
+        public static Action<string>? Output { get; set; }
 
         public static void Dump(byte[] data, int length)
         {

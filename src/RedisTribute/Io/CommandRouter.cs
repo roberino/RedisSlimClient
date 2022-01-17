@@ -131,7 +131,7 @@ namespace RedisTribute.Io
                 }
             }));
 
-            return selectable.Where(p => p != null);
+            return selectable.Where(p => p != null).Select(x => x!);
         }
 
         async Task<IOrderedEnumerable<IConnectionSubordinate>> GetAvailableConnections(ICommandIdentity command, Func<PipelineStatus, bool> filter)

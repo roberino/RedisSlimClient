@@ -9,16 +9,16 @@ namespace RedisTribute.Configuration
         internal const int DefaultSslPort = 6380;
         internal const int DefaultNonSslPort = 6379;
 
-        string _certificatePath;
-        X509Certificate2 _certificate;
+        string? _certificatePath;
+        X509Certificate2? _certificate;
 
         public bool UseSsl { get; set; }
 
-        public string SslHost { get; set; }
+        public string? SslHost { get; set; }
 
         public int DefaultPort => UseSsl ? DefaultSslPort : DefaultNonSslPort;
 
-        public X509Certificate2 Certificate
+        public X509Certificate2? Certificate
         {
             get => _certificate;
             set
@@ -32,7 +32,7 @@ namespace RedisTribute.Configuration
             }
         }
 
-        public string CertificatePath
+        public string? CertificatePath
         {
             get => _certificatePath;
             set
@@ -44,13 +44,13 @@ namespace RedisTribute.Configuration
             }
         }
 
-        public RemoteCertificateValidationCallback RemoteCertificateValidationCallback { get; set; }
+        public RemoteCertificateValidationCallback? RemoteCertificateValidationCallback { get; set; }
 
-        public LocalCertificateSelectionCallback ClientCertificateValidationCallback { get; set; }
+        public LocalCertificateSelectionCallback? ClientCertificateValidationCallback { get; set; }
 
         static RemoteCertificateValidationCallback Trust(X509Certificate2 issuer)
         {
-            return (object _, X509Certificate certificate, X509Chain __, SslPolicyErrors sslPolicyError)
+            return (object _, X509Certificate? certificate, X509Chain? __, SslPolicyErrors sslPolicyError)
                 => sslPolicyError == SslPolicyErrors.RemoteCertificateChainErrors
                     && certificate is X509Certificate2 v2
                     && ValidateIssuer(v2, issuer);

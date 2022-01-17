@@ -7,8 +7,8 @@ namespace RedisTribute.Io.Commands
 {
     class RedisTelemetricCommand : ICommandIdentity
     {
-        Action<CommandState> _stateChanged;
-        Stopwatch _sw;
+        Action<CommandState>? _stateChanged;
+        Stopwatch? _sw;
 
         protected RedisTelemetricCommand(string commandText, bool requireMaster, RedisKey key = default)
         {
@@ -26,7 +26,7 @@ namespace RedisTribute.Io.Commands
             }
         }
 
-        public Func<object[], ValueTask> OnExecute { get; set; }
+        public Func<object[], ValueTask>? OnExecute { get; set; }
 
         public Action<CommandState> OnStateChanged
         {
