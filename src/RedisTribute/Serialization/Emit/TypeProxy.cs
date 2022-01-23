@@ -12,7 +12,7 @@ namespace RedisTribute.Serialization.Emit
         static readonly Lazy<TypeProxy<T>> SingleInstance =
             new Lazy<TypeProxy<T>>(() => new TypeProxy<T>(), LazyThreadSafetyMode.ExecutionAndPublication);
 
-        readonly IObjectGraphExporter<T> _dataExtractor;
+        readonly IObjectGraphExporter<T>? _dataExtractor;
 
         TypeProxy()
         {
@@ -23,11 +23,13 @@ namespace RedisTribute.Serialization.Emit
             _dataExtractor = Activator.CreateInstance(newType) as IObjectGraphExporter<T>;
         }
 
+        IObjectGraphExporter<T> Extractor => _dataExtractor ?? throw new InvalidOperationException();
+
         public static TypeProxy<T> Instance => SingleInstance.Value;
 
         public Type TargetType { get; }
 
-        public void WriteData(T instance, IObjectWriter writer) => _dataExtractor.WriteObjectData(instance, writer);
+        public void WriteData(T instance, IObjectWriter writer) => Extractor.WriteObjectData(instance, writer);
 
         public T ReadData(IObjectReader reader, T defaultValue)
         {
@@ -35,14 +37,14 @@ namespace RedisTribute.Serialization.Emit
 
             if (defaultValue == null)
             {
-                newObject = (T)typeof(T).GetConstructor(Type.EmptyTypes)?.Invoke(new object[0]);
+                newObject = (T)typeof(T).GetConstructor(Type.EmptyTypes)?.Invoke(Array.Empty<object>());
             }
             else
             {
                 newObject = defaultValue;
             }
 
-            newObject = _dataExtractor.ReadObjectData(newObject, reader);
+            newObject = Extractor.ReadObjectData(newObject, reader);
 
             return newObject;
         }

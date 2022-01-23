@@ -57,7 +57,7 @@ namespace RedisTribute.Io.Commands.Streams
 
                 var result = new Dictionary<RedisKey, RedisKey>();
 
-                var id = new StreamEntryId(parts[0].ToString());
+                var id = new StreamEntryId(parts[0].ToString()!);
 
                 var data = (RedisArray)parts[1];
 

@@ -26,6 +26,8 @@ namespace RedisTribute.Types.Messaging
             };
         }
 
+        public static readonly MessageHeader Empty = Create();
+
         public string MachineName { get; set; } = string.Empty;
         public TimeSpan LockTime { get; set; }
         public MessageFlags Flags { get; set; }

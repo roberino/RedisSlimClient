@@ -29,9 +29,9 @@ namespace RedisTribute.Io.Pipelines
         }
 
         public Uri EndpointIdentifier => _socket.EndpointIdentifier;
-        public event Action<Exception> Error;
-        public event Action<PipelineStatus> StateChanged;
-        public event Action<(string Action, byte[] Data)> Trace;
+        public event Action<Exception>? Error;
+        public event Action<PipelineStatus>? StateChanged;
+        public event Action<(string Action, byte[] Data)>? Trace;
 
         public void Schedule(IWorkScheduler scheduler)
         {
@@ -82,7 +82,7 @@ namespace RedisTribute.Io.Pipelines
 
         async Task PumpToSocket()
         {
-            Exception error = null;
+            Exception? error = null;
 
             while (IsRunning)
             {

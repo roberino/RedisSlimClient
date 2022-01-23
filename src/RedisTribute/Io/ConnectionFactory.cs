@@ -13,7 +13,7 @@ namespace RedisTribute.Io
         readonly Func<ICommandQueue> _queueFactory;
         readonly PipelineMode? _requiredPipelineMode;
 
-        public ConnectionFactory(Func<ICommandQueue> queueFactory = null, PipelineMode? requiredPipelineMode = null)
+        public ConnectionFactory(Func<ICommandQueue>? queueFactory = null, PipelineMode? requiredPipelineMode = null)
         {
             _queueFactory = queueFactory ?? (() => new CommandQueue());
             _requiredPipelineMode = requiredPipelineMode;

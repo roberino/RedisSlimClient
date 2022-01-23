@@ -1,4 +1,5 @@
 ﻿using RedisTribute.Io.Commands;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -16,9 +17,12 @@ namespace RedisTribute.Io
 
         public async Task<IReadOnlyCollection<MultiKeyRoute>> RouteMultiKeyCommandAsync(IMultiKeyCommandIdentity command)
         {
-            var availablePipelines = (await Task.WhenAll(_connections.Select(c => c.RouteMultiKeyCommandAsync(command)))).ToArray();
+            if(_connections.Count == 0)
+                return Array.Empty<MultiKeyRoute>();
 
-            return availablePipelines.OrderBy(x => x.Count()).FirstOrDefault();
+            var availablePipelines = await Task.WhenAll(_connections.Select(c => c.RouteMultiKeyCommandAsync(command)));
+
+            return availablePipelines.OrderBy(x => x.Count()).First();
         }
 
         public async Task<IEnumerable<ICommandExecutor>> RouteCommandAsync(ICommandIdentity command, ConnectionTarget target)
@@ -35,9 +39,12 @@ namespace RedisTribute.Io
 
         public async Task<ICommandExecutor> RouteCommandAsync(ICommandIdentity command)
         {
+            if (_connections.Count == 0)
+                throw new InvalidOperationException("No connections");
+
             var availablePipelines = await Task.WhenAll(_connections.Select(c => c.RouteCommandAsync(command)));
 
-            var candidate = availablePipelines.OrderBy(r => r.Metrics.Workload).FirstOrDefault();
+            var candidate = availablePipelines.OrderBy(r => r.Metrics.Workload).First();
 
             return candidate;
         }

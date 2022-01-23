@@ -23,8 +23,8 @@ namespace RedisTribute.Serialization.CustomSerializers
 
     public class KeyValueItem<T>
     {
-        public string Key { get; set; }
+        public string Key { get; init; }
 
-        public T Value { get; set; }
+        public T Value { get; init; }
     }
 }

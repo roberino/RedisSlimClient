@@ -17,7 +17,7 @@ namespace RedisTribute.Io.Monitoring
 
         public DefaultMonitoringStrategy(IRedisDiagnosticClient client, ITelemetryWriter telemetryWriter, TimeSpan? heartbeatInterval)
         {
-            _timer = new Timer(x => OnHeartbeat((IRedisDiagnosticClient)x), client, heartbeatInterval.GetValueOrDefault(DefaultInterval), heartbeatInterval.GetValueOrDefault(DefaultInterval));
+            _timer = new Timer(x => OnHeartbeat((IRedisDiagnosticClient)x!), client, heartbeatInterval.GetValueOrDefault(DefaultInterval), heartbeatInterval.GetValueOrDefault(DefaultInterval));
             _telemetryWriter = telemetryWriter;
             _monitoringStats = new ConcurrentDictionary<Uri, MonitoringStats>();
         }

@@ -12,12 +12,12 @@ namespace RedisTribute.Types.Streams
 
     interface IStreamSinkFactory
     {
-        Sink<StreamingItem<TOut>> CreatePipelineSink<TOut>(string forwardingNamespace = null);
+        Sink<StreamingItem<TOut>> CreatePipelineSink<TOut>(string? forwardingNamespace = null);
     }
 
     public abstract class StreamPipeline<TIn> : PipelineComponent<IRedisStreamPipeline, StreamingItem<TIn>>
     {
-        public abstract Task PushAsync(TIn item, string correlationId = null, CancellationToken cancellation = default);
+        public abstract Task PushAsync(TIn item, string? correlationId = null, CancellationToken cancellation = default);
     }
 
     class Pipeline<TIn> : StreamPipeline<TIn>, IRedisStreamPipeline, IStreamSinkFactory
@@ -49,7 +49,7 @@ namespace RedisTribute.Types.Streams
             return new Pipeline<TIn>(client, clientId, stream, options);
         }
 
-        public override async Task PushAsync(TIn item, string correlationId = null, CancellationToken cancellation = default)
+        public override async Task PushAsync(TIn item, string? correlationId = null, CancellationToken cancellation = default)
         {
             var x = (body: item, hash: string.Empty,
                 correlationId: string.IsNullOrEmpty(correlationId) ? Guid.NewGuid().ToString("N") : correlationId, clientId: _clientId.ClientName);
@@ -65,7 +65,7 @@ namespace RedisTribute.Types.Streams
             }
         }
 
-        public Sink<StreamingItem<TOut>> CreatePipelineSink<TOut>(string forwardingNamespace = null)
+        public Sink<StreamingItem<TOut>> CreatePipelineSink<TOut>(string? forwardingNamespace = null)
         {
             var key = forwardingNamespace == null
                 ? _options.ResolvePipelineName<TOut>()

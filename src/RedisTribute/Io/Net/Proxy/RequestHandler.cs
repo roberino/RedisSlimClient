@@ -19,7 +19,7 @@ namespace RedisTribute.Io.Net.Proxy
 
         public int ReceivedBytes { get; private set; }
 
-        public Response Handle(EndPoint remoteEndpoint, byte[] request, int bytesRead)
+        public Response Handle(EndPoint? remoteEndpoint, byte[] request, int bytesRead)
         {
             ReceivedBytes += bytesRead;
             return _handler(new Request(request, bytesRead, remoteEndpoint, Interlocked.Increment(ref _sequence)));

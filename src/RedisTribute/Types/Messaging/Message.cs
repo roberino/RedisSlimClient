@@ -77,11 +77,10 @@ namespace RedisTribute.Types.Messaging
 
         public byte[] GetBytes()
         {
-            var sm = new SerializableMessage<T>
+            var sm = new SerializableMessage<T>(Body)
             {
                 Id = Id,
                 Header = (MessageHeader)Header,
-                Body = Body,
                 Properties = Properties
             };
 

@@ -43,10 +43,10 @@ namespace RedisTribute.Io.Server
 
                     foreach (var item in slaveData.Cast<RedisArray>())
                     {
-                        var port = int.Parse(item[1].ToString());
+                        var port = int.Parse(item[1].ToString()!);
                         var mappedPort = _networkConfiguration.PortMappings.Map(port);
 
-                        results.Add(new ServerEndPointInfo(item[0].ToString(), port, mappedPort, _networkConfiguration.DnsResolver, ServerRoleType.Slave));
+                        results.Add(new ServerEndPointInfo(item[0].ToString()!, port, mappedPort, _networkConfiguration.DnsResolver, ServerRoleType.Slave));
                     }
 
                     return new ServerRole(role, null, results);
@@ -54,7 +54,7 @@ namespace RedisTribute.Io.Server
 
                 if (role == ServerRoleType.Slave)
                 {
-                    var masterHost = arr[1].ToString();
+                    var masterHost = arr[1].ToString()!;
                     var masterPort = (int)arr[2].ToLong();
                     var mappedPort = _networkConfiguration.PortMappings.Map(masterPort);
 

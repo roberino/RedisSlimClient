@@ -12,7 +12,7 @@ namespace RedisTribute.UnitTests.Util
         [Fact]
         public async Task GetValue_SingleCall_ReturnsValue()
         {
-            var instance = new SyncronizedInstance<Guid>(async () => await Task.Delay(10).ContinueWith(_ => Guid.NewGuid()));
+            var instance = new SyncronizedInstance<string>(async () => await Task.Delay(10).ContinueWith(_ => Guid.NewGuid().ToString()));
 
             var result = await instance.GetValue();
 
@@ -22,7 +22,7 @@ namespace RedisTribute.UnitTests.Util
         [Fact]
         public void GetValue_MultipleCallsCrossThread_ReturnsValue()
         {
-            var instance = new SyncronizedInstance<Guid>(async () => await Task.Delay(10).ContinueWith(_ => Guid.NewGuid()));
+            var instance = new SyncronizedInstance<string>(async () => await Task.Delay(10).ContinueWith(_ => Guid.NewGuid().ToString()));
 
             var results = new ConcurrentBag<string>();
 

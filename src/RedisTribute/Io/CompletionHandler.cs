@@ -29,7 +29,7 @@ namespace RedisTribute.Io
             return this;
         }
 
-        public event Action<(string Action, byte[] Data)> Trace;
+        public event Action<(string Action, byte[] Data)>? Trace;
 
         void OnError(Exception ex)
         {

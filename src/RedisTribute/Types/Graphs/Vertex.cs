@@ -213,7 +213,7 @@ namespace RedisTribute.Types.Graphs
             return (attributes, edges, label);
         }
 
-        public bool Equals(IVertex<T> other)
+        public bool Equals(IVertex<T>? other)
         {
             if (other == null)
             {
@@ -223,7 +223,7 @@ namespace RedisTribute.Types.Graphs
             return string.Equals(Namespace, other.Namespace) && string.Equals(other.Id, Id);
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             return Equals(obj as IVertex<T>);
         }

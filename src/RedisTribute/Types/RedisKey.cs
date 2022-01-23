@@ -38,7 +38,7 @@ namespace RedisTribute.Types
             return StructuralComparisons.StructuralEqualityComparer.Equals(Bytes, other.Bytes);
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (obj is RedisKey)
             {

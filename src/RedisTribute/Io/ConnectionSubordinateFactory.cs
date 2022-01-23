@@ -82,7 +82,7 @@ namespace RedisTribute.Io
             }));
         }
 
-        async Task<ICommandPipeline> Auth(ICommandPipeline pipeline, string password, int? dbIndex)
+        async Task<ICommandPipeline> Auth(ICommandPipeline pipeline, string? password, int? dbIndex)
         {
             if (password != null)
             {

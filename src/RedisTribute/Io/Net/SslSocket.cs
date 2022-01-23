@@ -14,7 +14,7 @@ namespace RedisTribute.Io.Net
         readonly byte[] _writeBuffer;
         readonly byte[] _readBuffer;
 
-        Stream _sslStream;
+        Stream? _sslStream;
 
         public SslSocket(IServerEndpointFactory endPointFactory, TimeSpan timeout, SslConfiguration configuration, IReadWriteBufferSettings bufferSettings) : base(endPointFactory, timeout)
         {
@@ -96,6 +96,9 @@ namespace RedisTribute.Io.Net
 
         async ValueTask<int> SendBufferedAsync(ReadOnlySequence<byte> buffer)
         {
+            if (_sslStream == null)
+                throw new InvalidOperationException();
+
             var len = (int)buffer.Length;
 
             buffer.CopyTo(_writeBuffer);
@@ -116,6 +119,9 @@ namespace RedisTribute.Io.Net
 #if NET_CORE
         async ValueTask<int> SendCoreAsync(ReadOnlySequence<byte> buffer)
         {
+            if (_sslStream == null)
+                throw new InvalidOperationException();
+
             try
             {
                 if (buffer.IsSingleSegment)
@@ -157,6 +163,9 @@ namespace RedisTribute.Io.Net
 
         async ValueTask<int> ReceiveAsyncImpl(Memory<byte> memory)
         {
+            if (_sslStream == null)
+                throw new InvalidOperationException();
+
             var read = 0;
 
 #if NET_CORE

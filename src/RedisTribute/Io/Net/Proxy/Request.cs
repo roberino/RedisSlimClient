@@ -4,7 +4,7 @@ namespace RedisTribute.Io.Net.Proxy
 {
     public readonly struct Request
     {
-        public Request(byte[] data, int bytesRead, EndPoint endPoint, long sequence)
+        public Request(byte[] data, int bytesRead, EndPoint? endPoint, long sequence)
         {
             Data = data;
             BytesRead = bytesRead;
@@ -12,7 +12,7 @@ namespace RedisTribute.Io.Net.Proxy
             Sequence = sequence;
         }
 
-        public EndPoint RemoteEndpoint { get; }
+        public EndPoint? RemoteEndpoint { get; }
         public long Sequence { get; }
         public byte[] Data { get; }
         public int BytesRead { get; }

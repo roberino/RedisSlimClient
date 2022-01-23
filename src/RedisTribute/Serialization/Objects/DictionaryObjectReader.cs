@@ -13,7 +13,7 @@ namespace RedisTribute.Serialization.Objects
         readonly IBinaryFormatter _binaryFormatter;
         readonly IDictionary<RedisKey, RedisKey> _input;
 
-        public DictionaryObjectReader(IDictionary<RedisKey, RedisKey> input, ISerializerSettings serializerSettings, IBinaryFormatter binaryFormatter = null)
+        public DictionaryObjectReader(IDictionary<RedisKey, RedisKey> input, ISerializerSettings serializerSettings, IBinaryFormatter? binaryFormatter = null)
         {
             _serializerSettings = serializerSettings;
             _binaryFormatter = binaryFormatter ?? BinaryFormatter.Default;

@@ -178,7 +178,10 @@ namespace RedisTribute.Configuration
 
             if (string.IsNullOrEmpty(SslConfiguration.SslHost))
             {
-                SslConfiguration.SslHost = ServerEndpoints.FirstOrDefault()?.Host;
+                var sslHost = ServerEndpoints.FirstOrDefault()?.Host;
+                               
+                if (sslHost != null)
+                    SslConfiguration.SslHost = sslHost;
             }
 
             if (PasswordManager is PasswordManager pwds)

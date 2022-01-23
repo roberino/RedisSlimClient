@@ -73,7 +73,7 @@ namespace RedisTribute.Types.Graphs
             return new QueryImpl(Create(labelCondition, attributeCondition), edgeCondition);
         }
 
-        static Func<TInput, bool> CreateCondition<TInput>(IList<Expression<Func<TInput, bool>>> conditions)
+        static Func<TInput, bool>? CreateCondition<TInput>(IList<Expression<Func<TInput, bool>>> conditions)
         {
             if (conditions.Count > 0)
             {

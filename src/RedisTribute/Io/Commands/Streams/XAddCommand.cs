@@ -34,7 +34,7 @@ namespace RedisTribute.Io.Commands.Streams
 
         protected override StreamEntryId TranslateResult(IRedisObject redisObject)
         {
-            return new StreamEntryId(redisObject.ToString());
+            return new StreamEntryId(redisObject.ToString()!);
         }
     }
 }

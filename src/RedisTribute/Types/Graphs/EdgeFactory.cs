@@ -36,9 +36,9 @@ namespace RedisTribute.Types.Graphs
             return new Edge<T>(location, edgeData, c => _vertexLookup(edgeData.TargetVertexId, c));
         }
 
-        public Edge<T> Create(string edgeId, string vertexId, string edgeLabel = null, Direction direction = Direction.Out, double weight = 1)
+        public Edge<T> Create(string edgeId, string vertexId, string? edgeLabel = null, Direction direction = Direction.Out, double weight = 1)
         {
-            var data = new EdgeData() { Direction = direction, Label = edgeLabel, Weight = weight, TargetVertexId = vertexId, Id = edgeId };
+            var data = new EdgeData() { Direction = direction, Label = edgeLabel ?? string.Empty, Weight = weight, TargetVertexId = vertexId, Id = edgeId };
 
             var edgeUri = _nameResolver.GetLocation(GraphObjectType.Edge, data.Id);
 

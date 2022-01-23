@@ -12,7 +12,7 @@ namespace RedisTribute
     /// </remarks>
     public readonly struct ScanOptions
     {
-        public ScanOptions(Func<string, Task> resultsHandler, string matchPattern = null)
+        public ScanOptions(Func<string, Task> resultsHandler, string? matchPattern = null)
         {
             ResultsHandler = resultsHandler;
             MatchPattern = matchPattern;
@@ -32,7 +32,7 @@ namespace RedisTribute
 
         public Func<string, Task> ResultsHandler { get; }
 
-        public string MatchPattern { get; }
+        public string? MatchPattern { get; }
 
         public int? MaxCount { get; }
 

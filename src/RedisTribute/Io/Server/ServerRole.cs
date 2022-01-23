@@ -4,7 +4,7 @@ namespace RedisTribute.Io.Server
 {
     readonly struct ServerRole
     {
-        public ServerRole(ServerRoleType roleType, ServerEndPointInfo  master, IReadOnlyCollection<ServerEndPointInfo> slaves)
+        public ServerRole(ServerRoleType roleType, ServerEndPointInfo?  master, IReadOnlyCollection<ServerEndPointInfo> slaves)
         {
             RoleType = roleType;
             Master = master;
@@ -12,7 +12,7 @@ namespace RedisTribute.Io.Server
         }
 
         public ServerRoleType RoleType { get; }
-        public ServerEndPointInfo Master { get; }
+        public ServerEndPointInfo? Master { get; }
         public IReadOnlyCollection<ServerEndPointInfo> Slaves { get; }
     }
 }

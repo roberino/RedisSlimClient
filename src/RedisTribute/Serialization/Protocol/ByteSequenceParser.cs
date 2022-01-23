@@ -12,7 +12,7 @@ namespace RedisTribute.Serialization
         ReadState _currentState;
         (ResponseType type, long length, int offset) _currentType;
 
-        ArrayState _currentArrayState;
+        ArrayState? _currentArrayState;
 
         public ByteSequenceParser()
         {

@@ -35,7 +35,7 @@ namespace RedisTribute.Io.Commands
 
             args[0] = commandText;
             args[1] = key.Bytes;
-            args[2] = data;
+            args[2] = data!;
 
             var i = 3;
 

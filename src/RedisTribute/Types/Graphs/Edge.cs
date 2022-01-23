@@ -81,7 +81,7 @@ namespace RedisTribute.Types.Graphs
             Dirty = false;
         }
 
-        public int CompareTo(object obj)
+        public int CompareTo(object? obj)
         {
             if (obj is Edge<T> e)
             {
@@ -91,7 +91,7 @@ namespace RedisTribute.Types.Graphs
             return -1;
         }
 
-        public bool Equals(IEdge<T> other)
+        public bool Equals(IEdge<T>? other)
         {
             if(other == null)
             {
@@ -103,6 +103,6 @@ namespace RedisTribute.Types.Graphs
 
         public override int GetHashCode() => Id.GetHashCode();
 
-        public override bool Equals(object obj) => Equals(obj as IEdge<T>);
+        public override bool Equals(object? obj) => Equals(obj as IEdge<T>);
     }
 }

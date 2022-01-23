@@ -23,8 +23,8 @@ namespace RedisTribute.Types
         internal RedisHashSet(RedisKey key,
             IHashSetClient client,
             ISerializerSettings serializerSettings,
-            IDictionary<string, byte[]> originalValues = null,
-            IAsyncLockStrategy<IAsyncLock> lockStrategy = null)
+            IDictionary<string, byte[]>? originalValues = null,
+            IAsyncLockStrategy<IAsyncLock>? lockStrategy = null)
         {
             Key = key;
 
@@ -48,7 +48,7 @@ namespace RedisTribute.Types
 
         public static async Task<RedisHashSet<T>> CreateAsync(RedisKey key, 
             IHashSetClient client, ISerializerSettings serializerSettings, 
-            IAsyncLockStrategy<IAsyncLock> lockStrategy = null, CancellationToken cancellation = default)
+            IAsyncLockStrategy<IAsyncLock>? lockStrategy = null, CancellationToken cancellation = default)
         {
             var hashSet = new RedisHashSet<T>(key, client, serializerSettings, lockStrategy: lockStrategy);
 

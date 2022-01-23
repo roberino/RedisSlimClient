@@ -34,7 +34,7 @@ namespace RedisTribute.Io
             _connectionSubordinateFactory = new ConnectionSubordinateFactory(endPointInfo, clientCredentials, pipelineFactory, telemetryWriter, timeout);
         }
 
-        public event Action ConfigurationChanged;
+        public event Action? ConfigurationChanged;
 
         public async Task<IReadOnlyCollection<IConnectionSubordinate>> CreateNodeSetAsync()
         {

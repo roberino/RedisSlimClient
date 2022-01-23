@@ -17,7 +17,7 @@ namespace RedisTribute.Io.Net
 
         static readonly Action _callbackCompleted = () => { };
 
-        Action _onCompleted;
+        Action? _onCompleted;
 
         public AwaitableSocketAsyncEventArgs()
         {
@@ -52,7 +52,7 @@ namespace RedisTribute.Io.Net
 
         public AwaitableSocketAsyncEventArgs GetAwaiter() => this;
 
-        public Action<Action> CompletionHandler { get; set; }
+        public Action<Action>? CompletionHandler { get; set; }
 
         public bool IsCompleted =>
             ReferenceEquals(_onCompleted, _callbackCompleted)
@@ -112,7 +112,7 @@ namespace RedisTribute.Io.Net
 
             if (continuation != null)
             {
-                PipeScheduler.ThreadPool.Schedule(state => ((Action)state)(), continuation);
+                PipeScheduler.ThreadPool.Schedule(state => ((Action)state!)(), continuation);
             }
         }
 

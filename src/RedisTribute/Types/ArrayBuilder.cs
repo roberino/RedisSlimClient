@@ -4,18 +4,18 @@ namespace RedisTribute.Types
 {
     class ArrayBuilder
     {
-        readonly Stack<RedisArray> _objectStack = new Stack<RedisArray>();
+        readonly Stack<RedisArray> _objectStack = new();
 
-        RedisArray currentArray = null;
+        RedisArray? currentArray = null;
 
-        public IRedisObject AddOrYield(RedisObjectPart part)
+        public IRedisObject? AddOrYield(RedisObjectPart part)
         {
-            return AddOrYield(part.IsArrayStart ? new RedisArray(part.Length) : part.Value, part.IsArrayStart);
+            return AddOrYield(part.IsArrayStart ? new RedisArray(part.Length) : part.Value!, part.IsArrayStart);
         }
 
-        RedisArray YieldCurrentArray()
+        RedisArray? YieldCurrentArray()
         {
-            if (currentArray.IsComplete)
+            if (currentArray?.IsComplete == true)
             {
                 while (_objectStack.Count > 0)
                 {
@@ -38,7 +38,7 @@ namespace RedisTribute.Types
             return null;
         }
 
-        IRedisObject AddOrYield(IRedisObject obj, bool isArray)
+        IRedisObject? AddOrYield(IRedisObject obj, bool isArray)
         {
             if (currentArray == null)
             {

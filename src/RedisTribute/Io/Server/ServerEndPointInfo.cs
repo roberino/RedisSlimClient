@@ -9,7 +9,7 @@ namespace RedisTribute.Io.Server
 {
     class ServerEndPointInfo : IServerEndpointFactory, IEquatable<ServerEndPointInfo>, IRedisEndpoint
     {
-        Uri _uri;
+        Uri? _uri;
         int? _dbIndex;
 
         public ServerEndPointInfo(string host, int port, int mappedPort, IHostAddressResolver dnsResolver, ServerRoleType role = ServerRoleType.Unknown)
@@ -110,7 +110,7 @@ namespace RedisTribute.Io.Server
             return DnsResolver.CreateEndpoint(Host, MappedPort);
         }
 
-        public bool Equals(ServerEndPointInfo other)
+        public bool Equals(ServerEndPointInfo? other)
         {
             if (other == null)
             {
@@ -135,7 +135,7 @@ namespace RedisTribute.Io.Server
             return DnsResolver.AreIpEquivalent(Host, other.Host);
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             return Equals(obj as ServerEndPointInfo);
         }

@@ -1,18 +1,17 @@
 ﻿using System;
 using System.Collections;
-using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace RedisTribute.Util
 {
-    class SyncronizedInstance<T> : IDisposable
+    class SyncronizedInstance<T> : IDisposable where T : class
     {
         readonly TimeSpan _timeout;
         readonly SemaphoreSlim _semaphore;
         readonly Func<Task<T>> _factory;
 
-        T _instance;
+        T? _instance;
 
         public SyncronizedInstance(Func<Task<T>> factory, TimeSpan? timeout = null)
         {
@@ -21,7 +20,7 @@ namespace RedisTribute.Util
             _timeout = timeout.GetValueOrDefault(TimeSpan.FromSeconds(30));
         }
 
-        public TValue TryGet<TValue>(Func<T, TValue> valueFactory, TValue defaultValue = default)
+        public TValue? TryGet<TValue>(Func<T, TValue> valueFactory, TValue? defaultValue = default)
         {
             var instance = _instance;
 

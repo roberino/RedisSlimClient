@@ -11,16 +11,16 @@ namespace RedisTribute.Io.Net.Proxy
     sealed class TcpServer : IDisposable
     {
         readonly EndPoint _local;
-        readonly EndPoint _target;
+        readonly EndPoint? _target;
         readonly ManualResetEvent _listenWaiter;
 
-        Socket _mainSocket;
+        Socket? _mainSocket;
 
-        Task _worker;
+        Task? _worker;
 
         CancellationTokenSource _disposed;
 
-        public TcpServer(EndPoint local, EndPoint target = null)
+        public TcpServer(EndPoint local, EndPoint? target = null)
         {
             _local = local;
             _target = target;
@@ -39,7 +39,7 @@ namespace RedisTribute.Io.Net.Proxy
 
         public EndPoint ForwardingEndPoint { get; }
 
-        public event Action<Exception> Error;
+        public event Action<Exception>? Error;
 
         public Task StartAsync(RequestHandler handler)
         {
@@ -62,6 +62,9 @@ namespace RedisTribute.Io.Net.Proxy
 
         async Task StartAsync(RequestHandler handler, CancellationToken cancellationToken)
         {
+            if (_mainSocket == null)
+                throw new InvalidOperationException();
+
             while (!cancellationToken.IsCancellationRequested)
             {
                 try
@@ -133,7 +136,7 @@ namespace RedisTribute.Io.Net.Proxy
 
             public void OnDataReceive(IAsyncResult result)
             {
-                var state = (State)result.AsyncState;
+                var state = (State)result.AsyncState!;
 
                 try
                 {

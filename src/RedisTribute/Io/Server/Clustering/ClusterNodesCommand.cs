@@ -23,7 +23,7 @@ namespace RedisTribute.Io.Server.Clustering
 
         protected override IList<ClusterNode> TranslateResult(IRedisObject redisObject)
         {
-            var reader = new StringReader(redisObject.ToString());
+            var reader = new StringReader(redisObject.ToString()!);
             var config = new List<ClusterNode>();
 
             //  <id> <ip:port> <flags> <master> <ping-sent> <pong-recv> <config-epoch> <link-state> <slot> <slot> ... <slot>

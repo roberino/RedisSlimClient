@@ -30,11 +30,11 @@ namespace RedisTribute.Types
             return new UnixTime(MillisecondTimestamp + 1);
         }
 
-        public int CompareTo(object obj)
+        public int CompareTo(object? obj)
         {
-            if (obj is UnixTime)
+            if (obj is UnixTime time)
             {
-                return MillisecondTimestamp.CompareTo(((UnixTime)obj).MillisecondTimestamp);
+                return MillisecondTimestamp.CompareTo(time.MillisecondTimestamp);
             }
 
             return -1;
@@ -42,11 +42,11 @@ namespace RedisTribute.Types
 
         public bool Equals(UnixTime other) => MillisecondTimestamp == other.MillisecondTimestamp;
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
-            if (obj is UnixTime)
+            if (obj is UnixTime time)
             {
-                return Equals((UnixTime)obj);
+                return Equals(time);
             }
 
             return false;

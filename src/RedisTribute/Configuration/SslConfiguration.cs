@@ -14,7 +14,7 @@ namespace RedisTribute.Configuration
 
         public bool UseSsl { get; set; }
 
-        public string? SslHost { get; set; }
+        public string SslHost { get; set; } = string.Empty;
 
         public int DefaultPort => UseSsl ? DefaultSslPort : DefaultNonSslPort;
 

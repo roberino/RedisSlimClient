@@ -5,7 +5,7 @@ namespace RedisTribute.WebStream
 {
     public class CrawlChannel
     {
-        public string? ChannelName { get; set; }
+        public string ChannelName { get; set; } = string.Empty;
     }
 
     public class CrawlOptions : CrawlChannel
